@@ -26,7 +26,16 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 2. Every claim row carries `source URL · accessed YYYY-MM-DD`. No URL → the row is deleted, not kept as "known". The URL must itself show the claim: a claim with no fetched evidence is deleted, never pinned to a nearby source. A deferred question writes only `[OPEN]`, no findings.
 3. Social/trend results (Q5) inform copy and FAQ only; never a technical decision. Q7 signals change a row only once an official page confirms them; unconfirmed ones are written `[CHECK: <signal> · <URL>]` for mapping.
 4. Numbers (limits, prices) are copied verbatim with the page's own wording; if the page did not show it, write `(not on page)`.
-5. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
+5. A "nothing changed / none found" result is written as `none found · searched: <source or query>, last 30 days`, never as "confirmed". A generic landing or index page is not evidence for a specific claim.
+6. Q5 is about the §2 audience (end users), not developers. If no end-user complaints are found, Q5 writes `[OPEN]`; never substitute issue trackers or PRs.
+7. Only three markers exist: `[OPEN]`, `[CONFLICT]`, `[CHECK]`. The counts in §7 must equal the markers in the file.
+8. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
+
+## Link check (before writing)
+Every URL in the draft is opened once more; any that does not load (4xx/5xx, timeout) removes its row, or the row is re-sourced within budget. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
+<!-- claude-only -->
+`grep -oE 'https?://[^ )|`>]+' draft | sort -u | while read u; do echo "$(curl -s -o /dev/null -L -m 20 -w '%{http_code}' "$u") $u"; done`, where every line must start with 2xx or 3xx.
+<!-- /claude-only -->
 
 ## Budget and stop rule
 - ≤3 sources per question; stop a question when two official sources agree.
@@ -56,7 +65,7 @@ Portable: do steps 1–4 yourself in one pass. List the applicable questions, an
 1. Main thread reads BRIEF, lists the applicable questions and prints them (≤7 lines).
 2. Spawn in parallel: `planner` (Fable) with Q1–Q5 and the rules above; it returns the filled §1–§5 text and its fetch count (planner does not write files). `quick` (Sonnet) with Q6 for brownfield; it returns the §5 inventory text.
 3. Main thread runs `/last30days` for each Q7 subject (and Q5 if applicable), then confirms every signal on the official page before changing a row.
-4. Main thread assembles `.v2p/SCAVENGE.md` from `references/scavenge-template.md`, writes it, prints the path and `Next: /v2p mapping`.
+4. Main thread assembles the draft from `references/scavenge-template.md`, runs the link check, writes `.v2p/SCAVENGE.md`, prints the path and `Next: /v2p mapping`.
 
 `AskUserQuestion` only for resume/re-run. Nothing else is asked; open items go to `[OPEN: …]`.
 <!-- /claude-only -->

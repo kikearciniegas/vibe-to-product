@@ -228,7 +228,13 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 2. Every claim row carries `source URL · accessed YYYY-MM-DD`. No URL → the row is deleted, not kept as "known". The URL must itself show the claim: a claim with no fetched evidence is deleted, never pinned to a nearby source. A deferred question writes only `[OPEN]`, no findings.
 3. Social/trend results (Q5) inform copy and FAQ only; never a technical decision. Q7 signals change a row only once an official page confirms them; unconfirmed ones are written `[CHECK: <signal> · <URL>]` for mapping.
 4. Numbers (limits, prices) are copied verbatim with the page's own wording; if the page did not show it, write `(not on page)`.
-5. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
+5. A "nothing changed / none found" result is written as `none found · searched: <source or query>, last 30 days`, never as "confirmed". A generic landing or index page is not evidence for a specific claim.
+6. Q5 is about the §2 audience (end users), not developers. If no end-user complaints are found, Q5 writes `[OPEN]`; never substitute issue trackers or PRs.
+7. Only three markers exist: `[OPEN]`, `[CONFLICT]`, `[CHECK]`. The counts in §7 must equal the markers in the file.
+8. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
+
+## Link check (before writing)
+Every URL in the draft is opened once more; any that does not load (4xx/5xx, timeout) removes its row, or the row is re-sourced within budget. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
 
 ## Budget and stop rule
 - ≤3 sources per question; stop a question when two official sources agree.
@@ -312,6 +318,11 @@ written: <YYYY-MM-DD> by v2p scavenge · reads: .v2p/BRIEF.md (<written date>)
 |---|---|---|
 | <name> | W<n> | — |
 
+TBD tool (one table per TBD integration; every cell sourced):
+| candidate | price for BRIEF §2 scale | §6 locales supported | meets §4 acceptance lines | URL · accessed |
+|---|---|---|---|---|
+Default: <candidate> · why: <one line>
+
 ## 4. Obligations from data sensitivity (Q4)
 | flag (BRIEF §7) | primary text | what it requires (one line) | URL · accessed |
 |---|---|---|---|
@@ -321,12 +332,12 @@ written: <YYYY-MM-DD> by v2p scavenge · reads: .v2p/BRIEF.md (<written date>)
 - Code inventory (brownfield only): stack <…> · entry points <…> · env vars referenced <n> · tests <yes/no, runner> · deps created <6 months: <list|none> · TODO/FIXME <n> · files >200 lines <n>
 
 ## 6. Recent changes, last 30 days (Q7)
-| subject | signal (last 30 days) | confirmed on official page? | effect on rows above |
-|---|---|---|---|
-| <name> | <change, or "none found"> · <URL> · accessed <date> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
+| subject | last-30-days search (query · results n) | signal | confirmed on official page? | effect on rows above |
+|---|---|---|---|---|
+| <name> | <query> · <n> | <change · URL · accessed, or "none found · searched: …"> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
 
 ## 7. Budget and tools
-fetches: <n>/25 · time: <min> · tools: <names used, or none>
+fetches: <n>/25 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
 [CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>
 
 ## 8. Open

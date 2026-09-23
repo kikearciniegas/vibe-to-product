@@ -18,6 +18,11 @@ written: <YYYY-MM-DD> by v2p scavenge · reads: .v2p/BRIEF.md (<written date>)
 |---|---|---|
 | <name> | W<n> | — |
 
+TBD tool (one table per TBD integration; every cell sourced):
+| candidate | price for BRIEF §2 scale | §6 locales supported | meets §4 acceptance lines | URL · accessed |
+|---|---|---|---|---|
+Default: <candidate> · why: <one line>
+
 ## 4. Obligations from data sensitivity (Q4)
 | flag (BRIEF §7) | primary text | what it requires (one line) | URL · accessed |
 |---|---|---|---|
@@ -27,12 +32,12 @@ written: <YYYY-MM-DD> by v2p scavenge · reads: .v2p/BRIEF.md (<written date>)
 - Code inventory (brownfield only): stack <…> · entry points <…> · env vars referenced <n> · tests <yes/no, runner> · deps created <6 months: <list|none> · TODO/FIXME <n> · files >200 lines <n>
 
 ## 6. Recent changes, last 30 days (Q7)
-| subject | signal (last 30 days) | confirmed on official page? | effect on rows above |
-|---|---|---|---|
-| <name> | <change, or "none found"> · <URL> · accessed <date> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
+| subject | last-30-days search (query · results n) | signal | confirmed on official page? | effect on rows above |
+|---|---|---|---|---|
+| <name> | <query> · <n> | <change · URL · accessed, or "none found · searched: …"> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
 
 ## 7. Budget and tools
-fetches: <n>/25 · time: <min> · tools: <names used, or none>
+fetches: <n>/25 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
 [CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>
 
 ## 8. Open
