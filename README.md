@@ -1,86 +1,76 @@
-# 🚀 Vibe-to-Product: Professional AI Development Framework
+# Vibe-to-Product (v2p)
 
-Welcome to the **Vibe-to-Product Framework**. This repository contains a complete system designed to bridge the gap between "Vibe Coding" (rapid AI-generated prototypes) and "Professional Engineering" (production-ready, secure, and scalable applications).
+v2p turns an idea or an AI-generated prototype into a production product. It starts with a short interview (the handshake) that writes `.v2p/BRIEF.md` in your project: profile, the one job, success criteria, scope, brand, constraints, stack and the standards that apply. Later phases read that file instead of re-asking.
 
-## 📌 The Problem: The "Vibe Coding" Trap
-AI is incredible at generating the **Happy Path**—the version of an app where everything works perfectly. However, this often leads to "fragile" software characterized by:
-- **Mega-Files:** Components that are too large and unmaintainable.
-- **Hidden Debt:** Duplicate logic, `any` types, and missing error handling.
-- **Security Gaps:** Leaked API keys and missing input sanitization.
-- **The "Apology Loop":** AI repeating the same mistakes when fixing bugs.
+It is a thin orchestrator. In Claude Code, planning, execution and review are delegated to the superpowers and gstack skills; v2p decides what runs when and what each phase hands to the next.
 
-## 🛠 The Solution: Architected Iteration
-This framework replaces linear prompting with **Orchestrated Development**. Instead of asking an AI to "build a feature," we use a structured, multi-persona loop that separates **Reasoning** from **Production** and **Validation**.
+## Two runtimes
+**Claude Code (skill).** Install by symlink, then type `/v2p`:
 
-### 🏗️ The System Architecture
-The framework is composed of four core pillars:
+```sh
+ln -s "$PWD/skills/v2p" ~/.claude/skills/v2p
+```
 
-| File | Role | Description |
-| :--- | :--- | :--- |
-| `STANDARDS.md` | **The Standard** | A comprehensive list of 150+ production requirements across Frontend, Backend, Security, Infra, SEO, and Legal. |
-| `PERSONA.md` | **The System** | The "Operating System" for the AI. It defines the AI's persona as a Senior Architect and sets strict behavioral constraints. |
-| `WORKFLOW.md` | **The Workflow** | The operational manual. It defines the 5-phase process (Contract $\rightarrow$ Vibe $\rightarrow$ Harden $\rightarrow$ Polish $\rightarrow$ Audit). |
-| `SKILL.md` | **The Activation** | A master prompt that wraps the entire system into a "Skill," allowing any AI agent to instantly adopt this professional framework. |
+**Portable (any chat model).** Paste `dist/v2p-portable.md` into ChatGPT, Gemini or another chat, then say what you are building. The pack tells the model to run the handshake and use only the standards for your profile.
 
----
+## Phases
+| Phase | Writes | Status |
+|---|---|---|
+| `handshake` | `.v2p/BRIEF.md` | available |
+| `scavenge` | `.v2p/SCAVENGE.md` | planned |
+| `mapping` | `.v2p/PLAN.md` | planned |
+| `execute` | none | planned |
+| `review` | `.v2p/REVIEW.md` | planned |
+| `deploy` | none | planned |
 
-## ⚙️ Setup & Requirements
+## Profiles
+| Profile | Shape | Standards loaded |
+|---|---|---|
+| `landing` | one-action page, no login | core, web, landing + 10-section checks + UX laws |
+| `saas-web` | logged-in, users outside your organisation | core, web, saas-web |
+| `internal-tool` | logged-in, users work for you | core, web, internal-tool |
+| `native-app` | iOS/Android binary | core, native-app |
 
-### 🛠 Installation
-Since this is a prompt-engineering framework, there is no software to install. 
-1. **Clone or Download** this repository.
-2. **Upload** the four `.md` files (`STANDARDS.md`, `PERSONA.md`, `WORKFLOW.md`, `SKILL.md`) into your AI chat session (Claude, GPT-4, etc.).
+The standards hold 188 checklist items across six files (`grep -c '^- \[ \]' skills/v2p/references/standards/*.md`), each claimed with evidence rather than a tick.
 
-### 🧠 Requirements
-To get the best results, use a high-reasoning model. 
-- **Recommended:** Claude 3.5 Sonnet, GPT-4o, or similar "Frontier" models.
-- **Optimized Setup:** Use a high-reasoning model for **The Architect** and **The Auditor** phases, and a faster model (e.g., Claude 3.5 Haiku) for the **Executor** phase.
+## File map
+| Path | Role |
+|---|---|
+| `skills/v2p/SKILL.md` | router: entry, profiles, phases, when to load what |
+| `skills/v2p/phases/handshake.md` | the interview and its confirmation gate |
+| `skills/v2p/references/brief-template.md` | layout of `.v2p/BRIEF.md` |
+| `skills/v2p/references/standards/` | `core.md`, `web.md`, and one file per profile |
+| `skills/v2p/references/landing-10-sections.md` | per-section checks for landing pages |
+| `skills/v2p/references/ux-laws.md` | UX laws as measurable checks |
+| `skills/v2p/references/model-routing.md` | which agent and model runs each phase (Claude Code only) |
+| `WORKFLOW.md` | the Architect / Executor / Auditor loop and failure-recovery rule |
+| `build-portable.sh` | builds `dist/v2p-portable.md` |
+| `dist/v2p-portable.md` | generated portable pack; never edit by hand |
 
----
+## Build
+```sh
+sh build-portable.sh
+```
 
-## ⚡ How to Trigger the Framework
+## Verify
+Run from the project directory:
 
-To activate the **Vibe-to-Product** mode in your AI session, follow these steps exactly:
+```sh
+grep -cE '^(name|description): ' skills/v2p/SKILL.md          # 2
+grep -ciE 'custom cursor|urgency|whatsapp|back-to-top' skills/v2p/references/standards/core.md   # 0
+grep -n 'FID' skills/v2p/references/standards/*.md              # no output
+grep -rniE 'refuse any request|maximum 200 lines' skills/v2p    # no output
+grep -rc '(verified: 2026-09)' skills/v2p/references            # total 8 or more
+grep -rn 'PERSON[A]' README.md WORKFLOW.md skills/                # no output
+sh build-portable.sh && grep -c 'Rafael Arciniegas' dist/v2p-portable.md   # 1
+```
 
-1. **Context Load:** Upload all four `.md` files to the chat.
-2. **Activation:** Copy and paste the entire content of `SKILL.md` as your first prompt.
-3. **Verification:** The AI will confirm it has adopted the **Architected Iteration** framework and is ready to operate as the laad la architect/auditor.
-4. **Execution:** Begin your first feature using the **Phase 1: Architecture** prompt found in `WORKFLOW.md`.
+The full list, including the referenced-path and no-item-lost checks, is in `docs/specs/slice-1-spec.md` §6.
 
----
+## Models
+Claude Code: see `skills/v2p/references/model-routing.md`. Portable: any strong reasoning model.
 
-## 🎭 The Orchestration Triad
-To ensure quality, the AI shifts between three distinct cognitive modes:
+**Stop vibing. Start engineering.**
 
-1. **The Architect (The Brain):** Handles global vision, defines data contracts (TypeScript interfaces), and plans the atomic file structure.
-2. **The Executor (The Hands):** Implements the code modularly, following the locked contracts and the "Atomic Design" principle.
-3. **The Auditor (The Shield):** Acts as an adversarial reviewer. It doesn't fix code; it finds "defects" and gaps relative to the Professional Checklist.
-
----
-
-## 🔄 The Professional Execution Loop
-
-Every feature is built using the **Hardening Loop**:
-
-1. **Contract Phase:** Define the API and Type interfaces. Lock them.
-2. **The Vibe Pass:** Implement the core "Happy Path" functionality.
-3. **The Hardening Pass:** Implement "Unhappy Paths" (Error boundaries, loading states, input validation).
-4. **The Polish Pass:** Apply a11y (ARIA), smooth animations, and performance optimizations.
-5. **The Audit Pass:** A brutal review against the `STANDARDS.md`.
-
-### 🛡️ Special Guardrails
-- **Anti-Hallucination Loop:** If a bug persists after two attempts, the AI must stop and perform a **Root Cause Analysis (RCA)** before trying again.
-- **Atomic Standard:** No file exceeds 200 lines.
-- **Strict Typing:** Zero `any` types allowed.
-- **Production First:** Security headers, HTTPS, and Secrets Vaulting are treated as defaults, not options.
-
-## 🚀 Quick Start Guide
-To launch this framework in a new AI session:
-1. Upload all four `.md` files.
-2. Paste the activation prompt found in `SKILL.md`.
-3. Start your first feature using the **Phase 1: Architecture** prompt from the `WORKFLOW.md`.
-
-**Stop vibing. Start engineering.** 🚀
-
----
+***
 Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.

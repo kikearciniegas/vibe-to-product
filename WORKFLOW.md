@@ -55,7 +55,7 @@ Follow this exact sequence for every new feature:
 **Prompt:** *"Switch to **Architect Mode**. I want to implement [FEATURE]. Please define the data contract (Interfaces/JSON) and the Atomic File Structure. Do not write implementation code yet."*
 
 ### Phase 2: The Base Build (Executor Mode)
-**Prompt:** *"Switch to **Executor Mode**. Implement the base functionality using the agreed-upon contracts. Follow the atomic structure and `PERSONA.md`. Provide the Checklist Alignment footer."*
+**Prompt:** *"Switch to **Executor Mode**. Implement the base functionality using the agreed-upon contracts. Follow the atomic structure and `references/standards/core.md`. Provide the Standards evidence footer."*
 
 ### Phase 3: The Hardening (Executor Mode)
 **Prompt:** *"Still in **Executor Mode**, now harden this feature. Implement the unhappy paths: add loading skeletons, handle API error states, and add strict input validation."*
