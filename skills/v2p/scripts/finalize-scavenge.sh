@@ -16,10 +16,14 @@ done
 
 q7=$(awk '/^## 6\./{f=1; next} /^## /{f=0} f && /^\| / && !/^\| subject/ && !/^\|---/' "$draft")
 [ -n "$q7" ] || { echo "FAIL: §6 (Q7) has no rows"; fail=1; }
-if printf '%s\n' "$q7" | grep -qi 'not searched'; then
-  echo "FAIL: §6 has 'not searched' rows; run the last-30-days search for every subject"; fail=1
+# A searched row carries evidence: a URL for a signal, or "none found · searched".
+unsearched=$(printf '%s\n' "$q7" | grep -viE 'https?://|none found · searched')
+if [ -n "$q7" ] && [ -n "$unsearched" ]; then
+  echo "FAIL: §6 rows without a sourced signal or 'none found · searched' (run the last-30-days search):"
+  printf '%s\n' "$unsearched" | cut -c1-100; fail=1
 fi
+grep -qE 'links: [^ ]+ ok' "$draft" || { echo "FAIL: §7 has no 'links: <ok>/<total> ok' field to stamp"; fail=1; }
 
 [ "$fail" -eq 0 ] || { echo "FAIL: links $ok/$total ok; $out not written"; exit 1; }
-sed "s|links: [^ ]* ok|links: $ok/$total ok|" "$draft" > "$out" && rm "$draft"
+sed -E "s|links: [^ ]+ ok|links: $ok/$total ok|" "$draft" > "$out" && rm "$draft"
 echo "PASS: links $ok/$total ok -> $out"

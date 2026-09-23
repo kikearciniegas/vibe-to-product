@@ -64,7 +64,7 @@ Portable: do steps 1–4 yourself in one pass. List the applicable questions, an
 ### Claude Code
 1. Main thread reads BRIEF, lists the applicable questions and prints them (≤7 lines).
 2. Spawn in parallel: `planner` (Fable) with Q1–Q5 and the rules above; it returns the filled §1–§5 text and its fetch count (planner does not write files). `quick` (Sonnet) with Q6 for brownfield; it returns the §5 inventory text.
-3. Main thread runs `/last30days` for each Q7 subject (and Q5 if applicable), then confirms every signal on the official page before changing a row.
+3. Main thread invokes the `last30days` skill through the Skill tool, **one call per Q7 subject** (topic: `<subject> changes`), plus one for Q5 if applicable. Never call its engine scripts directly. Each row gets the returned finding with its URL, or `none found · searched: /last30days "<topic>"`. If a call fails twice, write `none found · searched: /last30days failed (<error>)`, so the failure is visible and never passes as "pending". Then confirm every signal on the official page before changing a row.
 4. Main thread assembles `.v2p/SCAVENGE.draft.md` from `references/scavenge-template.md` and runs `scripts/finalize-scavenge.sh` until it prints `PASS`, prints the path and `Next: /v2p mapping`.
 
 `AskUserQuestion` only for resume/re-run. Nothing else is asked; open items go to `[OPEN: …]`.
