@@ -36,6 +36,7 @@ Turn 2 — success and scope
 Turn 3 — brand and locale
 - Q7 — Brand guide?
   - `existing`: path, URL or file. Record palette, type, voice and logo in BRIEF §6.
+    If it cannot be read (missing, wrong path, unsupported format), say so once and ask for the right location. If it isn't available now, don't block: record `Status: existing (source: pending)`, write `pending brand file` for palette/type/voice/logo, log `brand file | deferred | provide before UI work` in §10, and continue.
   - `new`: 3 adjectives, 1–2 reference sites, a must-avoid list (default: the anti-"made-by-AI" traits in `references/standards/landing.md`). Record `brand: to-create`; it is created in a later phase.
   - `none needed`: internal-tool default is the organisation's UI kit.
 - Q8 (S; default one language) — One language or several? Translated, or per-market content?
