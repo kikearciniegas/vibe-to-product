@@ -50,7 +50,7 @@ Turn 4 — constraints and stack
 ## Confirmation gate
 Show, together:
 1. the running brief,
-2. the decisions log (item, answered / defaulted / deferred, value),
+2. the decisions log: one row per question Q0–Q12, each marked answered / defaulted / deferred / skipped, with the value (or, for skipped, the reason). "Answered" only when the user's own words cover it. A reply to a different question, or silence, makes it defaulted (state the default) or a new question. Record the user's latest value, not an earlier one or a blend.
 3. any open `[NEEDS CLARIFICATION: …]` markers.
 
 Write only on an explicit "yes", "ok" or "confirmed". A change request or a question re-enters the loop: apply it, show the gate again, and write nothing in the meantime. Open markers block writing; resolve each one first.
