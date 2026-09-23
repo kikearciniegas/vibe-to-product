@@ -17,8 +17,8 @@ ln -s "$PWD/skills/v2p" ~/.claude/skills/v2p
 | Phase | Writes | Status |
 |---|---|---|
 | `handshake` | `.v2p/BRIEF.md` | available |
-| `scavenge` | `.v2p/SCAVENGE.md` | planned |
-| `mapping` | `.v2p/PLAN.md` | planned |
+| `scavenge` | `.v2p/SCAVENGE.md` | available |
+| `mapping` | `.v2p/PLAN.md` | available |
 | `execute` | none | planned |
 | `review` | `.v2p/REVIEW.md` | planned |
 | `deploy` | none | planned |
@@ -38,7 +38,15 @@ The standards hold 188 checklist items across six files (`grep -c '^- \[ \]' ski
 |---|---|
 | `skills/v2p/SKILL.md` | router: entry, profiles, phases, when to load what |
 | `skills/v2p/phases/handshake.md` | the interview and its confirmation gate |
+| `skills/v2p/phases/scavenge.md` | evidence gathering: reference architecture, patterns, integrations, obligations, brownfield inventory |
+| `skills/v2p/phases/mapping.md` | providers, skills, standards rows and verifiable tasks into `.v2p/PLAN.md` |
 | `skills/v2p/references/brief-template.md` | layout of `.v2p/BRIEF.md` |
+| `skills/v2p/references/scavenge-template.md` | layout of `.v2p/SCAVENGE.md` |
+| `skills/v2p/references/plan-template.md` | layout of `.v2p/PLAN.md` |
+| `skills/v2p/references/stack/overview.md` | startup stack: happy path, provider table, cost at launch, architecture diagram |
+| `skills/v2p/references/stack/wiring.md` | config wiring matrix: which value goes where |
+| `skills/v2p/references/stack/security.md` | security and privacy per provider |
+| `skills/v2p/references/skills-catalog.md` | one default skill per need, with status on this machine (Claude Code only) |
 | `skills/v2p/references/standards/` | `core.md`, `web.md`, and one file per profile |
 | `skills/v2p/references/landing-10-sections.md` | per-section checks for landing pages |
 | `skills/v2p/references/ux-laws.md` | UX laws as measurable checks |
@@ -63,6 +71,10 @@ grep -rniE 'refuse any request|maximum 200 lines' skills/v2p    # no output
 grep -rc '(verified: 2026-09)' skills/v2p/references            # total 8 or more
 grep -rn 'PERSON[A]' README.md WORKFLOW.md skills/                # no output
 sh build-portable.sh && grep -c 'Rafael Arciniegas' dist/v2p-portable.md   # 1
+grep -cE '^\| `(scavenge|mapping)` \| `phases/(scavenge|mapping)\.md` \| `\.v2p/(SCAVENGE|PLAN)\.md` \| available' skills/v2p/SKILL.md   # 2
+grep -rn '(verified: 2026-09)' skills/v2p/references/stack | grep -vc 'https\?://'   # 0
+grep -c '<!-- source: references/stack/' dist/v2p-portable.md; grep -c 'skills-[c]atalog\|model-[r]outing' dist/v2p-portable.md   # 3, 0
+grep -c '| [a]vailable |' README.md; grep -c 'skills-[c]atalog' README.md   # 3, 1
 ```
 
 The full list, including the referenced-path and no-item-lost checks, is in `docs/specs/slice-1-spec.md` §6.

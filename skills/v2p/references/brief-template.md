@@ -50,7 +50,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 ## 11. Open markers
 none  ← must be literally "none" for the file to be written
 
-Next: /v2p mapping (not available in this version)
+Next: /v2p scavenge
 ```
 
 ***

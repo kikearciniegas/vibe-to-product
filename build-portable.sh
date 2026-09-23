@@ -8,9 +8,11 @@ copyright='Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.'
 {
   printf '# v2p portable pack (generated %s; do not edit)\n\n' "$(date +%Y-%m-%d)"
   for p in SKILL.md phases/handshake.md references/brief-template.md \
+    phases/scavenge.md phases/mapping.md references/scavenge-template.md references/plan-template.md \
     references/standards/core.md references/standards/web.md references/standards/landing.md \
     references/standards/saas-web.md references/standards/internal-tool.md references/standards/native-app.md \
-    references/landing-10-sections.md references/ux-laws.md; do
+    references/landing-10-sections.md references/ux-laws.md \
+    references/stack/overview.md references/stack/wiring.md references/stack/security.md; do
     printf '<!-- source: %s -->\n' "$p"
     awk '
       NR == 1 && $0 == "---" { fm = 1; next }

@@ -15,6 +15,7 @@ Optional argument: `handshake | scavenge | mapping | execute | review | deploy`.
 
 No argument:
 - `.v2p/BRIEF.md` exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
+  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`.
 - Otherwise ask "What are we building? One paragraph." and start the handshake.
 
 ## 3. Target directory
@@ -43,8 +44,8 @@ AI features, payments, webhooks and i18n are conditional blocks inside the stand
 | Phase | File | Writes | Status |
 |---|---|---|---|
 | `handshake` | `phases/handshake.md` | `.v2p/BRIEF.md` | available |
-| `scavenge` | none | `.v2p/SCAVENGE.md` | not available in this version |
-| `mapping` | none | `.v2p/PLAN.md` | not available in this version |
+| `scavenge` | `phases/scavenge.md` | `.v2p/SCAVENGE.md` | available |
+| `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
 | `execute` | none | none | not available in this version |
 | `review` | none | `.v2p/REVIEW.md` | not available in this version |
 | `deploy` | none | none | not available in this version |
@@ -64,8 +65,11 @@ For a phase marked "not available in this version", reply exactly that and stop.
 - `references/landing-10-sections.md`: only for `landing`.
 - `references/ux-laws.md`: at any UI review.
 - BRIEF layout: `references/brief-template.md`.
+- SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
+- Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
 <!-- claude-only -->
 - `references/model-routing.md`: before delegating any phase work.
+- `references/skills-catalog.md`: at mapping step 2.
 <!-- /claude-only -->
 - Source rule for every v2p file: no `---` horizontal rules (use `***`).
 

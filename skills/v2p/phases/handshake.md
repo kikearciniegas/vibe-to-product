@@ -57,7 +57,7 @@ Write only on an explicit "yes", "ok" or "confirmed". A change request or a ques
 ## Write step
 1. Load the standards for the confirmed profile (router §6) and fill BRIEF §9, including which conditional blocks are ON.
 2. Write `.v2p/BRIEF.md` from `references/brief-template.md`. §11 must be literally `none`.
-3. Print the path, then: `Next: /v2p mapping (not available yet in this version)`.
+3. Print the path, then: `Next: /v2p scavenge`.
 
 If you cannot write files, print the BRIEF in one code block and ask the user to save it as `.v2p/BRIEF.md`.
 
