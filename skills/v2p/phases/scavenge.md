@@ -50,7 +50,7 @@ In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/
 - context7 MCP: first choice for library/SDK docs (`resolve-library-id` → `query-docs`).
 - WebFetch/WebSearch: default for everything else.
 - **Firecrawl: use only if a `firecrawl` / `firecrawl-scrape` skill appears in this session's available-skills list. It is installed in the plugin cache but disabled** (`~/.claude/settings.json` → `firecrawl@claude-plugins-official=false`, verified 2026-09-23), so by default its tools are not loaded. Do not run `npx firecrawl-cli`, do not install, do not enable; write `firecrawl: unavailable` in SCAVENGE.md §7. When it is available, prefer `firecrawl-scrape` over WebFetch for JS-rendered pages only.
-- `/last30days` (installed, enabled): Q7 always, Q5 when applicable; runs on the main thread (needs Bash + AskUserQuestion); works without API keys via WebSearch fallback (reported by the skill's own frontmatter).
+- `/last30days` (installed, enabled): Q7 always, Q5 when applicable; runs inside the Q7 subagent (step 3); it asks questions only during its one-time first-run setup, which is already done on this machine; works without API keys via WebSearch fallback (reported by the skill's own frontmatter).
 - gstack `/browse`: only when a page needs a click or login (pricing calculators, dashboards). Never `mcp__claude-in-chrome__*`.
 - Perplexity: not installed; do not reference.
 - Brownfield Q6: Serena MCP is installed (`~/.claude.json` `mcpServers.serena`); use `find_symbol`/`get_symbols_overview`; fall back to `rg`. Graph tool: code-review-graph if installed (see `references/skills-catalog.md`); not required.
