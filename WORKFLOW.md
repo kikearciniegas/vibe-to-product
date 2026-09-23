@@ -55,19 +55,19 @@ Follow this exact sequence for every new feature:
 **Prompt:** *"Switch to **Architect Mode**. I want to implement [FEATURE]. Please define the data contract (Interfaces/JSON) and the Atomic File Structure. Do not write implementation code yet."*
 
 ### Phase 2: The Base Build (Executor Mode)
-**Prompt:** *"Switch to **Executor Mode**. Implement the base functionality using the agreed-upon contracts. Follow the atomic structure and `references/standards/core.md`. Provide the Standards evidence footer."*
+**Prompt:** *"Switch to **Executor Mode**. Implement the base functionality using the agreed-upon contracts. Follow the atomic structure and `skills/v2p/references/standards/core.md`. Provide the Standards evidence footer."*
 
 ### Phase 3: The Hardening (Executor Mode)
 **Prompt:** *"Still in **Executor Mode**, now harden this feature. Implement the unhappy paths: add loading skeletons, handle API error states, and add strict input validation."*
 
 ### Phase 4: The Audit (Auditor Mode)
-**Prompt:** *"Switch to **Auditor Mode**. Act as a critical security auditor. Scan this implementation against `STANDARDS.md`. Be brutal—find every missing item or risk."*
+**Prompt:** *"Switch to **Auditor Mode**. Act as a critical security auditor. Scan this implementation against the standards files listed in `.v2p/BRIEF.md` §9. Be brutal—find every missing item or risk."*
 
 ### Phase 5: Final Polish & Fixes (Executor Mode)
 **Prompt:** *"Switch back to **Executor Mode**. Address every point raised by the Auditor and apply the final professional polish (animations/a11y)."*
 
 ### Phase 6: Final Verification
-**Prompt:** *"Run a final audit of this feature. Confirm all items in the `STANDARDS.md` are satisfied."*
+**Prompt:** *"Run a final audit of this feature. Confirm every item in the standards files listed in `.v2p/BRIEF.md` §9 has a Standards evidence row."*
 
 ---
 Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.
