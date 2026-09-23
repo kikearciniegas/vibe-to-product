@@ -238,8 +238,8 @@ Every URL in the draft is opened once more; any that does not load (4xx/5xx, tim
 
 ## Budget and stop rule
 - ≤3 sources per question; stop a question when two official sources agree.
-- Hard cap: **25 fetches total** (every page or docs fetch counts) and ~30 minutes wall time. The count is written into SCAVENGE.md §7.
-- Q7: one last-30-days search per subject, each counting as 1 fetch; confirmation fetches count as usual.
+- Q1–Q5: **20 fetches** (every page or docs fetch counts). Q7: **5 reserved**, one last-30-days search per subject; Q1–Q5 may never spend them. ~30 minutes wall time. The count is written into SCAVENGE.md §7.
+- Q7 runs after Q1–Q4 are answered and before the file is assembled. Confirmation fetches for Q7 signals come from Q7's reserve only if Q1–Q5 left some; otherwise the signal is written as `[CHECK]`.
 - Q6 is not budgeted by fetches; it is budgeted by files: read ≤40 files, never the whole tree (use search and symbol lookups).
 - When the cap hits, unanswered questions are written as `[OPEN: <question> — answer needed by <mapping task>]`, never guessed.
 
@@ -262,6 +262,7 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 ## Preconditions
 - `.v2p/BRIEF.md` required, with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
 - `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or plan without it?"; if planning without it, record `scavenge: skipped` in the PLAN.md header.
+- If `.v2p/SCAVENGE.md` exists, its §7 must read `links: n/n ok` (the two numbers equal) and its §6 must not contain "not searched". Otherwise print `SCAVENGE.md failed its checks: re-run /v2p scavenge.` and stop.
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
 
 ## Step 0 — Resolve SCAVENGE markers
@@ -337,7 +338,7 @@ Default: <candidate> · why: <one line>
 | <name> | <query> · <n> | <change · URL · accessed, or "none found · searched: …"> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
 
 ## 7. Budget and tools
-fetches: <n>/25 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
+fetches: Q1–Q5 <n>/20 · Q7 <n>/5 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
 [CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>
 
 ## 8. Open

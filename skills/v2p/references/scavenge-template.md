@@ -37,7 +37,7 @@ Default: <candidate> · why: <one line>
 | <name> | <query> · <n> | <change · URL · accessed, or "none found · searched: …"> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
 
 ## 7. Budget and tools
-fetches: <n>/25 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
+fetches: Q1–Q5 <n>/20 · Q7 <n>/5 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
 [CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>
 
 ## 8. Open

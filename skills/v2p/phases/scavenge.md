@@ -34,13 +34,13 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 ## Link check (before writing)
 Every URL in the draft is opened once more; any that does not load (4xx/5xx, timeout) removes its row, or the row is re-sourced within budget. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
 <!-- claude-only -->
-`grep -oE 'https?://[^ )|`>]+' draft | sort -u | while read u; do echo "$(curl -s -o /dev/null -L -m 20 -w '%{http_code}' "$u") $u"; done`, where every line must start with 2xx or 3xx.
+In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/SCAVENGE.draft.md` (never `SCAVENGE.md` directly), then run `sh <this skill's dir>/scripts/finalize-scavenge.sh .v2p`. It link-checks every URL (401/403/429 count as present but bot-blocked), refuses any §6 row that says "not searched", stamps `links: n/n ok`, and only then renames the draft to `SCAVENGE.md`. On `FAIL`, fix what it names and run it again; never write `SCAVENGE.md` by hand.
 <!-- /claude-only -->
 
 ## Budget and stop rule
 - ≤3 sources per question; stop a question when two official sources agree.
-- Hard cap: **25 fetches total** (every page or docs fetch counts) and ~30 minutes wall time. The count is written into SCAVENGE.md §7.
-- Q7: one last-30-days search per subject, each counting as 1 fetch; confirmation fetches count as usual.
+- Q1–Q5: **20 fetches** (every page or docs fetch counts). Q7: **5 reserved**, one last-30-days search per subject; Q1–Q5 may never spend them. ~30 minutes wall time. The count is written into SCAVENGE.md §7.
+- Q7 runs after Q1–Q4 are answered and before the file is assembled. Confirmation fetches for Q7 signals come from Q7's reserve only if Q1–Q5 left some; otherwise the signal is written as `[CHECK]`.
 - Q6 is not budgeted by fetches; it is budgeted by files: read ≤40 files, never the whole tree (use search and symbol lookups).
 - When the cap hits, unanswered questions are written as `[OPEN: <question> — answer needed by <mapping task>]`, never guessed.
 
@@ -65,7 +65,7 @@ Portable: do steps 1–4 yourself in one pass. List the applicable questions, an
 1. Main thread reads BRIEF, lists the applicable questions and prints them (≤7 lines).
 2. Spawn in parallel: `planner` (Fable) with Q1–Q5 and the rules above; it returns the filled §1–§5 text and its fetch count (planner does not write files). `quick` (Sonnet) with Q6 for brownfield; it returns the §5 inventory text.
 3. Main thread runs `/last30days` for each Q7 subject (and Q5 if applicable), then confirms every signal on the official page before changing a row.
-4. Main thread assembles the draft from `references/scavenge-template.md`, runs the link check, writes `.v2p/SCAVENGE.md`, prints the path and `Next: /v2p mapping`.
+4. Main thread assembles `.v2p/SCAVENGE.draft.md` from `references/scavenge-template.md` and runs `scripts/finalize-scavenge.sh` until it prints `PASS`, prints the path and `Next: /v2p mapping`.
 
 `AskUserQuestion` only for resume/re-run. Nothing else is asked; open items go to `[OPEN: …]`.
 <!-- /claude-only -->

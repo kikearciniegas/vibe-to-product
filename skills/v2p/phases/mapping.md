@@ -7,6 +7,7 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 ## Preconditions
 - `.v2p/BRIEF.md` required, with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
 - `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or plan without it?"; if planning without it, record `scavenge: skipped` in the PLAN.md header.
+- If `.v2p/SCAVENGE.md` exists, its §7 must read `links: n/n ok` (the two numbers equal) and its §6 must not contain "not searched". Otherwise print `SCAVENGE.md failed its checks: re-run /v2p scavenge.` and stop.
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
 
 ## Step 0 — Resolve SCAVENGE markers
