@@ -184,7 +184,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 - Money model: <…|none> · Integrations: <…|none>
 
 ## 9. Standards loaded
-- references/standards/core.md + <web.md +> <profile>.md <+ landing-10-sections.md>
+- references/standards/core.md + <web.md +> <profile>.md <+ landing-10-sections.md + ux-laws.md>
 - Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | none>
 
 ## 10. Decisions log
