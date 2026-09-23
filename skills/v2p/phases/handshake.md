@@ -64,7 +64,7 @@ If you cannot write files, print the BRIEF in one code block and ask the user to
 
 <!-- claude-only -->
 ## Claude Code note
-Use `AskUserQuestion` for closed choices: profile confirmation (Q3), brand status (Q7), money model (Q11). Use free text for vision (Q1) and success criteria (Q5).
+Use `AskUserQuestion` for closed choices: profile confirmation (Q3), brand status (Q7), money model (Q11). Ask vision (Q1), success criteria (Q5) and non-goals (Q6) as plain text in the reply, never through `AskUserQuestion`: they have no fixed options.
 <!-- /claude-only -->
 
 ***
