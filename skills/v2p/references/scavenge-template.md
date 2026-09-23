@@ -1,7 +1,7 @@
 # SCAVENGE template
 
 Copy the block below into `.v2p/SCAVENGE.md` and replace every `<…>`.
-Rule: every bullet and row in §1–§5 must contain `http` and `accessed`; a row without both is deleted before writing.
+Rule: every bullet and row in §1–§6 must contain `http` and `accessed`; a row without both is deleted before writing.
 
 ````
 # SCAVENGE — <project name>
@@ -26,11 +26,16 @@ written: <YYYY-MM-DD> by v2p scavenge · reads: .v2p/BRIEF.md (<written date>)
 - Adjacent: <product> — <what users complain about, last 30 days> · <URL> · accessed <date>
 - Code inventory (brownfield only): stack <…> · entry points <…> · env vars referenced <n> · tests <yes/no, runner> · deps created <6 months: <list|none> · TODO/FIXME <n> · files >200 lines <n>
 
-## 6. Budget and tools
-fetches: <n>/25 · time: <min> · tools: <names used, or none>
-[CONFLICT] rows: <n> · [OPEN] rows: <n>
+## 6. Recent changes, last 30 days (Q7)
+| subject | signal (last 30 days) | confirmed on official page? | effect on rows above |
+|---|---|---|---|
+| <name> | <change, or "none found"> · <URL> · accessed <date> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
 
-## 7. Open
+## 7. Budget and tools
+fetches: <n>/25 · time: <min> · tools: <names used, or none>
+[CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>
+
+## 8. Open
 - [OPEN: <question> — answer needed by <mapping task>]   (or: none)
 
 Next: /v2p mapping

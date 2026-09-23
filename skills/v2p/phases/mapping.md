@@ -9,6 +9,9 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 - `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or plan without it?"; if planning without it, record `scavenge: skipped` in the PLAN.md header.
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
 
+## Step 0 — Resolve SCAVENGE markers
+Every `[CONFLICT]`, `[CHECK]` and `[OPEN]` in SCAVENGE.md gets one outcome before providers are picked: decided (state which source wins and why), or turned into a task with its own verifier. None are carried silently into the plan.
+
 ## Step 1 — Provider selection
 Five rules, in order. Each records a `defaulted` or `answered` row in PLAN §2.
 1. BRIEF §8 must-have / won't-accept / existing accounts win over any default.

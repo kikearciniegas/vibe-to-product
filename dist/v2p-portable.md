@@ -220,18 +220,20 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 | Q3 | §8 integrations + money model | One row per integration listed in §8. For each: the exact keys/webhooks needed. If the tool is TBD, compare 2–3 candidates on price vs §7 budget, the §6 locales and the §4 acceptance lines, and name one default. **Look in `references/stack/wiring.md` first; go to the web only for a provider not in the guide.** | stack guide, then official docs |
 | Q4 | §7 data sensitivity | The primary legal text that applies to the flags set (personal data, payments, health, minors, EU accessibility) for the audience's jurisdiction. Cite the law/regulator page, not a blog. Never state obligations from memory. | government/regulator or standards body |
 | Q5 | §2 audience | Up to 3 adjacent products and what their users complain about in the last 30 days (pain language reused in copy and the FAQ) | social-trends search, then web search |
+| Q7 | Q1–Q4 answers | **Always runs.** For each subject named in Q1–Q4 (the starter/framework, each Q3 tool, the Q4 law; max 5): what changed in the last 30 days (pricing or plan limits, deprecations, breaking releases, security advisories, outages, acquisitions or migrations, legal amendments). A signal is a lead, not a fact: confirm it on the official changelog, pricing or regulator page, then update the affected row. | last-30-days search, then the official page |
 | Q6 | §1 `Code: existing at <path>` (brownfield only) | Inventory: stack, entry points, env vars referenced, tests present, dependencies with created-date <6 months, TODO/FIXME count, files >200 lines | code search on the repo; no web |
 
 ## Source-quality rules
 1. Rank: official docs > maintained repos (pushed within 6 months, not archived, >100 stars or vendor-owned) > posts/forums/social. A lower rank never overrides a higher one on a technical fact.
 2. Every claim row carries `source URL · accessed YYYY-MM-DD`. No URL → the row is deleted, not kept as "known". The URL must itself show the claim: a claim with no fetched evidence is deleted, never pinned to a nearby source. A deferred question writes only `[OPEN]`, no findings.
-3. Social/trend results (Q5) inform copy and FAQ only; never a technical decision.
+3. Social/trend results (Q5) inform copy and FAQ only; never a technical decision. Q7 signals change a row only once an official page confirms them; unconfirmed ones are written `[CHECK: <signal> · <URL>]` for mapping.
 4. Numbers (limits, prices) are copied verbatim with the page's own wording; if the page did not show it, write `(not on page)`.
 5. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
 
 ## Budget and stop rule
 - ≤3 sources per question; stop a question when two official sources agree.
-- Hard cap: **25 fetches total** (every page or docs fetch counts) and ~30 minutes wall time. The count is written into SCAVENGE.md §6.
+- Hard cap: **25 fetches total** (every page or docs fetch counts) and ~30 minutes wall time. The count is written into SCAVENGE.md §7.
+- Q7: one last-30-days search per subject, each counting as 1 fetch; confirmation fetches count as usual.
 - Q6 is not budgeted by fetches; it is budgeted by files: read ≤40 files, never the whole tree (use search and symbol lookups).
 - When the cap hits, unanswered questions are written as `[OPEN: <question> — answer needed by <mapping task>]`, never guessed.
 
@@ -255,6 +257,9 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 - `.v2p/BRIEF.md` required, with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
 - `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or plan without it?"; if planning without it, record `scavenge: skipped` in the PLAN.md header.
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
+
+## Step 0 — Resolve SCAVENGE markers
+Every `[CONFLICT]`, `[CHECK]` and `[OPEN]` in SCAVENGE.md gets one outcome before providers are picked: decided (state which source wins and why), or turned into a task with its own verifier. None are carried silently into the plan.
 
 ## Step 1 — Provider selection
 Five rules, in order. Each records a `defaulted` or `answered` row in PLAN §2.
@@ -290,7 +295,7 @@ Do **not** ask how to execute the plan; execute is not available yet.
 # SCAVENGE template
 
 Copy the block below into `.v2p/SCAVENGE.md` and replace every `<…>`.
-Rule: every bullet and row in §1–§5 must contain `http` and `accessed`; a row without both is deleted before writing.
+Rule: every bullet and row in §1–§6 must contain `http` and `accessed`; a row without both is deleted before writing.
 
 ````
 # SCAVENGE — <project name>
@@ -315,11 +320,16 @@ written: <YYYY-MM-DD> by v2p scavenge · reads: .v2p/BRIEF.md (<written date>)
 - Adjacent: <product> — <what users complain about, last 30 days> · <URL> · accessed <date>
 - Code inventory (brownfield only): stack <…> · entry points <…> · env vars referenced <n> · tests <yes/no, runner> · deps created <6 months: <list|none> · TODO/FIXME <n> · files >200 lines <n>
 
-## 6. Budget and tools
-fetches: <n>/25 · time: <min> · tools: <names used, or none>
-[CONFLICT] rows: <n> · [OPEN] rows: <n>
+## 6. Recent changes, last 30 days (Q7)
+| subject | signal (last 30 days) | confirmed on official page? | effect on rows above |
+|---|---|---|---|
+| <name> | <change, or "none found"> · <URL> · accessed <date> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
 
-## 7. Open
+## 7. Budget and tools
+fetches: <n>/25 · time: <min> · tools: <names used, or none>
+[CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>
+
+## 8. Open
 - [OPEN: <question> — answer needed by <mapping task>]   (or: none)
 
 Next: /v2p mapping
