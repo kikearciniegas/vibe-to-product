@@ -12,6 +12,8 @@ Portable pack: if this arrives as one pasted document, the files named below fol
 ## 2. Entry
 Optional argument: `handshake | scavenge | mapping | execute | review | deploy`.
 
+**Before asking the first question of any phase, read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
+
 No argument:
 - `.v2p/BRIEF.md` exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
   - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`.
