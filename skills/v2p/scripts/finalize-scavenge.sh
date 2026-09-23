@@ -16,10 +16,10 @@ done
 
 q7=$(awk '/^## 6\./{f=1; next} /^## /{f=0} f && /^\| / && !/^\| subject/ && !/^\|---/' "$draft")
 [ -n "$q7" ] || { echo "FAIL: §6 (Q7) has no rows"; fail=1; }
-# A searched row carries evidence: a URL for a signal, or "none found · searched".
-unsearched=$(printf '%s\n' "$q7" | grep -viE 'https?://|none found · searched')
+# Every Q7 row cites the official changelog/news page it read (a URL), or records why it failed.
+unsearched=$(printf '%s\n' "$q7" | grep -viE 'https?://|failed \(')
 if [ -n "$q7" ] && [ -n "$unsearched" ]; then
-  echo "FAIL: §6 rows without a sourced signal or 'none found · searched' (run the last-30-days search):"
+  echo "FAIL: §6 rows without an official changelog/news URL or a recorded failure:"
   printf '%s\n' "$unsearched" | cut -c1-100; fail=1
 fi
 grep -qE 'links: [^ ]+ ok' "$draft" || { echo "FAIL: §7 has no 'links: <ok>/<total> ok' field to stamp"; fail=1; }

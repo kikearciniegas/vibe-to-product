@@ -32,9 +32,9 @@ Default: <candidate> · why: <one line>
 - Code inventory (brownfield only): stack <…> · entry points <…> · env vars referenced <n> · tests <yes/no, runner> · deps created <6 months: <list|none> · TODO/FIXME <n> · files >200 lines <n>
 
 ## 6. Recent changes, last 30 days (Q7)
-| subject | last-30-days search (query · results n) | signal | confirmed on official page? | effect on rows above |
+| subject | last-30-days search (query · results n) | signal | official changelog/news, last 30 days | effect on rows above |
 |---|---|---|---|---|
-| <name> | <query> · <n> | <change · URL · accessed, or "none found · searched: …"> | yes · <URL> · accessed <date> \| no → [CHECK] | <row updated \| none> |
+| <name> | <query> · <n> | <change · URL · accessed, or "none found · searched: …"> | <entries in window, or "no entries in window"> · <URL> · accessed <date> | <row updated \| none> |
 
 ## 7. Budget and tools
 fetches: Q1–Q5 <n>/20 · Q7 <n>/5 · links: <ok>/<total> ok · time: <min> · tools: <names used, or none>
