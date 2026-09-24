@@ -15,7 +15,7 @@ Status as of 2026-09-24. Decisions come from the user; each slice gets a spec in
 - **Crash-safe checkpoints:** subagent results are saved to `.v2p/work/` so a re-run resumes instead of starting over.
 - **Hook-enforced gates (proposal):** a PreToolUse hook blocks direct writes to the handoff files. Installing it into global settings is a separate decision for you.
 
-## Slice 4: execute + review (built 2026-09-24 · branch slice-4-execute-review · live test pending)
+## Slice 4: execute + review (built 2026-09-24 · 1fce294 · live test pending)
 - **Execute:** runs the PLAN task by task through superpowers subagent-driven development (implementer `builder`/`quick`, reviewer `planner`), one commit per task after its verifier passes, on a v2p branch or worktree. Scope changes go to `.v2p/PLAN-AMENDMENTS.md`; PLAN.md is never edited.
 - **Review:** one pass over the whole branch; findings are fixed, accepted or left open for deploy; the standards evidence is completed; the gate re-runs every PLAN verifier before it writes `.v2p/REVIEW.md`.
 
