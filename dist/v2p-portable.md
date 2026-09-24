@@ -1561,7 +1561,7 @@ Read at execute and review. Row ids `W<n>` refer to `references/stack/wiring.md`
 ## Cloudflare
 - WAF: managed free ruleset + up to 5 custom rules and 1 rate-limiting rule on Free (verified: 2026-09) https://developers.cloudflare.com/waf/custom-rules/ · https://developers.cloudflare.com/waf/rate-limiting-rules/
 - Turnstile on every public form, server-side siteverify only, tokens single-use/300 s (verified: 2026-09) https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
-- DNS-only for Vercel and DKIM records (W2, W8); account 2FA (unverified: not fetched).
+- DKIM records DNS-only (W8). Host record per host: Vercel → DNS-only (W2); Cloudflare Workers → no manual record, Cloudflare creates it on an active zone you own (W31; proxy status of that record (unverified)); Netlify → DNS-only as in W2 (W34; unverified: the Netlify page read does not mention Cloudflare proxying). Account 2FA (unverified: not fetched).
 
 ## Vercel
 - Platform DDoS mitigation on all plans; WAF custom rules, IP blocking, managed rulesets, Attack Mode (plan limits (unverified)) (verified: 2026-09) https://vercel.com/docs/vercel-firewall
@@ -1619,7 +1619,7 @@ Read at execute and review. Row ids `W<n>` refer to `references/stack/wiring.md`
 - Orca (optional agent desktop): sends anonymous telemetry by default; opt out in its privacy settings (reported by the user 2026-09-23).
 
 ## Cross-cutting (from core.md)
-- Every secret is a Vercel Sensitive var; `.env.example` lists names only; webhook idempotency block ON whenever W4/W12/W13/W14 exist; threat model names each provider as an entry point.
+- Every secret lives in the host's secret store: Vercel → Sensitive var (W27); Cloudflare Workers → Worker secret, runtime not Build variables (W30); Netlify → **Contains secret values** (W33). `.env.example` lists names only; webhook idempotency block ON whenever W4/W12/W13/W14 exist; threat model names each provider as an entry point.
 
 ***
 
