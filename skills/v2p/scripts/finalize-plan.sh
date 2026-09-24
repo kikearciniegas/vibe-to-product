@@ -2,7 +2,8 @@
 # Promote .v2p/PLAN.draft.md to .v2p/PLAN.md only if every task has a Verifier line, §4 has one row
 # per checklist item of the BRIEF §9 standards files, §2's total fits the BRIEF budget (or carries the
 # user's override), no `---` rule exists, `## Architecture` and `## Threat Model` exist, and a landing
-# plan has `## 4b`. Usage: sh finalize-plan.sh [.v2p dir]
+# plan has `## 4b`, Verifier lines pass the lint below, and Interfaces paths are in some Files line up to that task.
+# Usage: sh finalize-plan.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/PLAN.draft.md"; out="$d/PLAN.md"; fail=0
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 [ -f "$d/BRIEF.md" ] || { echo "FAIL: $d/BRIEF.md missing"; exit 1; }
@@ -31,6 +32,44 @@ grep -q '^## Threat Model' "$draft" || { echo "FAIL: no '## Threat Model' sectio
 if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b' "$draft"; then
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
 fi
+# Verifier lint (backticked text, single-quoted strings removed): raw `wc -l` in a comparison (macOS pads it),
+# a bare `&` in a mechanical verifier (backgrounds the whole && chain), `curl` without -m/--max-time.
+# Files completeness: a backticked Interfaces path (has `/` and an extension; not a URL or a route) must appear
+# in the Files of this task or an earlier one (`{a,b}` and `*` in Files are expanded / matched).
+lint=$(awk -v q="'" '
+  function bt(s,   o) { o = ""; while (match(s, /`[^`]*`/)) { o = o substr(s, RSTART + 1, RLENGTH - 2) "\n"; s = substr(s, RSTART + RLENGTH) } return o }
+  function expand(t, arr,   pre, mid, post, k, i, p) {
+    if (!match(t, /\{[^{}]*\}/)) { arr[++arr[0]] = t; return }
+    pre = substr(t, 1, RSTART - 1); mid = substr(t, RSTART + 1, RLENGTH - 2); post = substr(t, RSTART + RLENGTH)
+    k = split(mid, p, ","); for (i = 1; i <= k; i++) expand(pre p[i] post, arr) }
+  function g2re(g,   i, c, r) { r = "^"; for (i = 1; i <= length(g); i++) { c = substr(g, i, 1)
+      if (c == "*") r = r ".*"; else if (c == "?") r = r "."; else if (index("\\^$.[]|()+{}", c)) r = r "\\" c; else r = r c }
+    return r "$" }
+  function addfiles(s,   k, i, tok, a, j) { k = split(bt(s), tok, "\n")
+    for (i = 1; i <= k; i++) { sub(/ .*/, "", tok[i]); gsub(/<[^>]*>/, "*", tok[i]); if (tok[i] == "") continue
+      delete a; a[0] = 0; expand(tok[i], a); for (j = 1; j <= a[0]; j++) fre[++nf] = g2re(a[j]) } }
+  function flush(   i, j, ok) { for (i = 1; i <= ni; i++) { ok = 0
+      for (j = 1; j <= nf; j++) if (ip[i] ~ fre[j]) { ok = 1; break }
+      if (!ok) print "FAIL: Task " t " Interfaces names `" ip[i] "`, absent from the Files of Tasks 1-" t }
+    ni = 0 }
+  function addiface(s,   k, i, tok, a, j) { k = split(bt(s), tok, "\n")
+    for (i = 1; i <= k; i++) { if (tok[i] ~ /[ \t<>]/ || tok[i] !~ /\// || tok[i] ~ /:\/\// || tok[i] ~ /^\//) continue
+      delete a; a[0] = 0; expand(tok[i], a)
+      for (j = 1; j <= a[0]; j++) if (a[j] ~ /\/[^\/]*\.[A-Za-z0-9]+$/) ip[++ni] = a[j] } }
+  /^### Task / { flush(); t = $3; sub(/:$/, "", t) }
+  /^## / { flush() }
+  /^\*\*Files:\*\*/ { f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f) }
+  /^\*\*Interfaces:\*\*/ { addiface($0) }
+  /^\*\*Verifier:\*\*/ { s = bt($0); if (s == "") s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
+    c = s; gsub(/wc -l *\| *tr -d/, "", c)
+    if (c ~ /wc -l/ && c ~ /\$\(|(^|[^A-Za-z])test |\[ /) r = r "; raw wc -l in a comparison (macOS pads it: use grep -c, or pipe to tr -d \" \")"
+    if ($0 ~ /^\*\*Verifier:\*\* *mechanical:/) { c = s; gsub(/&&|>&|&>/, "", c)
+      if (c ~ /&/) r = r "; bare & backgrounds the chain (start servers from the test runner or a wait-for-port script)" }
+    c = s; while (match(c, /(^|[^A-Za-z0-9_-])curl( |$)/)) { c = substr(c, RSTART + RLENGTH); a1 = c; sub(/[|;&)\n].*/, "", a1)
+      if (a1 !~ /(^| )-[A-Za-z]*m( |[0-9]|$)|--max-time/) { r = r "; curl without -m/--max-time"; break } }
+    if (r != "") print "FAIL: Task " t " Verifier: " substr(r, 3) }
+  END { flush() }' "$draft")
+[ -z "$lint" ] || { printf '%s\n' "$lint"; fail=1; }
 [ "$fail" -eq 0 ] || { echo "FAIL: $out not written"; exit 1; }
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.

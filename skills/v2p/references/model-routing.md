@@ -28,7 +28,7 @@ Not included in the portable pack. Read before spawning any agent for a v2p phas
 
 | Tier | Trigger (who, when) | What runs | Evidence it leaves | Gate that refuses without it |
 |---|---|---|---|---|
-| every task | main thread, after the implementer reports, before commit | `task-record.sh verify <n>` (= `drift-check.sh <n>` + verifier commands + tidy delta + branch check) | record lines `drift:`, `verifier:`, `output:` + receipt | `finalize-execute.sh` step 3 |
+| every task | main thread, after the implementer commits (against the committed head; a failure → fix commits, re-verify) | `task-record.sh verify <n>` (= `drift-check.sh <n>` + verifier commands + tidy delta + branch check) | record lines `drift:`, `verifier:`, `output:` + receipt | `finalize-execute.sh` step 3 |
 | every task | task reviewer (`planner`, SDD) or main thread (inline) | `ponytail-review` on `git diff <base>..HEAD` | `ponytail-review:` line via `task-record.sh ponytail` | `finalize-execute.sh` step 3 |
 | every task | implementer, inside the task | `superpowers:test-driven-development` (red → green) | the verifier's own test files in the commit | reviewer prompt (SDD); not scripted |
 | every phase (execute end) | main thread before `finalize-execute.sh` | `superpowers:verification-before-completion` + extras on EXECUTE §2 rows | corrected rows | `finalize-execute.sh` step 7 (shape only) |

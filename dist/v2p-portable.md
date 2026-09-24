@@ -297,7 +297,8 @@ Portable: write the plan yourself from `references/plan-template.md`, using BRIE
 - §3 Skills: installed rows to use, and at which task.
 - §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 193, saas-web 190, internal-tool 185, native-app 141 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 129, web 48, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap). A review task or a launch task does not belong in §5: review and deploy are phases.
-- Verifier convention: prefer self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains) — execute treats exit 0 as pass and only compares bare-number expecteds. Give network commands a timeout (`curl -m 10`).
+- Verifier convention: prefer self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains) — execute treats exit 0 as pass and only compares bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '`; never compare raw `wc -l` (macOS left-pads it, so `test "$(… | wc -l)" = 0` never passes). No bare `&` in a Verifier (it backgrounds the whole `&&` chain and races the next command): a server is started by the test runner (e.g. Playwright `webServer`) or by a script with an explicit wait-for-port. Every `curl` carries `-m <seconds>`.
+- Files completeness: a scaffold or generator task (create-next-app and the like) lists the generator's output files, or a glob such as `src/app/*`. Every file path named in a task's **Interfaces:** line appears in that task's **Files:** or an earlier task's; name the file, not only the symbol (`publicEnv` in `src/lib/public-env.ts`).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
 
 ## Step 5 — Write and hand off
@@ -410,8 +411,9 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 ## 5. Tasks
 ### Task 1: <name>
 **Files:** …  **Interfaces:** …
+<Files rule: a scaffold/generator task lists the generator's output files (or a glob such as `src/app/*`); every file path named in **Interfaces:** appears in this task's **Files:** or an earlier task's>
 **Verifier:** mechanical: `<command>` → `<expected output/exit code>`   |   manual: <who checks what, where>
-<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds; network commands carry a timeout (`curl -m 10`)>
+<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '` — never compare raw `wc -l` (macOS pads it). No bare `&`: a server is started by the test runner (e.g. Playwright `webServer`) or by a script that waits for the port. Every `curl` carries `-m <s>`>
 - [ ] Step 1 … (writing-plans step style)
 
 ## 6. Handoff
@@ -661,10 +663,10 @@ Order: PLAN §6 `Order:` line. Independent tasks run in parallel only through th
 1. Start the task record (base commit, branch, tidy count).
 2. Implement with test-driven development: failing test first, then the code. Change only the files in the task's **Files:** list. A needed path outside it is reported with the reason, never touched first.
 3. A reported path: decide. Granted → record the amendment (path + reason) before touching it. Refused → revert it.
-4. Run the task's Verifier commands and record the observed output. A failure goes back to step 2 (a fix round).
-5. Manual part of the Verifier not `none` → ask the user what they saw, where and when; record their words, attributed to them.
-6. Commit once per task, after the verifier passes, on the execute branch only, with the branch check in the same command.
-7. Task review, including an over-engineering pass on the task's diff (`git diff <base>..HEAD`); record its result in one line: `none` or `<k> findings, <m> cut, <k-m> accepted: <one line>`.
+4. The implementer commits once its own tests pass, on the execute branch only, with the branch check in the same command.
+5. Then, against the committed head, check the changed files (`git diff --name-only <base>`) against the task's **Files:** list and run the task's Verifier commands; record the observed output. A failure → fix commit(s) on the same branch (a fix round, back to step 2), then verify again.
+6. Manual part of the Verifier not `none` → ask the user what they saw, where and when; record their words, attributed to them.
+7. Task review, including an over-engineering pass on the task's diff (`git diff <base>..HEAD`); record its result in one line: `none` or `<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>` with a + d + r = k (applied = changed in this task's commits; deferred = left for a named later task or review; rejected = not a problem, reason in the line).
 8. Standards rows this task satisfies (PLAN §4 rows the task names, or rows whose evidence hint the verifier output covers): set `done` in `EXECUTE.draft.md` §2 with evidence = the command and its observed output from this run, or a path or URL. Never `[x]`.
 
 Portable: you run the loop yourself. After each task print one row (`task | files changed | verifier command → output the user pasted | manual observation | commit`) and ask the user to run the verifier commands and paste the output; that paste is the evidence. There is no scope gate or receipt without the scripts; say so once.

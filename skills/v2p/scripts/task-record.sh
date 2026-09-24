@@ -5,8 +5,9 @@
 #   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt
 #   verify <n>                 drift-check.sh <n>, then every mechanical Verifier command of the task; writes the result
 #   manual <n> "<text>"        the user's observation for the manual part of the Verifier
-#   ponytail <n> "<text>"      "none" or "<k> findings, <m> cut, <k-m> accepted: <one line>"; run after the task commit:
-#                              also records head: (the reviewed range is base..head)
+#   ponytail <n> "<text>"      "none" or "<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>" (a+d+r=k);
+#                              run after verify passes on the committed head: also records head: (range base..head).
+#                              Only this writer enforces the format; readers (finalize-execute) accept older lines too.
 #   allow <n> <path> "<why>"   scope amendment: appends to .v2p/PLAN-AMENDMENTS.md and the record's files: line
 #   skip <n> "<reason>"        task not executed here (only on the user's yes)
 # ponytail: expected-output check covers exit code and bare numbers only; `→ passed`/`→ all passed` rely on the
@@ -71,7 +72,13 @@ manual)
   need; t=$3; [ -n "$t" ] && [ "$t" != none ] || { echo "ERROR: manual needs the user's observation (what, where, when)" >&2; exit 2; }
   put manual "$t · by user · $(date +%Y-%m-%d)"; seal; echo "manual: recorded for task $n" ;;
 ponytail)
-  need; t=$3; printf '%s\n' "$t" | grep -qE '^(none|[0-9]+ findings)' || { echo "ERROR: expected 'none' or '<k> findings, <m> cut, <k-m> accepted: <one line>'" >&2; exit 2; }
+  need; t=$3; fmt="'none' or '<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>' (a+d+r=k)"
+  if [ "$t" != none ]; then
+    s=$(printf '%s\n' "$t" | sed -n 's/^\([0-9][0-9]*\) findings, \([0-9][0-9]*\) applied, \([0-9][0-9]*\) deferred, \([0-9][0-9]*\) rejected: *[^ ].*/\1 \2 \3 \4/p' |
+      awk 'NR == 1 { print ($2 + $3 + $4 == $1) ? "ok" : $2 " applied + " $3 " deferred + " $4 " rejected != " $1 " findings" }')
+    [ -n "$s" ] || { echo "ERROR: expected $fmt; got: $t" >&2; exit 2; }
+    [ "$s" = ok ] || { echo "ERROR: $s; expected $fmt" >&2; exit 2; }
+  fi
   put ponytail-review "$t"; put head "$(git rev-parse HEAD)"; seal; echo "ponytail-review: recorded for task $n" ;;
 allow)
   need; p=$3; why=$4; [ -n "$p" ] && [ -n "$why" ] || { echo "ERROR: allow needs <path> and a reason" >&2; exit 2; }

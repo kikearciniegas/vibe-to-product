@@ -50,8 +50,9 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 ## 5. Tasks
 ### Task 1: <name>
 **Files:** …  **Interfaces:** …
+<Files rule: a scaffold/generator task lists the generator's output files (or a glob such as `src/app/*`); every file path named in **Interfaces:** appears in this task's **Files:** or an earlier task's>
 **Verifier:** mechanical: `<command>` → `<expected output/exit code>`   |   manual: <who checks what, where>
-<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds; network commands carry a timeout (`curl -m 10`)>
+<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '` — never compare raw `wc -l` (macOS pads it). No bare `&`: a server is started by the test runner (e.g. Playwright `webServer`) or by a script that waits for the port. Every `curl` carries `-m <s>`>
 - [ ] Step 1 … (writing-plans step style)
 
 ## 6. Handoff

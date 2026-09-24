@@ -72,6 +72,36 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   run; is "8 exit" $rc 0; has "8 PASS" "$out" "PASS: $ntasks tasks, $nrows standards rows, total \$0/month"
   is "8 draft gone" "$(test -f "$P" && echo yes)" ""
   is "8 receipt" "$(cat "$v/.plan-pass")" "$(shasum -a 256 "$v/PLAN.md" | cut -d' ' -f1)"
+  # 10. Verifier lint and Files completeness: each case replaces one line of the passing plan (always the original)
+  cp "$v/PLAN.md" "$w/good"; V2='**Verifier:** mechanical: `npm test -- tests/booking.test.ts` → all passed'
+  rep() { A=$1 B=$2 C=${3-} D=${4-} awk '$0 == ENVIRON["A"] { print ENVIRON["B"]; next }
+    ENVIRON["C"] != "" && $0 == ENVIRON["C"] { print ENVIRON["D"]; next } { print }' "$w/good" > "$P"; run; }
+  V1='**Verifier:** mechanical: `npm run build` → exit 0'
+  vf() { rep "$V2" "**Verifier:** mechanical: \`$1\` → exit 0"; }
+  vf 'test "$(grep -r lorem src | wc -l)" = 0'; is "10 wc exit" $rc 1; has "10 wc" "$out" "FAIL: Task 2 Verifier: raw wc -l"
+  vf 'test "$(grep -r lorem src | wc -l | tr -d '"' '"')" = 0'; is "10 wc|tr passes" $rc 0
+  vf '! grep -rqE lorem src && test "$(grep -c x a.txt)" -ge 1'; is "10 grep -c passes" $rc 0
+  vf 'npm run build && npm run start & sleep 5; curl -m 5 -s localhost:3000'; has "10 bare &" "$out" "FAIL: Task 2 Verifier: bare & backgrounds"
+  rep "$V2" '**Verifier:** manual: run `npm run start & sleep 5` and look at the page'; hasnt "10 & in manual ignored" "$out" "bare &"
+  vf 'npm run build 2>&1 && npm test >/dev/null 2>&1'; is "10 && and 2>&1 pass" $rc 0
+  vf "curl -s http://localhost:3000 | grep -q ok"; has "10 curl no -m" "$out" "FAIL: Task 2 Verifier: curl without -m/--max-time"
+  vf "curl -m 5 -s http://a/ && curl -s http://b/"; has "10 second curl no -m" "$out" "curl without -m"
+  vf "curl -sm 5 http://a/ | grep -q ok && curl --max-time 5 -s http://b/"; is "10 -sm and --max-time pass" $rc 0
+  rep "$V2" "$V2
+**Files:** Create \`src/booking.ts\`  **Interfaces:** Produces \`book()\` in \`src/booking/api.ts\`"
+  is "10 files exit" $rc 1; has "10 iface path missing" "$out" "FAIL: Task 2 Interfaces names \`src/booking/api.ts\`, absent from the Files of Tasks 1-2"
+  rep "$V2" "$V2
+**Files:** Create \`src/{booking,other}/api.ts\`  **Interfaces:** Produces \`book()\` in \`src/booking/api.ts\`, posts to \`https://api.example.com/v1/x.json\` and \`/robots.txt\`"
+  is "10 brace + URL + route pass" $rc 0
+  rep "$V1" "$V1
+**Interfaces:** Consumes \`src/app/[locale]/page.tsx\`" "$V2" "$V2
+**Files:** Create \`src/app/*\`"; has "10 later task's Files do not count" "$out" "FAIL: Task 1 Interfaces names"
+  rep "$V1" "$V1
+**Files:** Create \`src/app/*\`" "$V2" "$V2
+**Interfaces:** Consumes \`src/app/[locale]/page.tsx\`"; is "10 earlier task's glob counts" $rc 0
+  rep "$V1" "$V1
+**Files:** Create \`src/app/[locale]/page.tsx\`" "$V2" "$V2
+**Interfaces:** Consumes \`src/app/l/page.tsx\`"; has "10 [locale] is literal, not a class" "$out" "Task 2 Interfaces names \`src/app/l/page.tsx\`"
 done
 # 9. the source was read only
 SH=all; is "9 source untouched" "$(cat "$src/BRIEF.md" "$src/PLAN.md" | shasum -a 256)" "$sum0"

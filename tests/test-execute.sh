@@ -48,11 +48,15 @@ for SH in sh zsh; do
   TR allow 1 docs/usage.md "reviewer asked for a usage note"; is "6 allow exit" $rc 0
   has "6 amendment line" "$(cat .v2p/PLAN-AMENDMENTS.md)" "· task 1 · files += \`docs/usage.md\` · reviewer asked for a usage note"
   DC 1; is "6 after allow exit" $rc 0; has "6 after allow" "$out" "(1 allowed by amendments)"
-  # 7. ponytail shape
+  # 7. ponytail shape; commit first, then verify against the committed head (execute.md Step 2 order)
   s0=$(sha $rec1); TR ponytail 1 junk; is "7 junk exit" $rc 2; is "7 unchanged" "$(sha $rec1)" "$s0"
-  TR verify 1; is "7 re-verify" $rc 0
   git add -A; git commit -qm 'feat: greeting script'
+  TR verify 1; is "7 verify on committed head" $rc 0; has "7 verify head = commit" "$(cat $rec1)" "head: $(git rev-parse HEAD)"
+  has "7 verify drift" "$(cat $rec1)" "drift: allowed 1"
   TR ponytail 1 none; is "7 none exit" $rc 0; has "7 line" "$(cat $rec1)" "ponytail-review: none"; has "7 head = task commit" "$(cat $rec1)" "head: $(git rev-parse HEAD)"
+  # 7b. a record written by the previous task-record.sh (old ponytail format), re-sealed as that version did
+  sed 's/^ponytail-review: none$/ponytail-review: 2 findings, 1 cut, 1 accepted: old-format line from an earlier run/' $rec1 > "$base/r1" && mv "$base/r1" $rec1
+  sha $rec1 > .v2p/work/.execute-task-1-pass
   # 8. task 2: glob + bracket path; bracket falsifier; bare-number expected
   TR start 2; is "8 start 2" $rc 0
   printf 'echo hi\n# greeting\n' > src/greet.sh; mkdir -p 'app/[locale]'; echo p > 'app/[locale]/page.tsx'
@@ -65,7 +69,13 @@ for SH in sh zsh; do
   TR manual 2 ""; is "9 empty exit" $rc 2; TR manual 2 none; is "9 none exit" $rc 2
   TR manual 2 "opened it, saw hi"; is "9 exit" $rc 0; has "9 line" "$(cat .v2p/work/execute-task-2.md)" "manual: opened it, saw hi · by user ·"
   git add -A; git commit -qm 'feat: locale page'
-  TR ponytail 2 "1 findings, 1 cut, 0 accepted: dropped an unused helper"; is "9 ponytail" $rc 0
+  s0=$(sha .v2p/work/execute-task-2.md)
+  TR ponytail 2 "1 findings, 1 cut, 0 accepted: dropped an unused helper"; is "9 old format refused" $rc 2
+  has "9 old format msg shows new" "$out" "<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>"
+  TR ponytail 2 "3 findings, 1 applied, 1 deferred, 0 rejected: sum is short"; is "9 a+d+r != k refused" $rc 2; has "9 sum msg" "$out" "1 applied + 1 deferred + 0 rejected != 3 findings"
+  TR ponytail 2 "1 findings, 1 applied, 0 deferred, 0 rejected:"; is "9 empty summary refused" $rc 2
+  is "9 record unchanged by refusals" "$(sha .v2p/work/execute-task-2.md)" "$s0"
+  TR ponytail 2 "3 findings, 1 applied, 1 deferred, 1 rejected: dropped an unused helper; inlined config later (Task 5); kept retry"; is "9 ponytail" $rc 0
   # 10. finalize-execute
   FE; is "10 no record exit" $rc 1; has "10 no record" "$out" "task 3: no record"
   TR skip 3 "handed to /v2p review"; is "10 skip" $rc 0
@@ -84,6 +94,8 @@ for SH in sh zsh; do
   FE; is "10 PASS exit" $rc 0; has "10 PASS" "$out" "PASS: 2/3 tasks (1 skipped), 1 done rows"
   E=.v2p/EXECUTE.md
   is "10 §1 rows" "$(awk '/^## 1\./{f=1;next} /^## /{f=0} f && /^\| [0-9]/' $E | grep -c .)" 3
+  has "10 old-format ponytail kept" "$(grep '^| 1 |' $E)" "2 findings, 1 cut, 1 accepted: old-format line"
+  has "10 new-format ponytail kept" "$(grep '^| 2 |' $E)" "3 findings, 1 applied, 1 deferred, 1 rejected:"
   has "10 row 3 skipped" "$(grep '^| 3 |' $E)" "skipped — handed to /v2p review"
   has "10 checked" "$(grep '^checked: ' $E)" "checked: tasks 2/3 · skipped 1 · standards done 1 · N/A 0 · pending 192 · branch $main"
   is "10 receipt" "$(cat .v2p/.execute-pass)" "$(sha $E)"; is "10 draft gone" "$(test -f $D && echo yes)" ""
@@ -124,6 +136,11 @@ for SH in sh zsh; do
   TR verify '../../x'; is "16 verify bad n exit" $rc 2
   TR start '1a'; is "16 start bad n exit" $rc 2
   is "16 no work dir writes" "$(find .v2p/work -type f 2>/dev/null | grep -c .)" 0
+  cd "$base"
+  # 17. verify runs against the committed head: an out-of-scope file that was already committed still blocks it
+  f17=$base/f17-$SH; sh "$here/tests/fixture-execute.sh" "$f17" >/dev/null 2>&1; cd "$f17"
+  TR start 1; echo x > stray.txt; git add stray.txt; git commit -qm 'stray'
+  TR verify 1; is "17 committed stray exit" $rc 1; has "17 committed stray" "$(cat .v2p/work/execute-task-1.md)" "DRIFT file stray.txt"
   cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
