@@ -56,6 +56,8 @@ verify)
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     [ -n "$res" ] && sep='; ' || sep=' · '
     case $c in *'<'*) res="$res$sep\`$c\` → skipped: placeholder"; continue ;; esac
+    # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh above) — by design,
+    # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     good=0; [ "$r" -eq 0 ] && good=1
     case $x in ''|*[!0-9]*) ;; *) [ "$last" = "$x" ] || good=0 ;; esac
@@ -73,6 +75,10 @@ ponytail)
   put ponytail-review "$t"; put head "$(git rev-parse HEAD)"; seal; echo "ponytail-review: recorded for task $n" ;;
 allow)
   need; p=$3; why=$4; [ -n "$p" ] && [ -n "$why" ] || { echo "ERROR: allow needs <path> and a reason" >&2; exit 2; }
+  # this path is later matched as a drift-check pattern (eval'd as a case arm) — keep it relative, traversal-free,
+  # and inside the same safe character set drift-check enforces, before it is written anywhere
+  case $p in *[!]A-Za-z0-9._/@+*?[-]*) echo "ERROR: unsafe path $p (unsafe characters)" >&2; exit 2 ;; esac
+  case $p in /*|..|../*|*/..|*/../*) echo "ERROR: unsafe path $p (must be relative, no .. segment)" >&2; exit 2 ;; esac
   [ -f "$amend" ] || echo '# PLAN amendments — scope granted during execute (PLAN.md itself is never edited)' > "$amend"
   printf -- '- %s · task %s · files += `%s` · %s\n' "$(now)" "$n" "$p" "$why" >> "$amend"
   put files "$(sed -n 's/^files: *//p' "$rec") $p"; seal; echo "allowed: task $n += $p" ;;

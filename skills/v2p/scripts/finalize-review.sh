@@ -78,6 +78,8 @@ while IFS= read -r n; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     case $c in *'<'*) continue ;; esac
     vt=$((vt + 1)); echo "run: task $n: $c"
+    # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh) — by design,
+    # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     if [ "$r" -ne 0 ]; then echo "FAIL: verifier of task $n fails after review fixes: $c exit $r"; fail=1
     else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: verifier of task $n fails after review fixes: $c → $last (expected $x)"; fail=1; fi ;; esac; fi

@@ -36,6 +36,12 @@ while IFS= read -r t; do
   if [ -f "$amend" ]; then k=$(grep -c "· task $t · files += " "$amend"); a=$((a + k))
     grep "· task $t · files += " "$amend" | sed 's/.*files += `\([^`]*\)`.*/\1/' >> "$tmp.a"; fi
 done < "$tmp"
+# fail closed: a pattern is later held in a variable and eval'd as a case arm (match, below) — refuse
+# anything outside this allowlist before that eval ever sees it, rather than risk shell injection.
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  case $p in *[!]A-Za-z0-9._/@+*?[-]*) echo "DRIFT pattern $p (unsafe characters)"; exit 1 ;; esac
+done < "$tmp.a"
 match() { f=$1; p=$2; [ "$f" = "$p" ] && return 0; case $p in *\**) ;; *) return 1;; esac
   e=$(printf '%s' "$p" | sed 's/\[/\\[/g; s/\]/\\]/g'); eval "case \"\$f\" in $e) return 0;; esac"; return 1; }
 { git diff --name-only --relative --no-renames "$base" -- . 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u > "$tmp"

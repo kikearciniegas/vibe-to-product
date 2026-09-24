@@ -101,6 +101,30 @@ for SH in sh zsh; do
   is "13 curl verifier fails" $rc 1; has "13 curl exit" "$(cat .v2p/work/execute-task-2.md)" "verifier: fail · attempts: 1 · exit 7 · \`curl"
   is "13 under 5s" "$([ $((t1 - t0)) -lt 5 ] && echo yes)" yes
   cd "$base"
+  # 14. drift-check refuses a pattern with shell-unsafe characters instead of eval'ing it (fail closed).
+  # Planted straight into PLAN-AMENDMENTS.md so the test covers the matcher itself, not just the `allow` gate
+  # in front of it. Falsifier checked by hand against the pre-fix script: same payload → exit 0 and a PWNED file.
+  f14=$base/f14-$SH; sh "$here/tests/fixture-execute.sh" "$f14" >/dev/null 2>&1; cd "$f14"
+  TR start 1; rm -f PWNED
+  printf -- '- 2026-09-24T00:00:00 · task 1 · files += `*) ;; esac; touch PWNED; case 1 in 1` · malicious\n' >> .v2p/PLAN-AMENDMENTS.md
+  DC 1; is "14 injection blocked exit" $rc 1; has "14 injection blocked msg" "$out" "DRIFT pattern"; is "14 no PWNED via drift-check" "$(test -f PWNED && echo yes)" ""
+  TR verify 1; is "14 verify blocked exit" $rc 1; is "14 no PWNED via verify" "$(test -f PWNED && echo yes)" ""
+  cd "$base"
+  # 15. task-record allow refuses an absolute path, a `..` segment or an unsafe character before any write
+  f15=$base/f15-$SH; sh "$here/tests/fixture-execute.sh" "$f15" >/dev/null 2>&1; cd "$f15"
+  TR start 1
+  TR allow 1 '../secret' r; is "15 traversal exit" $rc 2; has "15 traversal msg" "$out" "ERROR: unsafe path"
+  TR allow 1 '/etc/passwd' r; is "15 absolute exit" $rc 2; has "15 absolute msg" "$out" "ERROR: unsafe path"
+  TR allow 1 'a;b' r; is "15 unsafe char exit" $rc 2; has "15 unsafe char msg" "$out" "ERROR: unsafe path"
+  is "15 amendments untouched" "$(test -f .v2p/PLAN-AMENDMENTS.md && echo yes)" ""
+  TR allow 1 docs/note.md "reviewer asked"; is "15 legit path still allowed" $rc 0
+  cd "$base"
+  # 16. task-record's <n> check (already `case $n in ''|*[!0-9]*)`) applies ahead of every subcommand's file writes
+  f16=$base/f16-$SH; sh "$here/tests/fixture-execute.sh" "$f16" >/dev/null 2>&1; cd "$f16"
+  TR verify '../../x'; is "16 verify bad n exit" $rc 2
+  TR start '1a'; is "16 start bad n exit" $rc 2
+  is "16 no work dir writes" "$(find .v2p/work -type f 2>/dev/null | grep -c .)" 0
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
