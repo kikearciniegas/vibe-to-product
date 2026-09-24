@@ -26,4 +26,6 @@ grep -qE 'links: [^ ]+ ok' "$draft" || { echo "FAIL: §7 has no 'links: <ok>/<to
 
 [ "$fail" -eq 0 ] || { echo "FAIL: links $ok/$total ok; $out not written"; exit 1; }
 sed -E "s|links: [^ ]+ ok|links: $ok/$total ok|" "$draft" > "$out" && rm "$draft"
+# Receipt: the next phase accepts SCAVENGE.md only if its hash matches this file.
+shasum -a 256 "$out" | cut -d" " -f1 > "$d/.scavenge-pass"
 echo "PASS: links $ok/$total ok -> $out"
