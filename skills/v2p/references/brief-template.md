@@ -41,7 +41,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 
 ## 9. Standards loaded
 - references/standards/core.md + <web.md +> <profile>.md <+ landing-10-sections.md + ux-laws.md>
-- Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | none>
+- Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | special-category data | GraphQL | file uploads | none>
 
 ## 10. Decisions log
 | item | answered / defaulted / deferred / inferred | value (inferred: ← source path) |

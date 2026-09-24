@@ -34,7 +34,7 @@ Disambiguators (ask only the one that separates the two candidates):
 - native-app vs saas-web → "If I handed you a finished API tomorrow, how much work remains?"
 
 No fit: pick the nearest profile and record the gap in BRIEF §10. Never invent a profile.
-AI features, payments, webhooks and i18n are conditional blocks inside the standards, not profiles.
+AI features, payments, webhooks, i18n, special-category data, GraphQL and file uploads are conditional blocks inside the standards, not profiles.
 
 ## 5. Phases
 | Phase | File | Writes | Status |
@@ -115,10 +115,10 @@ Turn 3 — brand and locale
 - Q8 (S; default one language) — One language or several? Translated, or per-market content?
 
 Turn 4 — constraints and stack
-- Q9 — Deadline; monthly infrastructure budget ceiling; data sensitivity (personal data, payments, health/financial, minors, public-sector or EU accessibility obligation); who operates it after launch (solo or team).
-- Q10 — Stack must-have, won't-accept, existing accounts (hosting, domain, payments, Apple/Google developer). No preference → state the profile default and record `defaulted`.
+- Q9 — Deadline; monthly infrastructure budget ceiling; data sensitivity (personal data, payments, health/financial, minors, public-sector or EU accessibility obligation); who operates it after launch (solo or team). Health or other special-category data → the special-category data block is ON in BRIEF §9.
+- Q10 — Stack must-have, won't-accept, existing accounts (hosting, domain, payments, Apple/Google developer). No preference → state the profile default and record `defaulted`. GraphQL in the stack → the GraphQL block is ON in BRIEF §9.
 - Q11 (S; skip for landing and internal-tool) — Money model: free / flat / per-seat / usage / in-app purchase.
-- Q12 (S; default none) — Integrations: email, payments, calendar, Slack, external APIs, inbound webhooks. Any yes → the webhook/idempotency block is ON in BRIEF §9.
+- Q12 (S; default none) — Integrations: email, payments, calendar, Slack, external APIs, inbound webhooks, user file uploads. Any yes → the webhook/idempotency block is ON in BRIEF §9; file uploads → the file uploads block is ON; a GraphQL API → the GraphQL block is ON.
 
 ## Confirmation gate
 Show, together:
@@ -182,7 +182,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 
 ## 9. Standards loaded
 - references/standards/core.md + <web.md +> <profile>.md <+ landing-10-sections.md + ux-laws.md>
-- Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | none>
+- Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | special-category data | GraphQL | file uploads | none>
 
 ## 10. Decisions log
 | item | answered / defaulted / deferred / inferred | value (inferred: ← source path) |
@@ -424,7 +424,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 ## Step 1 — Scan
 Budget: read ≤40 files, never the whole tree; use search and symbol lookups. Write `.v2p/work/adopt-scan.md`; line 1 is `written: <YYYY-MM-DDTHH:MM> · phase: adopt · part: scan · brief: <BRIEF written date | none>`, then exactly these headings:
 ```
-## Manifest & stack: <manifest path> · framework/runtime · notable deps (auth, payments, db, i18n, analytics, mobile)
+## Manifest & stack: <manifest path> · framework/runtime · notable deps (auth, payments, db, i18n, analytics, mobile, graphql, uploads/storage)
 ## Entry points: <routes/pages/commands with paths, ≤15>
 ## Login: yes|no · evidence <path:line>
 ## Payments SDK: yes|no · evidence
@@ -453,7 +453,7 @@ Portable: ask the user to paste `git status --short`, `find . -path ./node_modul
 | §8 Existing accounts | Env var names | prefixes → providers (`STRIPE_`, `SUPABASE_`, `CLERK_`, `RESEND_`, `SENTRY_`, `POSTHOG_`, `PADDLE_` …) | inferred |
 | §8 Money model | Payments SDK | present → ask which model; absent → `none` | asked / inferred |
 | §8 Integrations | Env vars + deps | list | inferred |
-| §9 blocks | derived | payments/webhooks/i18n/AI feature from deps and env names | inferred |
+| §9 blocks | derived | payments/webhooks/i18n/AI feature from deps and env names; GraphQL from graphql deps or `*.graphql` schema files; file uploads from multipart/upload handlers or a storage SDK; special-category data from health/medical fields in the schema | inferred |
 | §2, §4, §5, §7 | — | cannot be inferred: always asked (Q2, Q5, Q6, Q9), ≤3 per turn | answered / defaulted |
 
 Every `inferred` row's value cell ends with `← <source path>`. Gaps that block a section get `[NEEDS CLARIFICATION: …]` markers as in `phases/handshake.md`.
@@ -657,7 +657,7 @@ One row per claimed item, in a table at the end of every delivery:
 - [ ] Restricted access to system logs
 - [ ] Prevention of sensitive field manipulation (OWASP API3): request bodies accept only an allow-list of writable fields; admin-only fields are never writable from user endpoints; responses and server-component props carry only the fields the client renders (no `SELECT *` / `to_json()` pass-through). Rejecting unknown fields is **Server-side input validation**. Evidence: after that item's extra-field `POST`, the stored record is unchanged; one response payload inspected for extra fields. Source: OWASP API3:2023 https://api-security.owasp.org/editions/2023/en/0xa3-broken-object-property-level-authorization (verified: 2026-09).
 - [ ] **Endpoint Rate Limiting:** Strict limits on high-cost endpoints (Search, Auth) to prevent scraping.
-- [ ] **OWASP ASVS Level 1 self-check:** for every profile with login. Evidence: `docs/asvs-l1.md` with one row per requirement. (verified: 2026-09)
+- [ ] **OWASP ASVS Level 1 self-check:** for every profile with login. Evidence: `docs/asvs-l1.md` with one row per requirement. https://github.com/OWASP/ASVS/tree/master/5.0/en (verified: 2026-09)
 - [ ] **Auth by default:** every route, RPC procedure, server action, realtime subscription/channel and cron/internal endpoint passes through one shared server-side guard; public routes are an explicit allowlist; scheduled endpoints require a secret bearer header (e.g. Vercel `CRON_SECRET`). Middleware-only checks don't count. Evidence: an automated test that calls every registered route unauthenticated and expects 401/403 except the allowlist; one realtime subscription test where user A never receives user B's events. Source: ASVS 5.0 7.2.1, 8.2.1, 8.3.1 (L1) https://github.com/OWASP/ASVS/blob/master/5.0/en/0x17-V8-Authorization.md (verified: 2026-09); OWASP API5:2023 https://api-security.owasp.org/editions/2023/en/0x11-t10 (verified: 2026-09); Vercel cron https://vercel.com/docs/cron-jobs/manage-cron-jobs#securing-cron-jobs (verified: 2026-09).
 - [ ] **OAuth / social login** (when present): authorization-code flow with PKCE (S256) and a one-time `state`; redirect URIs registered as exact strings; only the scopes the app needs; access/refresh tokens stay server-side (BFF), never in browser JS. Evidence: the captured authorization request URL showing `code_challenge` and `state`, and the provider console's redirect-URI list. Source: RFC 9700 §2.1, 2.1.1 https://www.rfc-editor.org/rfc/rfc9700.html (verified: 2026-09); ASVS 5.0 10.4.1 (L1), 10.2.1, 10.4.6, 10.1.1, 10.2.3 https://github.com/OWASP/ASVS/blob/master/5.0/en/0x19-V10-OAuth-and-OIDC.md (verified: 2026-09).
 - [ ] **Reset and magic links:** password-reset, invite and magic-link tokens are random, short-lived (default: 15 min, 1 h at most) and invalidated on first use; reset does not bypass MFA. Evidence: a test that reuses a consumed link and one that uses an expired link, both rejected. Source: ASVS 5.0 6.4.1 (L1), 6.4.3 https://github.com/OWASP/ASVS/blob/master/5.0/en/0x15-V6-Authentication.md (verified: 2026-09; ASVS says "short", the minutes are a convention); OWASP Forgot Password Cheat Sheet https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html (unverified).
@@ -698,7 +698,7 @@ One row per claimed item, in a table at the end of every delivery:
 - [ ] **Log Structuring:** Transition from `console.log` to structured logging (Winston, Pino) for production searchability.
 - [ ] **Database Migrations:** Implement a version-controlled migration system. Schema changes follow expand-then-contract (add before remove), every migration has a tested down step, and runs on staging before production. Evidence: migration files with up/down and the staging run log. Source: Prisma Data Guide, Expand and contract https://www.prisma.io/dataguide/types/relational/expand-and-contract-pattern (verified: 2026-09).
 - [ ] **Global Error Boundaries:** Unified handler to prevent app crashes on unhandled exceptions.
-- [ ] **Observability:** OpenTelemetry traces, metrics and structured logs; the trace id is echoed in error responses; error pages reveal nothing internal. Evidence: one error response showing the trace id and the matching trace. (verified: 2026-09)
+- [ ] **Observability:** OpenTelemetry traces, metrics and structured logs; the trace id is echoed in error responses; error pages reveal nothing internal. Evidence: one error response showing the trace id and the matching trace. https://opentelemetry.io/docs/concepts/signals/ (verified: 2026-09)
 - [ ] **Feature flags:** a kill switch for every risky feature; per-tenant if multi-tenant. Evidence: flag list with the owner of each switch.
 - [ ] **Background jobs:** work not needed to answer the request (emails, outbound webhooks, PDFs, AI calls, provisioning) runs in a queue with retries and a dead-letter queue; no HTTP request runs past the platform timeout: work over ~10 s is enqueued and answered with `202` plus a status URL (`Location`, `Retry-After`) or a webhook; queue depth and failure count are visible on the dashboard. Evidence: the handler that enqueues and returns one `202` with its status URL, plus the queue metric. Source: Azure Architecture Center, Asynchronous Request-Reply https://learn.microsoft.com/en-us/azure/architecture/patterns/async-request-reply (verified: 2026-09); Stripe webhooks "Handle events asynchronously" https://docs.stripe.com/webhooks (verified: 2026-09).
 - [ ] **Connection pooling:** serverless/edge code reaches Postgres through a pooler (Neon `-pooler` host, Supabase pooler, PgBouncer); migrations and admin tasks use the direct connection. Evidence: the runtime connection-string host and the pool size setting. Source: Neon, Connection pooling https://neon.com/docs/connect/connection-pooling (verified: 2026-09).
@@ -710,7 +710,7 @@ One row per claimed item, in a table at the end of every delivery:
 - [ ] Image compression and modern formats (WebP/AVIF)
 - [ ] Page load time auditing
 - [ ] Responsive/Adaptive versioning
-- [ ] **Core Web Vitals Audit:** Verify LCP, INP, and CLS are in the "Green" zone. Evidence: field or lab report with all three values. (verified: 2026-09)
+- [ ] **Core Web Vitals Audit:** Verify LCP, INP, and CLS are in the "Green" zone. Evidence: field or lab report with all three values. https://web.dev/articles/vitals (verified: 2026-09)
 
 ### Infrastructure Additions
 - [ ] **CDN Integration:** Use a Content Delivery Network for static assets. [ASVS L2] The platform's WAF/DDoS protection is enabled and the origin is not reachable directly. Evidence: a request to the origin IP with the site's `Host` header is refused. Source: ASVS 5.0 2.4.1 anti-automation (L2) https://github.com/OWASP/ASVS/blob/master/5.0/en/0x11-V2-Validation-and-Business-Logic.md (verified: 2026-09); vendor docs (Cloudflare/Vercel Firewall) (unverified).
@@ -782,7 +782,7 @@ One row per claimed item, in a table at the end of every delivery:
 
 ## Conditional blocks (switched on by BRIEF §9)
 ### If the product has an AI feature
-OWASP Top 10 for LLM Applications. (verified: 2026-09)
+OWASP Top 10 for LLM Applications. https://genai.owasp.org/llm-top-10/ (verified: 2026-09)
 - [ ] **Prompt-injection defence:** untrusted input never reaches the system prompt unmarked; tools the model can call are allow-listed. Evidence: injection test cases and their results.
 - [ ] **Per-user AI usage limits:** a cap per user per period. Evidence: the limit config and one rejected over-limit request. Also per-request token usage is logged; a monthly spend cap at the provider alerts and then stops (default: alert at 70%, hard stop at 90%), with a cost breakdown by model; prompt caching is on for stable system prompts where supported. Evidence: the provider budget settings, the cost dashboard and one usage log line. Source: OWASP LLM10:2025 Unbounded Consumption https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/ (verified: 2026-09); cap thresholds from provider console docs (unverified).
 - [ ] **Output validation:** model output is validated before it reaches users. Evidence: the validator and a test that rejects bad output. Also model output is treated as untrusted input: schema-validated, encoded for its destination (HTML/SQL/shell), retried once with the validation error fed back, then a non-AI fallback; raw output is never rendered. Evidence: validator, retry branch and fallback path. Source: OWASP LLM05:2025 Improper Output Handling https://genai.owasp.org/llmrisk/llm052025-improper-output-handling/ (verified: 2026-09).
@@ -804,7 +804,7 @@ OWASP Top 10 for LLM Applications. (verified: 2026-09)
 - [ ] **Locales:** every user-facing string comes from a locale file; dates, numbers and currency are formatted per locale. Evidence: a string-extraction lint with 0 hard-coded strings.
 
 ### If audience > 100 concurrent users (load test)
-- [ ] **Load test:** k6 against staging with the p95 target from BRIEF §4. Evidence: k6 summary with p95 below target. (verified: 2026-09)
+- [ ] **Load test:** k6 against staging with the p95 target from BRIEF §4. Evidence: k6 summary with p95 below target. https://grafana.com/docs/k6/latest/using-k6/thresholds/ (verified: 2026-09)
 - [ ] **Progressive rollout:** a new version reaches a slice of traffic first (canary or feature-flag percentage) and the SLO alert is the promote/rollback gate. Evidence: rollout config and one promotion or rollback log. Source: Google SRE Workbook, Canarying Releases https://sre.google/workbook/canarying-releases/ (verified: 2026-09).
 
 ### If the product handles health or other special-category data
@@ -986,18 +986,18 @@ Loaded after `core.md` and `web.md`. Users work for you; the bar is correctness 
 Loaded after `core.md`. `web.md` does not apply. Dark mode with system preference detection lives in `core.md`.
 
 ## Build and release
-- [ ] **Expo SDK + EAS Build / Submit / Update:** builds and store submissions run from EAS; OTA updates have a written rollback plan. Evidence: EAS build URL and the rollback steps. (verified: 2026-09)
+- [ ] **Expo SDK + EAS Build / Submit / Update:** builds and store submissions run from EAS; OTA updates have a written rollback plan. Evidence: EAS build URL and the rollback steps. https://docs.expo.dev/eas/ (verified: 2026-09)
 - [ ] **App-size budget:** a size ceiling per platform, checked on every release build. Evidence: build size vs budget.
 - [ ] **Device matrix:** tested on the oldest and newest supported OS versions and one small screen. Evidence: matrix table with results.
-- [ ] **Crash reporting:** crashes reach a dashboard with symbolicated stack traces. Evidence: one test crash visible. (verified: 2026-09)
+- [ ] **Crash reporting:** crashes reach a dashboard with symbolicated stack traces. Evidence: one test crash visible. https://docs.expo.dev/guides/using-sentry/ (verified: 2026-09)
 
 ## Store review readiness
-- [ ] **iOS privacy manifest + Android data-safety form:** both filled and consistent with what the app collects. Evidence: `PrivacyInfo.xcprivacy` path and the Play Console form. (verified: 2026-09)
+- [ ] **iOS privacy manifest + Android data-safety form:** both filled and consistent with what the app collects. Evidence: `PrivacyInfo.xcprivacy` path and the Play Console form. https://developer.apple.com/documentation/bundleresources/privacy-manifest-files · https://support.google.com/googleplay/android-developer/answer/10787469 (verified: 2026-09)
 - [ ] **In-app account deletion:** reachable from settings when the app has accounts. Evidence: screen path.
 - [ ] **Demo account for reviewers:** credentials in the review notes. Evidence: the note text.
 
 ## Platform features
-- [ ] **Push via expo-notifications:** permission asked in context, not at launch; token rotation handled server-side. Evidence: the permission trigger and the token refresh handler. (verified: 2026-09)
+- [ ] **Push via expo-notifications:** permission asked in context, not at launch; token rotation handled server-side. Evidence: the permission trigger and the token refresh handler. https://docs.expo.dev/versions/latest/sdk/notifications/ (verified: 2026-09)
 - [ ] **Deep links:** universal links / app links verified (AASA and `assetlinks.json` served); every callback parameter is validated. Evidence: `curl` of both files and a test with a malformed parameter.
 - [ ] **Offline:** read-only cache or a write queue with a stated conflict policy. Evidence: airplane-mode test result.
 - [ ] **Secure storage:** tokens in Keychain/Keystore; no secrets in the bundle; TLS only. Evidence: storage call site and a `strings` scan of the bundle. Also cleartext traffic disabled (`android:usesCleartextTraffic="false"`, no ATS exceptions in `Info.plist`). Evidence: grep of both manifests → 0 exceptions. Source: OWASP MASVS-NETWORK-1 https://mas.owasp.org/MASVS/controls/MASVS-NETWORK-1/ (unverified).

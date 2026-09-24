@@ -46,7 +46,7 @@ Disambiguators (ask only the one that separates the two candidates):
 - native-app vs saas-web → "If I handed you a finished API tomorrow, how much work remains?"
 
 No fit: pick the nearest profile and record the gap in BRIEF §10. Never invent a profile.
-AI features, payments, webhooks and i18n are conditional blocks inside the standards, not profiles.
+AI features, payments, webhooks, i18n, special-category data, GraphQL and file uploads are conditional blocks inside the standards, not profiles.
 
 ## 5. Phases
 | Phase | File | Writes | Status |

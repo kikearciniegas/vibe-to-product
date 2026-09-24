@@ -25,7 +25,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 ## Step 1 — Scan
 Budget: read ≤40 files, never the whole tree; use search and symbol lookups. Write `.v2p/work/adopt-scan.md`; line 1 is `written: <YYYY-MM-DDTHH:MM> · phase: adopt · part: scan · brief: <BRIEF written date | none>`, then exactly these headings:
 ```
-## Manifest & stack: <manifest path> · framework/runtime · notable deps (auth, payments, db, i18n, analytics, mobile)
+## Manifest & stack: <manifest path> · framework/runtime · notable deps (auth, payments, db, i18n, analytics, mobile, graphql, uploads/storage)
 ## Entry points: <routes/pages/commands with paths, ≤15>
 ## Login: yes|no · evidence <path:line>
 ## Payments SDK: yes|no · evidence
@@ -54,7 +54,7 @@ Portable: ask the user to paste `git status --short`, `find . -path ./node_modul
 | §8 Existing accounts | Env var names | prefixes → providers (`STRIPE_`, `SUPABASE_`, `CLERK_`, `RESEND_`, `SENTRY_`, `POSTHOG_`, `PADDLE_` …) | inferred |
 | §8 Money model | Payments SDK | present → ask which model; absent → `none` | asked / inferred |
 | §8 Integrations | Env vars + deps | list | inferred |
-| §9 blocks | derived | payments/webhooks/i18n/AI feature from deps and env names | inferred |
+| §9 blocks | derived | payments/webhooks/i18n/AI feature from deps and env names; GraphQL from graphql deps or `*.graphql` schema files; file uploads from multipart/upload handlers or a storage SDK; special-category data from health/medical fields in the schema | inferred |
 | §2, §4, §5, §7 | — | cannot be inferred: always asked (Q2, Q5, Q6, Q9), ≤3 per turn | answered / defaulted |
 
 Every `inferred` row's value cell ends with `← <source path>`. Gaps that block a section get `[NEEDS CLARIFICATION: …]` markers as in `phases/handshake.md`.
