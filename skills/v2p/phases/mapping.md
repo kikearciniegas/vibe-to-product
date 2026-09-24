@@ -47,7 +47,7 @@ Spawn `planner` with: BRIEF, SCAVENGE, `docs/DECISIONS.md` if present, the provi
 ## Step 4 — v2p sections (the template enforces them)
 - §2 Providers: one row per provider with plan, monthly cost at launch (from the overview table), and the wiring rows it needs (row ids from `references/stack/wiring.md`). The Vercel row states the commercial answer from rule 3.
 - §3 Skills: installed rows to use, and at which task.
-- §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 161, saas-web 158, internal-tool 153, native-app 114 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 102, web 43, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
+- §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 193, saas-web 190, internal-tool 185, native-app 141 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 129, web 48, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
 

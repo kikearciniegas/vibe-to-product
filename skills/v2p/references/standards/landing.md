@@ -15,7 +15,7 @@ Loaded after `core.md` and `web.md`. Section-by-section checks live in `../landi
 - [ ] Share button integration
 
 ## Not "made by AI"
-- [ ] **Anti-"made-by-AI" pass:** no gradient headline text; no default three-icon-card row; no fake testimonials; no "it's not X, it's Y" copy. Evidence: reviewer note per trait, or a `grep` of the copy for the pattern.
+- [ ] **Anti-"made-by-AI" pass:** no gradient headline text; no default three-icon-card row; no fake testimonials; no "it's not X, it's Y" copy; no emoji in headings; no badge/pill above the H1; no lorem ipsum; hierarchy by size and weight, not gradient or colour alone; no fade-in on every section. Evidence: reviewer note per trait, or a `grep` of the copy for the pattern (`grep -P '<h[1-6][^>]*>[^<]*\p{Emoji}'` → 0; `grep -riE 'lorem|ipsum'` → 0). Source: owner's taste rule (unverified; no framework).
 
 ## Polish — optional, do last
 Each item applies only when its condition holds; otherwise mark it N/A with the reason.

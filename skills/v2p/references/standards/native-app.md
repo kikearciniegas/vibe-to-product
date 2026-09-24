@@ -17,7 +17,7 @@ Loaded after `core.md`. `web.md` does not apply. Dark mode with system preferenc
 - [ ] **Push via expo-notifications:** permission asked in context, not at launch; token rotation handled server-side. Evidence: the permission trigger and the token refresh handler. (verified: 2026-09)
 - [ ] **Deep links:** universal links / app links verified (AASA and `assetlinks.json` served); every callback parameter is validated. Evidence: `curl` of both files and a test with a malformed parameter.
 - [ ] **Offline:** read-only cache or a write queue with a stated conflict policy. Evidence: airplane-mode test result.
-- [ ] **Secure storage:** tokens in Keychain/Keystore; no secrets in the bundle; TLS only. Evidence: storage call site and a `strings` scan of the bundle.
+- [ ] **Secure storage:** tokens in Keychain/Keystore; no secrets in the bundle; TLS only. Evidence: storage call site and a `strings` scan of the bundle. Also cleartext traffic disabled (`android:usesCleartextTraffic="false"`, no ATS exceptions in `Info.plist`). Evidence: grep of both manifests → 0 exceptions. Source: OWASP MASVS-NETWORK-1 https://mas.owasp.org/MASVS/controls/MASVS-NETWORK-1/ (unverified).
 
 ## Interaction
 - [ ] **Interactive Feedback:** Subtle visual feedback on mobile interactions (Aesthetic Tech)

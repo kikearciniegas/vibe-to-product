@@ -32,7 +32,7 @@ ln -s "$PWD/skills/v2p" ~/.claude/skills/v2p
 | `internal-tool` | logged-in, users work for you | core, web, internal-tool |
 | `native-app` | iOS/Android binary | core, native-app |
 
-The standards hold 194 checklist items across six files (`grep -c '^- \[ \]' skills/v2p/references/standards/*.md`), each claimed with evidence rather than a tick.
+The standards hold 226 checklist items across six files (`grep -c '^- \[ \]' skills/v2p/references/standards/*.md`), each claimed with evidence rather than a tick.
 
 ## File map
 | Path | Role |

@@ -39,7 +39,8 @@ When to run: `landing` always; any UI at the review phase, against staging. Each
 ## Proximity
 - Label-to-input gap smaller than field-to-field gap (8 px or less vs 16 px or more).
 - A plan and its CTA share one container.
-- Measure: computed margins.
+- Spacing follows one scale (multiples of 4 px); section padding is larger than the gap between elements inside the section. Source: Material Design spacing https://m3.material.io/foundations/layout/understanding-layout/spacing (unverified).
+- Measure: computed margins; computed margin/padding values → 0 off-scale; section padding > intra-section gap.
 
 ## Von Restorff
 - Exactly one primary-styled element per viewport.

@@ -13,7 +13,7 @@ Purpose: say what the visitor gets and give them the one action.
 
 ## 2. Social proof
 Purpose: show that real people or companies already trust this.
-**Check:** at least 3 real, attributable logos or numbers, each traceable to a source file that records its source URL; zero placeholder names (`grep -riE 'lorem|acme|john doe'` → 0).
+**Check:** at least 3 real, attributable logos or numbers, each traceable to a source file that records its source URL; zero placeholder names (`grep -riE 'lorem|acme|john doe'` → 0); certifications and trust seals count only when real and linked to the issuer's verification page. Source: FTC Endorsement Guides https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking (verified: 2026-09).
 
 ## 3. Problem
 Purpose: name the audience's pain in their own words (BRIEF §2).
