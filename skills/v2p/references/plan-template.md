@@ -27,7 +27,7 @@ Copy the block below into `.v2p/PLAN.md` and replace every `<…>`. §2–§6 ar
 ## 2. Providers
 | provider | plan at launch | $/month | wiring rows | decision |
 |---|---|---|---|---|
-| <Cloudflare Pages> | <Free (commercial yes) / Vercel Hobby while pre-revenue → Cloudflare Pages at the first commercial use> | <0> | <W… rows> | answered / defaulted: <reason; commercial yet: yes/no> |
+| <Cloudflare Workers> | <Free (commercial yes) / Vercel Hobby while pre-revenue → Cloudflare Workers at the first commercial use> | <0> | <W… rows> | answered / defaulted: <reason; commercial yet: yes/no> |
 Total monthly at launch: $<sum> (<arithmetic shown>)
 <only when the total exceeds BRIEF §7 Budget/month and the user approved it:> Over budget approved by user: <reason in the user's words>
 
