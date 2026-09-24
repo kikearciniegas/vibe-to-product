@@ -92,7 +92,7 @@ Commands: `mkdir -p .v2p/work && sh <skill>/scripts/tidy-check.sh --tsv > .v2p/w
 ## Step 7 — Finalize
 Portable: write `.v2p/AUDIT.md` from the draft as `references/audit-template.md` says.
 <!-- claude-only -->
-Run `sh <skill>/scripts/finalize-audit.sh .v2p` until it prints `PASS`. It fills §4 from `tidy-check.sh`, checks the §2/§3 counts, the evidence and the merges, requires `.v2p/work/adopt-scan.md` when BRIEF §1 says `existing`, writes `AUDIT.md` and the receipt `.v2p/.audit-pass`, and clears `.v2p/work/adopt-*`. On `FAIL`, fix what it names and run it again. Never write `AUDIT.md` by hand.
+Run `sh <skill>/scripts/finalize-audit.sh .v2p` until it prints `PASS`. It fills §4 from `tidy-check.sh`, checks the §2/§3 counts, the evidence and the merges, writes `AUDIT.md` and the receipt `.v2p/.audit-pass`, and clears `.v2p/work/adopt-*`. On `FAIL`, fix what it names and run it again. Never write `AUDIT.md` by hand.
 <!-- /claude-only -->
 
 ## Step 8 — Hand off

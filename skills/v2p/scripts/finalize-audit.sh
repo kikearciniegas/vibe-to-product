@@ -7,7 +7,7 @@ skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/AUDIT.draft.
 [ -f "$brief" ] || { echo "FAIL: $brief missing"; exit 1; }
 root=$(cd "$d/.." && pwd -P); tmp=${TMPDIR:-/tmp}/fa.$$; trap 'rm -f "$tmp"' EXIT
 awk '/^## 11/{f=1;next} /^## /{f=0} f && NF {print; exit}' "$brief" | grep -qE '^none( *←.*)?$' || { echo "FAIL: BRIEF §11 is not 'none'"; fail=1; }
-grep -q '^- Code: existing' "$brief" && [ ! -f "$d/work/adopt-scan.md" ] && { echo "FAIL: checkpoint $d/work/adopt-scan.md missing: the inventory must come from this run's scan, not from memory"; fail=1; }
+# work/ checkpoints are a resume aid, not proof: requiring them made agents write them after the fact.
 grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
 
 # expected §2 rows = checklist items of the standards files named in BRIEF §9
