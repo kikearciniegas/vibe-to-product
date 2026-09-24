@@ -8,16 +8,11 @@
 v2p is a thin orchestrator: each phase reads the previous handoff file and writes one of its own in `<project>/.v2p/`.
 It never reimplements what superpowers or gstack already do; later phases call them.
 Portable pack: if this arrives as one pasted document, the files named below follow it as sections. Run the handshake first and use only the standards sections for the chosen profile.
-
-## 2. Entry
-Optional argument: `handshake | scavenge | mapping | execute | review | deploy`.
-
-**Before asking the first question of any phase, read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
-
-No argument:
-- `.v2p/BRIEF.md` exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
+- BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
   - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`.
-- Otherwise ask "What are we building? One paragraph." and start the handshake.
+- No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
+- No BRIEF and no code → ask "What are we building? One paragraph." and start the handshake. A docs-only folder (README and notes, no code) also goes here; add one line: "`/v2p adopt` merges existing notes into docs/."
+- `/v2p adopt` always runs adopt; with an existing BRIEF it keeps it and runs audit + tidy only.
 
 ## 3. Target directory
 - The BRIEF goes to `$PWD/.v2p/BRIEF.md`.
@@ -45,6 +40,7 @@ AI features, payments, webhooks and i18n are conditional blocks inside the stand
 | Phase | File | Writes | Status |
 |---|---|---|---|
 | `handshake` | `phases/handshake.md` | `.v2p/BRIEF.md` | available |
+| `adopt` | `phases/adopt.md` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
 | `scavenge` | `phases/scavenge.md` | `.v2p/SCAVENGE.md` | available |
 | `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
 | `execute` | none | none | not available in this version |
@@ -67,6 +63,7 @@ For a phase marked "not available in this version", reply exactly that and stop.
 - `references/ux-laws.md`: at any UI review.
 - BRIEF layout: `references/brief-template.md`.
 - SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
+- Adopt: `references/tidy-rules.md` (what should exist, what is debris, what is never touched) and `references/audit-template.md` (layout of `.v2p/AUDIT.md`).
 - Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
 - Source rule for every v2p file: no `---` horizontal rules (use `***`).
 
@@ -93,7 +90,7 @@ Adapted (paraphrased) from github.com/Hainrixz/the-architect.
 Turns hold at most 3 questions. (S) = skippable when the condition holds. (P) = wording varies by profile.
 
 Turn 0 — context
-- Q0 (S if `$PWD` obviously has code or is empty) — New from zero, or a change to existing code? Which directory? (`brownfield: yes` → a later scavenge phase.)
+- Q0 (S if `$PWD` obviously has code or is empty) — New from zero, or a change to existing code? Which directory? Existing code → stop; run `phases/adopt.md` (it derives the BRIEF from the code and comes back to this file's gate).
 - Q1 (S if given at entry) — What are we building, in one paragraph? What breaks if it doesn't exist?
 - Q2 — Who uses it, roughly how many, and how often?
 
@@ -126,7 +123,7 @@ Turn 4 — constraints and stack
 ## Confirmation gate
 Show, together:
 1. the running brief,
-2. the decisions log: one row per question Q0–Q12, each marked answered / defaulted / deferred / skipped, with the value (or, for skipped, the reason). "Answered" only when the user's own words cover it. A reply to a different question, or silence, makes it defaulted (state the default) or a new question. Record the user's latest value, not an earlier one or a blend.
+2. the decisions log: one row per question Q0–Q12, each marked answered / defaulted / deferred / skipped / inferred, with the value (or, for skipped, the reason). "Answered" only when the user's own words cover it. A reply to a different question, or silence, makes it defaulted (state the default) or a new question. Record the user's latest value, not an earlier one or a blend.
 3. any open `[NEEDS CLARIFICATION: …]` markers.
 
 Write only on an explicit "yes", "ok" or "confirmed". A change request or a question re-enters the loop: apply it, show the gate again, and write nothing in the meantime. Open markers block writing; resolve each one first.
@@ -188,7 +185,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 - Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | none>
 
 ## 10. Decisions log
-| item | answered / defaulted / deferred | value |
+| item | answered / defaulted / deferred / inferred | value (inferred: ← source path) |
 |---|---|---|
 
 ## 11. Open markers
@@ -209,6 +206,7 @@ Nothing is decided here; mapping decides.
 ## Preconditions
 - `.v2p/BRIEF.md` must exist with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
 - If `.v2p/SCAVENGE.md` exists: print its `written:` line and offer resume (keep) or re-run.
+- Checkpoints: list `.v2p/work/scavenge-*`. A file is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date; print "resuming from <files>" and skip the work it already covers. Any other file is stale: overwrite it, never read it. Line 1 of every checkpoint: `written: <YYYY-MM-DDTHH:MM> · phase: scavenge · part: <q1-5|q7> · brief: <BRIEF written date>`.
 
 ## Research questions (derived, not invented)
 Exactly these, each skipped when its BRIEF source is empty or `none`:
@@ -221,7 +219,7 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 | Q4 | §7 data sensitivity | The primary legal text that applies to the flags set (personal data, payments, health, minors, EU accessibility) for the audience's jurisdiction. Cite the law/regulator page, not a blog. Never state obligations from memory. | government/regulator or standards body |
 | Q5 | §2 audience | Up to 3 adjacent products and what their users complain about in the last 30 days (pain language reused in copy and the FAQ) | social-trends search, then web search |
 | Q7 | Q1–Q4 answers | **Always runs.** For each subject named in Q1–Q4 (the starter/framework, each Q3 tool, the Q4 law; max 5): what changed in the last 30 days (pricing or plan limits, deprecations, breaking releases, security advisories, outages, acquisitions or migrations, legal amendments). Two sources per subject: (1) a last-30-days search for community signals, (2) the subject's official changelog, release notes, pricing or regulator news page, read for entries dated in the last 30 days. A community signal is a lead, not a fact: it changes a row only once the official page confirms it. | last-30-days search + official changelog/news page |
-| Q6 | §1 `Code: existing at <path>` (brownfield only) | Inventory: stack, entry points, env vars referenced, tests present, dependencies with created-date <6 months, TODO/FIXME count, files >200 lines | code search on the repo; no web |
+| Q6 | §1 `Code: existing at <path>` (brownfield only) | Brownfield: copy the inventory line from `.v2p/AUDIT.md` §1 (written by adopt). AUDIT missing → print `Run /v2p adopt first.` and stop. | `.v2p/AUDIT.md`; no web, no code search |
 
 ## Source-quality rules
 1. Rank: official docs > maintained repos (pushed within 6 months, not archived, >100 stars or vendor-owned) > posts/forums/social. A lower rank never overrides a higher one on a technical fact.
@@ -229,7 +227,7 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 3. Social/trend results (Q5) inform copy and FAQ only; never a technical decision. Q7 signals change a row only once an official page confirms them; unconfirmed ones are written `[CHECK: <signal> · <URL>]` for mapping.
 4. Numbers (limits, prices) are copied verbatim with the page's own wording; if the page did not show it, write `(not on page)`.
 5. A "nothing changed / none found" result is written as `none found · searched: <source or query>, last 30 days`, never as "confirmed". A generic landing or index page is not evidence for a specific claim.
-6. Findings come only from pages fetched in this run, or from this run's `.v2p/work/` files. Never rebuild them from memory, prior-session summaries or observation logs (e.g. claude-mem): those are leads to re-fetch, not evidence.
+6. Findings come only from pages fetched in this run, or from this run's `.v2p/work/` files, in every phase. Never rebuild them from memory, prior-session summaries or observation logs (e.g. claude-mem): those are leads to re-fetch, not evidence.
 7. Q5 is about the §2 audience (end users), not developers. If no end-user complaints are found, Q5 writes `[OPEN]`; never substitute issue trackers or PRs.
 8. Only three markers exist: `[OPEN]`, `[CONFLICT]`, `[CHECK]`. The counts in §7 must equal the markers in the file.
 9. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
@@ -241,7 +239,6 @@ Every URL in the draft is opened once more; any that does not load (4xx/5xx, tim
 - ≤3 sources per question; stop a question when two official sources agree.
 - Q1–Q5: **20 fetches** (every page or docs fetch counts). Q7: **5 reserved** for the official changelog/news page, one per subject (last-30-days searches are not counted as fetches); Q1–Q5 may never spend them. ~30 minutes wall time. The count is written into SCAVENGE.md §7.
 - Q7 runs after Q1–Q4 are answered and before the file is assembled. A community signal that needs a second official page beyond the one reserved fetch is written as `[CHECK]`.
-- Q6 is not budgeted by fetches; it is budgeted by files: read ≤40 files, never the whole tree (use search and symbol lookups).
 - When the cap hits, unanswered questions are written as `[OPEN: <question> — answer needed by <mapping task>]`, never guessed.
 
 ## Tools and degradation
@@ -264,7 +261,9 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 - `.v2p/BRIEF.md` required, with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
 - `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or plan without it?"; if planning without it, record `scavenge: skipped` in the PLAN.md header.
 - If `.v2p/SCAVENGE.md` exists, its §7 must read `links: n/n ok` (the two numbers equal) and its §6 must not contain "not searched". Otherwise print `SCAVENGE.md failed its checks: re-run /v2p scavenge.` and stop.
+- BRIEF §1 `Code: existing …` → `.v2p/AUDIT.md` must exist and have passed adopt's finalize step. Otherwise print `Run /v2p adopt first.` and stop.
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
+- Checkpoint: `.v2p/work/mapping-plan.md` is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date; print "resuming from .v2p/work/mapping-plan.md" and do not re-plan. Otherwise it is stale: overwrite it, never read it.
 
 ## Step 0 — Resolve SCAVENGE markers
 Every `[CONFLICT]`, `[CHECK]` and `[OPEN]` in SCAVENGE.md gets one outcome before providers are picked: decided (state which source wins and why), or turned into a task with its own verifier. None are carried silently into the plan.
@@ -283,12 +282,13 @@ Closed choices are asked; everything else is defaulted with one line saying so.
 Portable: write `none` in PLAN §3.
 
 ## Step 3 — Write the plan
+Read `docs/DECISIONS.md` too when it exists: every open item in a `## From …` section becomes a task or an explicit non-goal in the PLAN.
 Portable: write the plan yourself from `references/plan-template.md`, using BRIEF as the spec. Do not run a separate brainstorm; the BRIEF is the spec.
 
 ## Step 4 — v2p sections (the template enforces them)
 - §2 Providers: one row per provider with plan, monthly cost at launch (from the overview table), and the wiring rows it needs (row ids from `references/stack/wiring.md`). The Vercel row states the commercial answer from rule 3.
 - §3 Skills: installed rows to use, and at which task.
-- §4 Standards: **one row per checklist item** of the loaded files (landing 155, saas-web 152, internal-tool 147, native-app 108 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 96, web 43, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
+- §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 161, saas-web 158, internal-tool 153, native-app 114 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 102, web 43, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
 
@@ -399,6 +399,206 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 Tasks: <n> (mechanical <m>, manual <k>). `/ralph-loop` eligible: tasks <ids> (mechanical only, `--max-iterations` required).
 Next: /v2p execute (not available in this version)
 ````
+
+***
+
+<!-- source: phases/adopt.md -->
+# v2p phase: adopt
+
+## Purpose
+Bring an existing or half-built project under v2p: scan it, derive the BRIEF from what exists, audit it against the standards, create the missing canonical files, merge scattered notes, and quarantine debris with the user's approval.
+Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
+
+## Preconditions
+- The router ran the probe. Portable: ask the user to paste `ls -a` and `git status --short`.
+- `.v2p/BRIEF.md` exists → say "BRIEF kept; running audit + tidy", run Step 0 and Step 1, then skip Steps 2–3. (This is also the manual re-tidy path.) Step 1 still runs because AUDIT §1 and §3 come from the scan.
+- `.v2p/AUDIT.md` exists and passed its check → offer resume (keep) or re-run.
+- Checkpoints: list `.v2p/work/adopt-*`. A file is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date (or `none` when there is no BRIEF yet); print "resuming from <files>" and skip the step that wrote it. Any other file is stale: overwrite it, never read it. `.v2p/work/` files are the only legitimate resume source; memory and prior-session summaries are leads to re-check, not evidence.
+
+## Step 0 — Git safety
+- No git → continue, no branch.
+- Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
+- Clean tree → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c v2p/adopt-<YYYY-MM-DD>`.
+- v2p never commits, stashes, resets or switches on a dirty tree. The closing message tells the user what to commit.
+
+## Step 1 — Scan
+Budget: read ≤40 files, never the whole tree; use search and symbol lookups. Write `.v2p/work/adopt-scan.md`; line 1 is `written: <YYYY-MM-DDTHH:MM> · phase: adopt · part: scan · brief: <BRIEF written date | none>`, then exactly these headings:
+```
+## Manifest & stack: <manifest path> · framework/runtime · notable deps (auth, payments, db, i18n, analytics, mobile)
+## Entry points: <routes/pages/commands with paths, ≤15>
+## Login: yes|no · evidence <path:line>
+## Payments SDK: yes|no · evidence
+## i18n: yes|no · evidence · locales seen
+## Env vars referenced: <n> · names only (never values) · .env.example: present|missing
+## Tests: <runner|none> · <n> test files
+## Files >200 lines: <path:lines, ≤10>
+## Docs found: README first heading + first paragraph verbatim · other .md/.txt notes: <path — one-line gist>
+## Deps created <6 months: <pkg (created date)|none> — `npm view <pkg> time.created` or the ecosystem equivalent
+## TODO/FIXME: <n> (`rg -c 'TODO|FIXME'`)
+## Module map: top-level dirs under src/ (or app/, lib/) with file counts · cross-module internal imports found: <n> (rg pattern from core.md Modularity item 3) · cycles: <n|not checked (tool)>
+## Brand signals: theme/tokens/logo/tailwind config paths | none
+```
+Portable: ask the user to paste `git status --short`, `find . -path ./node_modules -prune -o -type f -print | head -300`, the manifest, README.md and any NOTES/TODO/ideas files; fill the headings from those.
+
+## Step 2 — Prefill the BRIEF
+| BRIEF field | From scan | Rule | §10 status |
+|---|---|---|---|
+| §1 Profile | Login, Payments, Manifest (Expo/RN/Swift/Kotlin/Flutter) | mobile framework → `native-app`; no login and one form/CTA → `landing`; login → `saas-web` or `internal-tool` (ask the disambiguator "Do users work for you?") | inferred (+ answered for the disambiguator) |
+| §1 Code | root | `existing at <root>` | inferred |
+| §1 Vision / Breaks without it | README first paragraph | verbatim; "breaks" asked if README does not say | inferred / asked |
+| §3 The one job | Entry points | main route or command, one line; confirm at the gate | inferred |
+| §6 Brand | Brand signals | signals → `existing (source: <path>)`; none → `to-create` | inferred |
+| §6 Locales | i18n | locales seen, else `one` | inferred / defaulted |
+| §8 Must-have | Manifest & stack | framework + db + auth as found | inferred |
+| §8 Existing accounts | Env var names | prefixes → providers (`STRIPE_`, `SUPABASE_`, `CLERK_`, `RESEND_`, `SENTRY_`, `POSTHOG_`, `PADDLE_` …) | inferred |
+| §8 Money model | Payments SDK | present → ask which model; absent → `none` | asked / inferred |
+| §8 Integrations | Env vars + deps | list | inferred |
+| §9 blocks | derived | payments/webhooks/i18n/AI feature from deps and env names | inferred |
+| §2, §4, §5, §7 | — | cannot be inferred: always asked (Q2, Q5, Q6, Q9), ≤3 per turn | answered / defaulted |
+
+Every `inferred` row's value cell ends with `← <source path>`. Gaps that block a section get `[NEEDS CLARIFICATION: …]` markers as in `phases/handshake.md`.
+
+## Step 3 — Gate and write
+Run `phases/handshake.md` §Confirmation gate and §Write step verbatim. Extra: the running brief shows `(inferred)` after each inferred value so the user sees what to correct. §1 Code = `existing at <root>`.
+
+## Step 4 — Audit draft
+Write `.v2p/AUDIT.draft.md` from `references/audit-template.md` (never `AUDIT.md`):
+- §1 from the scan.
+- §2 one row per `- [ ]` item of the BRIEF §9 standards files. `done` only with evidence gathered now (a command run in this session with its output, or a path from the scan); `N/A — BRIEF §n` for blocks OFF; else `pending`.
+- §3 one row per core.md "Modularity" item, evidence from the scan's module map.
+- §4 left as the template placeholder; the finalize step fills it.
+- §5 filled in Step 5.
+
+## Step 5 — Canonical files and merges
+Run the tidy check (`references/tidy-rules.md`) and show its table. Create only the **missing** canonical files; never overwrite:
+- `README.md`: BRIEF §1 vision + how to run, from the manifest.
+- `CHANGELOG.md`: `## Unreleased` + one line "adopted by v2p <YYYY-MM-DD>".
+- `docs/ARCHITECTURE.md`: module map from the scan + one data-flow line.
+- `docs/DECISIONS.md`: merged notes, or `none yet`.
+- `.env.example`: env var names with empty values, only if a `.env*` file exists.
+- `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing.
+
+For each `merge:<dest>` row, append to `<dest>` a section `## From <path> (merged <YYYY-MM-DD>)` with the original content verbatim. README duplicates: only the parts not already in README.md; say what was dropped. Show the added sections (`git diff -- <dest>` when tracked, or the section text) before anything moves, and list the pair in AUDIT §5.
+Portable: print each new file in a code block.
+
+## Step 6 — Quarantine
+Always dry-run first and show every `MOVE` / `REFUSE` line. Then ask: "Quarantine these <n> items to `~/.v2p-backups/<project>/<ts>/` (restore command provided)? (Recommended) / Skip (record `quarantine: declined`)". Rows the user excludes are removed from the list before applying. Refused rows stay listed in AUDIT §4 as they are: they are the safety net, not failures. Write `quarantine: <manifest path>` or `quarantine: declined` into the draft's §4.
+Portable: move approved items by hand as described in `references/tidy-rules.md` §6; no receipts.
+
+## Step 7 — Finalize
+Portable: write `.v2p/AUDIT.md` from the draft as `references/audit-template.md` says.
+
+## Step 8 — Hand off
+Print the paths written, the quarantine restore command, "commit: `.v2p/ docs/ README.md CHANGELOG.md .env.example .gitignore`", then `Next: /v2p scavenge`.
+
+
+***
+
+<!-- source: references/audit-template.md -->
+# AUDIT template
+
+Adopt writes this as `.v2p/AUDIT.draft.md`, never as `AUDIT.md`; the finalize step checks it and produces `AUDIT.md`. Replace every `<…>`.
+
+Statuses are exactly `done`, `pending`, `N/A`. `done` needs evidence: `cmd → output`, a path, or a URL. `N/A` needs `BRIEF §n` in the evidence cell.
+
+````
+# AUDIT — <project name>
+checked: pending   ← the finalize step replaces this line; a hand-written AUDIT.md has no receipt and mapping refuses it
+written: <YYYY-MM-DD> by v2p adopt · reads: .v2p/BRIEF.md (<written date>) · root: <abs path> · git: <none|clean|dirty:n> · branch: <b>
+
+## 1. Inventory
+- stack <…> · entry points <…> · env vars referenced <n> (.env.example: present|missing) · tests <runner|none, n files> · deps created <6 months: <list|none> · TODO/FIXME <n> · files >200 lines <n: paths>
+- Module map: <dir (n files)> … · cross-module internal imports <n> · cycles <n|not checked>
+
+## 2. Standards (one row per item of the BRIEF §9 files; mapping copies this table into PLAN §4)
+| item | file | status | evidence |
+|---|---|---|---|
+| <label> | core.md | done | `<command>` → <output> |
+| <label> | web.md | pending | |
+| <label> | landing.md | N/A | BRIEF §9 block OFF |
+Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against the standards files)
+
+## 3. Modularity (one row per core.md "Modularity" item)
+| item | status | evidence |
+|---|---|---|
+
+## 4. Tidy
+<tidy check output — inserted by the finalize step; do not write by hand>
+quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined>
+
+## 5. Merges (originals quarantined after the destination gained "## From <path>")
+| source | destination |
+|---|---|
+| <path> | docs/DECISIONS.md |
+(or: none)
+
+Next: /v2p scavenge
+````
+
+Portable: there is no finalize step. Write `.v2p/AUDIT.md` directly (or print it in one code block), leave `checked: pending`, paste the tidy table into §4, and say that nothing verified the counts.
+
+***
+
+<!-- source: references/tidy-rules.md -->
+# Tidy rules
+
+Which files and folders a v2p project should have, which ones are debris, and which ones are never touched. The tidy check reads this list and never changes anything; the quarantine step moves approved items out of the project and never deletes them. `<project>` = the git toplevel, or the directory v2p runs in.
+
+## 1. Canonical set
+Required rows are what the tidy check reports as `missing`.
+
+| Path | Required | Profile | Owner |
+|---|---|---|---|
+| `README.md` | yes | all | adopt creates it from the BRIEF if missing |
+| `CHANGELOG.md` | yes | all | adopt creates `## Unreleased` |
+| `.gitignore` | yes (git only) | all | must contain `.v2p/work/` and `.v2p/*.draft.md` |
+| `.env.example` | when any `.env*` exists | all | names only, never values |
+| `.v2p/BRIEF.md` | yes | all | handshake / adopt |
+| `.v2p/SCAVENGE.md`, `PLAN.md`, `REVIEW.md`, `DEPLOY.md` | by their phase | all | the phase's finalize step only |
+| `.v2p/AUDIT.md` | brownfield | all | adopt's finalize step |
+| `.v2p/work/` | transient | all | checkpoints; cleared by the finalize step; gitignored |
+| `docs/ARCHITECTURE.md` | yes | all | module map + data flow |
+| `docs/DECISIONS.md` | yes | all | merged notes/ADRs; `## From <path>` sections |
+| `docs/threat-model.md` | before the review phase | all with a backend | reported as `pending (review)`, never `missing` |
+| `src/` or the framework's own roots (`app/`, `pages/`, `lib/`, `ios/`, `android/`, `public/`, `migrations/`) | — | framework-owned | never flagged |
+
+Profile deltas: `native-app` adds `ios/` and `android/` as framework-owned; `landing` may omit `docs/threat-model.md` (`N/A — BRIEF §8 no backend`). No other profile differences exist.
+
+## 2. Debris
+Each `kind` below has the action `quarantine`.
+- `debris`: `.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`, `*~`, `*.swp`, `*.swo`, `.#*`, `*.orig`, `*.rej`, `*.bak`, `*.bak.*`, `*.backup`, `*_backup*`, `*.tmp`, `*.temp`, `*.pyc`
+- `duplicate`: `*_old.*`, `*_old`, `*-old.*`, `*.old`, `*_copy.*`, `* copy.*`, `* copy`, `*_final*`, `*-final*`, `*final_v[0-9]*`, `*_v[0-9].*`, `*_v[0-9][0-9].*`, `* ([0-9]).*`. Name-based: a legitimate schema_v2.sql will be listed and the user unticks it. (`-v[0-9]` is deliberately not a pattern.)
+- `log`: `*.log`, `npm-debug.log*`, `yarn-error.log*`, `lerna-debug.log*` (only when not gitignored)
+- `orphan-build` (directory, only when not gitignored): `dist`, `build`, `out`, `.next`, `.nuxt`, `.output`, `.turbo`, `coverage`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.parcel-cache`, `.cache`. The right fix is usually a `.gitignore` line; say so next to the row.
+- `empty-dir`: any directory with no entries
+
+## 3. Scattered notes
+`kind` `scattered` or `dup-readme`, action `merge:<dest>`.
+- → `docs/DECISIONS.md`: files `NOTES*`, `notes*.md`, `TODO*`, `todo*.md`, `IDEAS*`, `ideas*.md`, `ROADMAP*`, `BACKLOG*`, `SCRATCH*`, `PLAN*`, `plan*.md`, `DECISIONS*`, `ADR*`, `*.notes.md`, `*.notes.txt`; directories `notes`, `ideas`, `adr`, `adrs`, `decisions`
+- → `docs/ARCHITECTURE.md`: `ARCHITECTURE*`, `architecture*.md`, `DESIGN.md`, `design.md`
+- → `CHANGELOG.md`: `CHANGES*`, `HISTORY*`
+- → `README.md` (root only): `README_*`, `README-*`, `README.txt`, `README.old`, `readme*`, `Readme*`
+- Exempt: `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, `docs/threat-model.md`, `CHANGELOG.md`, `README.md`, anything under `.v2p/`
+- Merge rule: the destination gains `## From <path> (merged <YYYY-MM-DD>)` + the original content verbatim; the quarantine step refuses the original until that heading exists in the destination; the user sees the added sections before anything moves.
+
+## 4. Never touch
+Neither step lists or moves these; the quarantine step prints `REFUSE never-touch` (or the reason below).
+- Directories: `.git/`, `.v2p/`, `.claude/`, `.serena/`, `.github/`, `.vscode/`, `.idea/`, `node_modules/`, `.venv/`, `venv/`, `vendor/`, `data/`, `uploads/`, `storage/`
+- The canonical files of §1; `.env` and `.env.*` (except `.env.example`, which is canonical)
+- Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, `bun.lock`, `Cargo.lock`, `poetry.lock`, `uv.lock`, `Gemfile.lock`, `composer.lock`, `Podfile.lock`, `go.sum`
+- Databases: `*.sqlite`, `*.sqlite3`, `*.db`
+- Anything git ignores (`REFUSE gitignored`)
+- Symlinks: never followed, never moved, refused anywhere in the path (`REFUSE symlink`)
+- Anything outside the project root (realpath prefix check; `REFUSE outside-or-relative`)
+- The quarantine directory itself: it lives in the home directory, and the step refuses to run with the project root set to `/` or the home directory.
+
+## 5. Git-tracked vs untracked
+Tracked files are moved like any other; git then shows ` D <path>` and the user commits the removal (or restores). A tracked file with uncommitted modifications is refused (`REFUSE uncommitted-changes`): commit or discard first; v2p never does it for you. Untracked files are moved; ignored files are never touched. The `tracked` and `age_days` columns are shown so recent, human-authored files stand out before approval. v2p never stashes, commits, resets or switches branches on a dirty tree.
+
+## 6. Quarantine layout
+`~/.v2p-backups/<project>/<YYYY-MM-DD-HHMMSS>/` mirrors the relative paths. `MANIFEST.tsv` has one row per item (`path sha256 tracked reason restore`; a header comment names the root, the time and the restore command). `restore.sh` has one `mkdir -p … && mv …` per file and one `mkdir -p` per emptied directory. Each move is verified by sha256. v2p never empties the quarantine; the user does.
+
+Portable (no scripts): list the rows as a table with the columns `kind path action tracked age_days`, and the user moves approved items by hand with `mkdir -p ~/.v2p-backups/<project>/<ts>/<dir> && mv <path> ~/.v2p-backups/<project>/<ts>/<path>`. There is no receipt without the scripts; say so.
 
 ***
 
@@ -552,6 +752,14 @@ One row per claimed item, in a table at the end of every delivery:
 ### Monitoring & Maintenance
 - [ ] **Uptime Monitoring:** Setup BetterStack/UptimeRobot for alerts.
 - [ ] **Analytics Check:** Confirm that the first "Live" visit is recorded.
+
+## Modularity
+- [ ] **Module map:** every top-level module (dir under `src/`, `app/` or `lib/`) is listed in `docs/ARCHITECTURE.md` with one line of responsibility and its allowed dependencies. Evidence: `ls -d src/*/ | wc -l` equals the listed count.
+- [ ] **Dependency direction:** imports point inward (ui → features → domain → shared); `shared/`, `core/`, `lib/` never import from a feature or route. Evidence: `rg -n "from ['\"](\.\./)+(features|app|routes)" src/shared src/core src/lib` → 0 lines, or the graph tool's edge query.
+- [ ] **No cross-module internals:** a module is imported only through its public surface (`index.*` or an explicit `exports` map). Evidence: `rg -nP "from ['\"]\.\.?/[\w-]+/(?!index)[\w/-]+['\"]" src` → 0, or an `import/no-internal-modules` / `no-restricted-paths` lint rule with `eslint . --max-warnings 0` → exit 0.
+- [ ] **Feature folders** (when the project has 2+ features or more than 20 source files): code is grouped by feature (`features/<name>/{components,api,model}`), not by type at the top level. Evidence: the module map; `ls src` shows feature names, not `components/ services/ utils/` alone.
+- [ ] **No import cycles.** Evidence: `npx madge --circular --extensions ts,tsx src` → "No circular dependency found" (JS/TS), `pydeps --show-cycles` (Python), or the graph tool's cycle report. (verified: 2026-09) https://github.com/pahen/madge
+- [ ] **Single owner per concern:** one place reads env/config, one creates the DB client, one wires auth; no second copy. Evidence: `rg -l "process\.env\." src | grep -vc "config"` → 0; `rg -l "createClient\(" src | wc -l` → 1 (adapt the pattern to the stack).
 
 ## Conditional blocks (switched on by BRIEF §9)
 ### If the product has an AI feature

@@ -44,7 +44,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 - Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | none>
 
 ## 10. Decisions log
-| item | answered / defaulted / deferred | value |
+| item | answered / defaulted / deferred / inferred | value (inferred: ← source path) |
 |---|---|---|
 
 ## 11. Open markers

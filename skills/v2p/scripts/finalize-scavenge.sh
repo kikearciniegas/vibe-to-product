@@ -7,6 +7,7 @@ d=${1:-.v2p}; draft="$d/SCAVENGE.draft.md"; out="$d/SCAVENGE.md"
 urls=$(grep -oE 'https?://[^ )|`>]+' "$draft" | sed 's/[.,;]$//' | sort -u)
 [ -n "$urls" ] || { echo "FAIL: no URLs in draft"; exit 1; }
 total=0; ok=0; fail=0
+for w in "$d/work/scavenge-q1-5.md" "$d/work/scavenge-q7.md"; do [ -f "$w" ] || { echo "FAIL: checkpoint $w missing: findings must come from this run's subagents (.v2p/work/), not from memory"; fail=1; }; done
 for u in $urls; do
   total=$((total + 1))
   c=$(curl -s -o /dev/null -L -m 20 -w '%{http_code}' "$u")
@@ -28,4 +29,5 @@ grep -qE 'links: [^ ]+ ok' "$draft" || { echo "FAIL: §7 has no 'links: <ok>/<to
 sed -E "s|links: [^ ]+ ok|links: $ok/$total ok|" "$draft" > "$out" && rm "$draft"
 # Receipt: the next phase accepts SCAVENGE.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.scavenge-pass"
+rm -f "$d"/work/scavenge-*
 echo "PASS: links $ok/$total ok -> $out"

@@ -1,0 +1,65 @@
+#!/bin/sh
+# Read-only tidy check. Usage: sh tidy-check.sh [--tsv|--probe] [root]
+# Exit 0 = clean, 1 = violations, 2 = usage. Runs under sh and zsh (no unquoted word-splitting).
+mode=human; root=
+for a in "$@"; do case $a in --tsv) mode=tsv ;; --probe) mode=probe ;; -*) echo "usage: tidy-check.sh [--tsv|--probe] [root]" >&2; exit 2 ;; *) root=$a ;; esac; done
+[ -n "$root" ] || root=$(git rev-parse --show-toplevel 2>/dev/null) || root=$PWD
+root=$(cd "$root" && pwd -P) || exit 2
+cd "$root" || exit 2
+git=none; branch=-; dirty=0
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)
+  dirty=$(git status --porcelain 2>/dev/null | grep -vc '^??'); git=clean; [ "$dirty" -gt 0 ] && git="dirty:$dirty"
+fi
+code=no
+for m in package.json pyproject.toml requirements.txt go.mod Cargo.toml Package.swift pubspec.yaml build.gradle build.gradle.kts Gemfile composer.json; do [ -f "$m" ] && code=yes; done
+[ "$code" = no ] && [ -n "$(find . -path ./.git -prune -o -path ./node_modules -prune -o -path ./.v2p -prune -o -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.py' -o -name '*.go' -o -name '*.rs' -o -name '*.swift' -o -name '*.kt' -o -name '*.java' -o -name '*.rb' -o -name '*.php' -o -name '*.dart' -o -name '*.vue' -o -name '*.svelte' \) -print -quit)" ] && code=yes
+brief=none; [ -f .v2p/BRIEF.md ] && brief=yes
+audit=no; [ -f .v2p/AUDIT.md ] && grep -q '^checked:' .v2p/AUDIT.md && audit=yes
+probe="root:$root code:$code git:$git branch:$branch brief:$brief audit:$audit"
+[ "$mode" = probe ] && { echo "$probe"; exit 0; }
+
+ignored() { [ "$git" != none ] && git check-ignore -q -- "$1"; }
+tracked() { [ "$git" != none ] && git ls-files --error-unmatch -- "$1" >/dev/null 2>&1 && echo yes || echo no; }
+age() { [ -e "$1" ] || { printf "%s\n" -; return; }; m=$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0); echo $(( ( $(date +%s) - m ) / 86400 )); }
+row() { printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(tracked "$2")" "$(age "$2")"; }
+
+{
+# 1. canonical files that must exist
+for f in README.md .gitignore CHANGELOG.md .v2p/BRIEF.md docs/ARCHITECTURE.md docs/DECISIONS.md; do [ -e "$f" ] || row missing "$f" create; done
+[ -n "$(find . -maxdepth 1 -name '.env*' ! -name '.env.example' -print -quit)" ] && [ ! -f .env.example ] && row missing .env.example create
+[ -d node_modules ] && ! ignored node_modules && row gitignore node_modules gitignore
+[ "$git" != none ] && [ -f .gitignore ] && ! grep -q '^\.v2p/work/' .gitignore && row gitignore .v2p/work/ gitignore
+
+# 2. walk (never descends into never-touch dirs; symlinks are skipped, never followed)
+find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name venv -o -name vendor -o -name .v2p -o -name .claude -o -name .serena -o -name .github -o -name .vscode -o -name .idea -o -type l \) -prune -o -print | sed 's|^\./||' | sort | while IFS= read -r p; do
+  ignored "$p" && continue
+  b=${p##*/}; d=${p%/*}; [ "$d" = "$p" ] && d=.
+  if [ -d "$p" ]; then
+    case $b in
+      dist|build|out|.next|.nuxt|.output|.turbo|coverage|__pycache__|.pytest_cache|.mypy_cache|.parcel-cache|.cache) row orphan-build "$p" quarantine; continue ;;
+      notes|ideas|adr|adrs|decisions) row scattered "$p" merge:docs/DECISIONS.md; continue ;;
+    esac
+    [ -z "$(find "$p" -mindepth 1 -print -quit)" ] && row empty-dir "$p" quarantine
+    continue
+  fi
+  case $d in dist|build|out|.next|.nuxt|.output|.turbo|coverage|__pycache__|.pytest_cache|.mypy_cache|.parcel-cache|.cache|notes|ideas|adr|adrs|decisions) continue ;; esac  # parent already listed
+  case $b in
+    .DS_Store|Thumbs.db|desktop.ini|._*|*~|*.swp|*.swo|.#*|*.orig|*.rej|*.bak|*.bak.*|*.backup|*_backup*|*.tmp|*.temp|*.pyc) row debris "$p" quarantine; continue ;;
+    *_old.*|*_old|*-old.*|*.old|*_copy.*|*\ copy.*|*\ copy|*_final*|*-final*|*final_v[0-9]*|*_v[0-9].*|*_v[0-9][0-9].*|*\ \([0-9]\).*) row duplicate "$p" quarantine; continue ;;
+    *.log|npm-debug.log*|yarn-error.log*|lerna-debug.log*) row log "$p" quarantine; continue ;;
+  esac
+  case $p in docs/DECISIONS.md|docs/ARCHITECTURE.md|docs/threat-model.md|CHANGELOG.md|README.md) continue ;; esac
+  case $b in
+    NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) row scattered "$p" merge:docs/DECISIONS.md ;;
+    ARCHITECTURE*|architecture*.md|DESIGN.md|design.md) row scattered "$p" merge:docs/ARCHITECTURE.md ;;
+    CHANGES*|HISTORY*) row scattered "$p" merge:CHANGELOG.md ;;
+  esac
+  [ "$d" = . ] && case $b in README_*|README-*|README.txt|README.old|readme*|Readme*) row dup-readme "$p" merge:README.md ;; esac
+done
+} > "${TMPDIR:-/tmp}/tidy.$$"
+rows=$(grep -c . "${TMPDIR:-/tmp}/tidy.$$"); [ -n "$rows" ] || rows=0
+if [ "$mode" = tsv ]; then cat "${TMPDIR:-/tmp}/tidy.$$"; else
+  echo "$probe"; echo "kind	path	action	tracked	age_days"; cat "${TMPDIR:-/tmp}/tidy.$$"; echo "tidy: $rows violations"; fi
+rm -f "${TMPDIR:-/tmp}/tidy.$$"
+[ "$rows" -eq 0 ]

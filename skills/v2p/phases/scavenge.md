@@ -7,6 +7,7 @@ Nothing is decided here; mapping decides.
 ## Preconditions
 - `.v2p/BRIEF.md` must exist with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
 - If `.v2p/SCAVENGE.md` exists: print its `written:` line and offer resume (keep) or re-run.
+- Checkpoints: list `.v2p/work/scavenge-*`. A file is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date; print "resuming from <files>" and skip the work it already covers. Any other file is stale: overwrite it, never read it. Line 1 of every checkpoint: `written: <YYYY-MM-DDTHH:MM> · phase: scavenge · part: <q1-5|q7> · brief: <BRIEF written date>`.
 
 ## Research questions (derived, not invented)
 Exactly these, each skipped when its BRIEF source is empty or `none`:
@@ -19,7 +20,7 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 | Q4 | §7 data sensitivity | The primary legal text that applies to the flags set (personal data, payments, health, minors, EU accessibility) for the audience's jurisdiction. Cite the law/regulator page, not a blog. Never state obligations from memory. | government/regulator or standards body |
 | Q5 | §2 audience | Up to 3 adjacent products and what their users complain about in the last 30 days (pain language reused in copy and the FAQ) | social-trends search, then web search |
 | Q7 | Q1–Q4 answers | **Always runs.** For each subject named in Q1–Q4 (the starter/framework, each Q3 tool, the Q4 law; max 5): what changed in the last 30 days (pricing or plan limits, deprecations, breaking releases, security advisories, outages, acquisitions or migrations, legal amendments). Two sources per subject: (1) a last-30-days search for community signals, (2) the subject's official changelog, release notes, pricing or regulator news page, read for entries dated in the last 30 days. A community signal is a lead, not a fact: it changes a row only once the official page confirms it. | last-30-days search + official changelog/news page |
-| Q6 | §1 `Code: existing at <path>` (brownfield only) | Inventory: stack, entry points, env vars referenced, tests present, dependencies with created-date <6 months, TODO/FIXME count, files >200 lines | code search on the repo; no web |
+| Q6 | §1 `Code: existing at <path>` (brownfield only) | Brownfield: copy the inventory line from `.v2p/AUDIT.md` §1 (written by adopt). AUDIT missing → print `Run /v2p adopt first.` and stop. | `.v2p/AUDIT.md`; no web, no code search |
 
 ## Source-quality rules
 1. Rank: official docs > maintained repos (pushed within 6 months, not archived, >100 stars or vendor-owned) > posts/forums/social. A lower rank never overrides a higher one on a technical fact.
@@ -27,7 +28,7 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 3. Social/trend results (Q5) inform copy and FAQ only; never a technical decision. Q7 signals change a row only once an official page confirms them; unconfirmed ones are written `[CHECK: <signal> · <URL>]` for mapping.
 4. Numbers (limits, prices) are copied verbatim with the page's own wording; if the page did not show it, write `(not on page)`.
 5. A "nothing changed / none found" result is written as `none found · searched: <source or query>, last 30 days`, never as "confirmed". A generic landing or index page is not evidence for a specific claim.
-6. Findings come only from pages fetched in this run, or from this run's `.v2p/work/` files. Never rebuild them from memory, prior-session summaries or observation logs (e.g. claude-mem): those are leads to re-fetch, not evidence.
+6. Findings come only from pages fetched in this run, or from this run's `.v2p/work/` files, in every phase. Never rebuild them from memory, prior-session summaries or observation logs (e.g. claude-mem): those are leads to re-fetch, not evidence.
 7. Q5 is about the §2 audience (end users), not developers. If no end-user complaints are found, Q5 writes `[OPEN]`; never substitute issue trackers or PRs.
 8. Only three markers exist: `[OPEN]`, `[CONFLICT]`, `[CHECK]`. The counts in §7 must equal the markers in the file.
 9. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
@@ -42,7 +43,6 @@ In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/
 - ≤3 sources per question; stop a question when two official sources agree.
 - Q1–Q5: **20 fetches** (every page or docs fetch counts). Q7: **5 reserved** for the official changelog/news page, one per subject (last-30-days searches are not counted as fetches); Q1–Q5 may never spend them. ~30 minutes wall time. The count is written into SCAVENGE.md §7.
 - Q7 runs after Q1–Q4 are answered and before the file is assembled. A community signal that needs a second official page beyond the one reserved fetch is written as `[CHECK]`.
-- Q6 is not budgeted by fetches; it is budgeted by files: read ≤40 files, never the whole tree (use search and symbol lookups).
 - When the cap hits, unanswered questions are written as `[OPEN: <question> — answer needed by <mapping task>]`, never guessed.
 
 ## Tools and degradation
@@ -54,7 +54,6 @@ In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/
 - `/last30days` (installed, enabled): Q7 always, Q5 when applicable; runs inside the Q7 subagent (step 3); it asks questions only during its one-time first-run setup, which is already done on this machine; works without API keys via WebSearch fallback (reported by the skill's own frontmatter).
 - gstack `/browse`: only when a page needs a click or login (pricing calculators, dashboards). Never `mcp__claude-in-chrome__*`.
 - Perplexity: not installed; do not reference.
-- Brownfield Q6: Serena MCP is installed (`~/.claude.json` `mcpServers.serena`); use `find_symbol`/`get_symbols_overview`; fall back to `rg`. Graph tool: code-review-graph if installed (see `references/skills-catalog.md`); not required.
 - SCAVENGE.md §7 tools line in Claude Code: `context7 <used|no> · firecrawl: <used|unavailable> · last30days <used|failed: reason> · browse <used|no>`.
 <!-- /claude-only -->
 
@@ -64,8 +63,8 @@ Portable: do steps 1–4 yourself in one pass. List the applicable questions, an
 <!-- claude-only -->
 ### Claude Code
 1. Main thread reads BRIEF, lists the applicable questions and prints them (≤7 lines).
-2. Spawn in parallel: `planner` (Fable) with Q1–Q5 and the rules above; it returns the filled §1–§5 text and its fetch count (planner does not write files). `quick` (Sonnet) with Q6 for brownfield; it returns the §5 inventory text.
-3. Q7 (and Q5's social search) runs in **one `quick` subagent, never on the main thread**: the `last30days` skill is ~240 KB, and loading it once per subject exhausted the main context in testing. The subagent invokes the `last30days` skill through the Skill tool **once**, for the first subject (topic: `<subject> changes`). For each remaining subject it reruns the exact engine command that first run used, changing only the topic. It returns only the §6 table rows: each row has the finding with its URL, or `none found · searched: /last30days "<topic>"`, or, after two failures, `none found · searched: /last30days failed (<error>)`. Then, for each subject, it reads the official changelog/news page (one reserved fetch) and records entries dated in the last 30 days, or `no entries in window · <URL>`. A community signal is marked confirmed only when that page shows it.
+2. Spawn in parallel: `planner` (Fable) with Q1–Q5 and the rules above; it returns the filled §1–§5 text and its fetch count (planner does not write files). The main thread writes that result to `.v2p/work/scavenge-q1-5.md` the moment it arrives, before any other action. Brownfield Q6 is copied from `.v2p/AUDIT.md` §1 by the main thread; no subagent.
+3. Q7 (and Q5's social search) runs in **one `quick` subagent, never on the main thread**: the `last30days` skill is ~240 KB, and loading it once per subject exhausted the main context in testing. The subagent invokes the `last30days` skill through the Skill tool **once**, for the first subject (topic: `<subject> changes`). For each remaining subject it reruns the exact engine command that first run used, changing only the topic. Before returning, it writes its result to `.v2p/work/scavenge-q7.md` itself. It returns only the §6 table rows: each row has the finding with its URL, or `none found · searched: /last30days "<topic>"`, or, after two failures, `none found · searched: /last30days failed (<error>)`. Then, for each subject, it reads the official changelog/news page (one reserved fetch) and records entries dated in the last 30 days, or `no entries in window · <URL>`. A community signal is marked confirmed only when that page shows it.
 4. Main thread assembles `.v2p/SCAVENGE.draft.md` from `references/scavenge-template.md` and runs `scripts/finalize-scavenge.sh` until it prints `PASS`, prints the path and `Next: /v2p mapping`.
 
 `AskUserQuestion` only for resume/re-run. Nothing else is asked; open items go to `[OPEN: …]`.
