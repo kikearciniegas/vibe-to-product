@@ -477,6 +477,13 @@ Portable: ask the user to paste `git status --short`, `find . -path ./node_modul
 
 Every `inferred` row's value cell ends with `← <source path>`. Gaps that block a section get `[NEEDS CLARIFICATION: …]` markers as in `phases/handshake.md`.
 
+Count the questions above that still need asking (not inferred or defaulted): Vision / breaks without it if the README doesn't say, the profile disambiguator if two candidates remain, Money model if a payments SDK was found, and the four always asked — Q2, Q5, Q6, Q9. When that count is more than 3, ask once, before any of them:
+
+"Accept defaults for everything the code doesn't show (Recommended for a quick start; every default is listed at the gate for you to correct) / Answer each question"
+
+- **Accept defaults**: still ask, in one turn, only what has no safe default — Vision / breaks without it (Q1, if not inferred from the README) and who uses it, roughly how many, how often (Q2) — plus one open line: "Anything else I should know (budget, country, deadline, must-haves)?". Everything else gets the profile default from `phases/handshake.md` / the router's profile rules and is recorded `defaulted` with the value stated (Operating country / Audience countries: `unknown` stays `unknown` unless the user's line gives it; mapping asks later). Profile: nearest profile by rule, shown at the gate.
+- **Answer each question**: continue Turn 1 onward as the table above and `phases/handshake.md` set out, ≤3 questions per turn.
+
 ## Step 3 — Gate and write
 Run `phases/handshake.md` §Confirmation gate and §Write step verbatim. Extra: the running brief shows `(inferred)` after each inferred value so the user sees what to correct. §1 Code = `existing at <root>`.
 
