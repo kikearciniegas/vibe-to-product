@@ -1,0 +1,83 @@
+#!/bin/sh
+# The only writer of execute's per-task records (.v2p/work/execute-task-<n>.md + receipt .execute-task-<n>-pass)
+# and of .v2p/PLAN-AMENDMENTS.md. PLAN.md is never edited: scope granted mid-execute is appended here.
+# Usage: sh task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]   (exit 0 ok · 1 fail · 2 usage)
+#   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt
+#   verify <n>                 drift-check.sh <n>, then every mechanical Verifier command of the task; writes the result
+#   manual <n> "<text>"        the user's observation for the manual part of the Verifier
+#   ponytail <n> "<text>"      "none" or "<k> findings, <m> cut, <k-m> accepted: <one line>"; run after the task commit:
+#                              also records head: (the reviewed range is base..head)
+#   allow <n> <path> "<why>"   scope amendment: appends to .v2p/PLAN-AMENDMENTS.md and the record's files: line
+#   skip <n> "<reason>"        task not executed here (only on the user's yes)
+# ponytail: expected-output check covers exit code and bare numbers only; `→ passed`/`→ all passed` rely on the
+# command's exit code — mapping's Verifier convention asks for self-checking commands.
+skill=$(cd "$(dirname "$0")/.." && pwd -P); S=$skill/scripts
+usage() { echo "usage: task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]" >&2; exit 2; }
+cmd=$1; n=$2
+case $cmd in start|verify) dd=$3 ;; manual|ponytail|skip) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
+case $n in ''|*[!0-9]*) usage ;; esac
+d=${dd:-.v2p}; [ -d "$d" ] || { echo "ERROR: $d not found" >&2; exit 2; }
+d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 2
+plan=$d/PLAN.md; rec=$d/work/execute-task-$n.md; pass=$d/work/.execute-task-$n-pass; amend=$d/PLAN-AMENDMENTS.md
+sh "$S/check-pass.sh" "$plan" "$d/.plan-pass" >/dev/null || { echo "ERROR: PLAN has no valid receipt (sh check-pass.sh $plan $d/.plan-pass)" >&2; exit 2; }
+[ "$(grep -c "^### Task $n:" "$plan")" -eq 1 ] || { echo "ERROR: PLAN has no single '### Task $n:'" >&2; exit 2; }
+mkdir -p "$d/work"; tmp=${TMPDIR:-/tmp}/tr.$$; trap 'rm -f "$tmp" "$tmp.o" "$tmp.run"' EXIT
+planpass=$(cat "$d/.plan-pass"); now() { date +%Y-%m-%dT%H:%M:%S; }
+seal() { shasum -a 256 "$rec" | cut -d' ' -f1 > "$pass"; }
+sealed() { [ -f "$rec" ] && [ -f "$pass" ] && [ "$(shasum -a 256 "$rec" | cut -d' ' -f1)" = "$(cat "$pass")" ]; }
+# put <key> <value> [block-file]: replace the key's line (and its indented block) at the end of the record
+put() { K=$1 awk 'skip && /^  /{next} {skip=0} index($0, ENVIRON["K"] ": ")==1 || $0==ENVIRON["K"] ":" {skip=1; next} {print}' "$rec" > "$tmp"
+  printf '%s: %s\n' "$1" "$2" | sed 's/: $/:/' >> "$tmp"; [ -n "$3" ] && sed 's/^/  /' "$3" >> "$tmp"; mv "$tmp" "$rec"; }
+tline() { awk -v n="$n" -v k="$1" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && index($0, "**" k ":**")==1 {print; exit}' "$plan"; }
+write_start() {
+  title=$(sed -n "s/^### Task $n: //p" "$plan" | head -n 1)
+  files=$(tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g' | tr '\n' ' ' | sed 's/ $//')
+  tidy=$(sh "$S/tidy-check.sh" --tsv "$root" | grep -c .)
+  printf 'written: %s · phase: execute · part: task-%s · plan: %s\ntask: %s · title: %s\nbranch: %s · base: %s · tidy: %s\nfiles: %s\nverifier: pending · attempts: 0\n' \
+    "$(now)" "$n" "$planpass" "$n" "$title" "$(git rev-parse --abbrev-ref HEAD)" "$(git rev-parse HEAD)" "$tidy" "$files" > "$rec"; seal; }
+fresh() { [ -f "$rec" ] && [ "$(sed -n 's/.* · plan: //p' "$rec" | head -n 1)" = "$planpass" ]; }
+need() { fresh || { echo "ERROR: no current record for task $n (run: task-record.sh start $n)" >&2; exit 2; }
+  sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }; }
+case $cmd in
+start)
+  if fresh; then sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }
+    echo "resume: task $n (base $(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec"))"; exit 0; fi
+  write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
+verify)
+  need; k=$(sed -n 's/^verifier: .*attempts: \([0-9]*\).*/\1/p' "$rec"); k=$(( ${k:-0} + 1 ))
+  dc=$(sh "$S/drift-check.sh" "$n" "$d" 2>&1); rc=$?
+  if [ "$rc" -ne 0 ]; then printf '%s\n' "$dc" > "$tmp.o"; put verifier "blocked by drift · attempts: $k"; put drift "" "$tmp.o"; seal
+    printf '%s\n' "$dc"; echo "FAIL: task $n blocked by drift"; exit 1; fi
+  a=$(printf '%s\n' "$dc" | sed -n 's/.*(\([0-9]*\) allowed by amendments).*/\1/p'); [ "${a:-0}" -eq 0 ] && drift=none || drift="allowed $a"
+  # strict parse: a command counts only when its closing backtick is followed by →
+  tline Verifier | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp"
+  ok=1; res=; : > "$tmp.o"
+  while IFS= read -r m; do
+    c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
+    [ -n "$res" ] && sep='; ' || sep=' · '
+    case $c in *'<'*) res="$res$sep\`$c\` → skipped: placeholder"; continue ;; esac
+    sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
+    good=0; [ "$r" -eq 0 ] && good=1
+    case $x in ''|*[!0-9]*) ;; *) [ "$last" = "$x" ] || good=0 ;; esac
+    [ "$good" -eq 1 ] || ok=0
+    res="$res${sep}exit $r · \`$c\` → $last"; { echo "\$ $c   (exit $r)"; tail -n 20 "$tmp.run"; } >> "$tmp.o"; rm -f "$tmp.run"
+  done < "$tmp"
+  [ "$ok" -eq 1 ] && v=pass || v=fail
+  put verifier "$v · attempts: $k${res}"; put head "$(git rev-parse HEAD)"; put drift "$drift"; put tidy-delta 0; put output "" "$tmp.o"; seal
+  echo "verifier: $v · attempts: $k${res}"; [ "$ok" -eq 1 ] ;;
+manual)
+  need; t=$3; [ -n "$t" ] && [ "$t" != none ] || { echo "ERROR: manual needs the user's observation (what, where, when)" >&2; exit 2; }
+  put manual "$t · by user · $(date +%Y-%m-%d)"; seal; echo "manual: recorded for task $n" ;;
+ponytail)
+  need; t=$3; printf '%s\n' "$t" | grep -qE '^(none|[0-9]+ findings)' || { echo "ERROR: expected 'none' or '<k> findings, <m> cut, <k-m> accepted: <one line>'" >&2; exit 2; }
+  put ponytail-review "$t"; put head "$(git rev-parse HEAD)"; seal; echo "ponytail-review: recorded for task $n" ;;
+allow)
+  need; p=$3; why=$4; [ -n "$p" ] && [ -n "$why" ] || { echo "ERROR: allow needs <path> and a reason" >&2; exit 2; }
+  [ -f "$amend" ] || echo '# PLAN amendments — scope granted during execute (PLAN.md itself is never edited)' > "$amend"
+  printf -- '- %s · task %s · files += `%s` · %s\n' "$(now)" "$n" "$p" "$why" >> "$amend"
+  put files "$(sed -n 's/^files: *//p' "$rec") $p"; seal; echo "allowed: task $n += $p" ;;
+skip)
+  t=$3; [ -n "$t" ] || { echo "ERROR: skip needs a reason" >&2; exit 2; }
+  fresh || write_start; need
+  put verifier "skipped — $t"; put head "$(git rev-parse HEAD)"; seal; echo "skipped: task $n — $t" ;;
+esac
