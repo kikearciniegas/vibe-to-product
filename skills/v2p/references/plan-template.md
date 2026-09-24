@@ -18,11 +18,18 @@ Copy the block below into `.v2p/PLAN.md` and replace every `<…>`. §2–§6 ar
 ## Review Focus
 <the five uncovered inputs — writing-plans rule; each gets a test in the owning task>
 
+## Architecture
+<data flow, one line per hop: client → host → each §2 provider it calls (core.md "Architecture Map")>
+
+## Threat Model
+<assets; entry points (one per §2 provider that receives traffic or webhooks); top 5 abuse cases, each with the task that mitigates it; the task that writes docs/threat-model.md (core.md threat-model item)>
+
 ## 2. Providers
 | provider | plan at launch | $/month | wiring rows | decision |
 |---|---|---|---|---|
-| <Vercel> | <Hobby while pre-revenue → Pro or Cloudflare Pages at the first commercial use / Pro> | <0 / 20 (unverified)> | W1 W2 W27 | answered / defaulted: <reason; commercial yet: yes/no> |
-Total at launch: <sum> $/month (arithmetic shown)
+| <Cloudflare Pages> | <Free (commercial yes) / Vercel Hobby while pre-revenue → Cloudflare Pages at the first commercial use> | <0> | <W… rows> | answered / defaulted: <reason; commercial yet: yes/no> |
+Total monthly at launch: $<sum> (<arithmetic shown>)
+<only when the total exceeds BRIEF §7 Budget/month and the user approved it:> Over budget approved by user: <reason in the user's words>
 
 ## 3. Skills
 | skill (installed) | used in task |
@@ -35,6 +42,10 @@ Optional, install first: <suggested rows or none>
 | <label> | core.md | pending | |
 | <label> | landing.md | N/A — <reason citing BRIEF §> | |
 Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
+
+## 4b. Landing sections (landing profile only; omit the heading otherwise)
+| section (references/landing-10-sections.md) | kept / omitted — reason in BRIEF §10 | task that meets its Check |
+|---|---|---|
 
 ## 5. Tasks
 ### Task 1: <name>

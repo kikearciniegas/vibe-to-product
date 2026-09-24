@@ -13,7 +13,7 @@ copyright='Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.'
     references/standards/core.md references/standards/web.md references/standards/landing.md \
     references/standards/saas-web.md references/standards/internal-tool.md references/standards/native-app.md \
     references/landing-10-sections.md references/ux-laws.md \
-    references/stack/overview.md references/stack/wiring.md references/stack/security.md; do
+    references/stack/overview.md references/stack/alternatives.md references/stack/wiring.md references/stack/security.md; do
     printf '<!-- source: %s -->\n' "$p"
     awk '
       NR == 1 && $0 == "---" { fm = 1; next }

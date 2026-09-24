@@ -38,6 +38,7 @@ Budget: read ≤40 files, never the whole tree; use search and symbol lookups. W
 ## TODO/FIXME: <n> (`rg -c 'TODO|FIXME'`)
 ## Module map: top-level dirs under src/ (or app/, lib/) with file counts · cross-module internal imports found: <n> (rg pattern from core.md Modularity item 3) · cycles: <n|not checked (tool)>
 ## Brand signals: theme/tokens/logo/tailwind config paths | none
+## Country signals: legal pages (jurisdiction, company address) · currency codes/symbols · phone prefixes · locales, each with <path:line> | none
 ```
 Portable: ask the user to paste `git status --short`, `find . -path ./node_modules -prune -o -type f -print | head -300`, the manifest, README.md and any NOTES/TODO/ideas files; fill the headings from those.
 
@@ -55,7 +56,8 @@ Portable: ask the user to paste `git status --short`, `find . -path ./node_modul
 | §8 Money model | Payments SDK | present → ask which model; absent → `none` | asked / inferred |
 | §8 Integrations | Env vars + deps | list | inferred |
 | §9 blocks | derived | payments/webhooks/i18n/AI feature from deps and env names; GraphQL from graphql deps or `*.graphql` schema files; file uploads from multipart/upload handlers or a storage SDK; special-category data from health/medical fields in the schema | inferred |
-| §2, §4, §5, §7 | — | cannot be inferred: always asked (Q2, Q5, Q6, Q9), ≤3 per turn | answered / defaulted |
+| §7 Operating country · Audience countries | Country signals, i18n | legal-page jurisdiction/address → operating country; currencies, phone prefixes, locales → audience countries; no signal → value `unknown` (mapping asks) | inferred |
+| §2, §4, §5, §7 (other fields) | — | cannot be inferred: always asked (Q2, Q5, Q6, Q9), ≤3 per turn | answered / defaulted |
 
 Every `inferred` row's value cell ends with `← <source path>`. Gaps that block a section get `[NEEDS CLARIFICATION: …]` markers as in `phases/handshake.md`.
 

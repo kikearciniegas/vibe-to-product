@@ -14,6 +14,8 @@ Blocks between `<!-- claude-only -->` markers apply to Claude Code only; other r
 ## 2. Entry
 Optional argument: `handshake | adopt | scavenge | mapping | execute | review | deploy`.
 
+**Model guard:** before `adopt`, `scavenge` or `mapping`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
+
 **Before asking the first question of any phase — including `adopt` — read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
 
 No argument: probe the directory first. Portable: ask the user whether this folder has code and whether `.v2p/BRIEF.md` exists.
@@ -76,7 +78,7 @@ For a phase marked "not available in this version", reply exactly that and stop.
 - BRIEF layout: `references/brief-template.md`.
 - SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
 - Adopt: `references/tidy-rules.md` (what should exist, what is debris, what is never touched) and `references/audit-template.md` (layout of `.v2p/AUDIT.md`).
-- Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
+- Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/alternatives.md` only when a BRIEF constraint or a growth trigger needs a non-default provider or the country-eligibility lists; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
 <!-- claude-only -->
 - `references/model-routing.md`: before delegating any phase work.
 - `references/skills-catalog.md`: at mapping step 2.

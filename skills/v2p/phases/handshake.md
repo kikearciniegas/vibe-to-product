@@ -42,7 +42,7 @@ Turn 3 — brand and locale
 - Q8 (S; default one language) — One language or several? Translated, or per-market content?
 
 Turn 4 — constraints and stack
-- Q9 — Deadline; monthly infrastructure budget ceiling; data sensitivity (personal data, payments, health/financial, minors, public-sector or EU accessibility obligation); who operates it after launch (solo or team). Health or other special-category data → the special-category data block is ON in BRIEF §9.
+- Q9 — Deadline; monthly infrastructure budget ceiling; data sensitivity (personal data, payments, health/financial, minors, public-sector or EU accessibility obligation); who operates it after launch (solo or team); the country the business or legal entity operates from, and the countries the audience is in (payments and messaging eligibility depend on them; not the same as the operator). Health or other special-category data → the special-category data block is ON in BRIEF §9.
 - Q10 — Stack must-have, won't-accept, existing accounts (hosting, domain, payments, Apple/Google developer). No preference → state the profile default and record `defaulted`. GraphQL in the stack → the GraphQL block is ON in BRIEF §9.
 - Q11 (S; skip for landing and internal-tool) — Money model: free / flat / per-seat / usage / in-app purchase.
 - Q12 (S; default none) — Integrations: email, payments, calendar, Slack, external APIs, inbound webhooks, user file uploads. Any yes → the webhook/idempotency block is ON in BRIEF §9; file uploads → the file uploads block is ON; a GraphQL API → the GraphQL block is ON.

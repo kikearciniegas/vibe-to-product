@@ -33,7 +33,8 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 - Locales: <one | list; translated | per-market>
 
 ## 7. Constraints
-- Deadline: <…> · Budget/month: <…> · Data sensitivity: <flags|none> · Operator after launch: <solo|team>
+- Deadline: <…> · Budget/month: <$n | 0 | none> · Data sensitivity: <flags|none> · Operator after launch: <solo|team>
+- Operating country: <country the business/legal entity operates from, ISO 3166 English name | unknown> · Audience countries: <list | worldwide | unknown>
 
 ## 8. Stack
 - Must-have: <…> · Won't-accept: <…> · Existing accounts: <…>
