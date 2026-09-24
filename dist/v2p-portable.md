@@ -1,4 +1,4 @@
-# v2p portable pack (generated 2026-09-23; do not edit)
+# v2p portable pack (generated 2026-09-24; do not edit)
 
 <!-- source: SKILL.md -->
 
@@ -272,7 +272,7 @@ Every `[CONFLICT]`, `[CHECK]` and `[OPEN]` in SCAVENGE.md gets one outcome befor
 Five rules, in order. Each records a `defaulted` or `answered` row in PLAN §2.
 1. BRIEF §8 must-have / won't-accept / existing accounts win over any default.
 2. Profile default set from `references/stack/overview.md` §"Happy path per profile".
-3. Commercial use and budget. Ask "Is it commercial yet? (first sale, ads, paid client work)" and write the answer into PLAN §2. Not yet → Vercel Hobby, with the switch trigger written in the Vercel row: at the first commercial use, move to Vercel Pro or Cloudflare Pages. Yes → Vercel Pro or Cloudflare Pages now. If `Budget/month` (§7) is `0` and the profile default has a paid-only requirement (Vercel commercial use → Pro; Instatus custom domain → Pro; Clerk MFA → Pro), name it and ask.
+3. Commercial use and budget. Ask "Is it commercial yet? (it sells, advertises or takes bookings/leads for a business; first sale, ads, paid client work)" and write the user's answer into PLAN §2, attributed to the user. If the BRIEF describes an existing trading business, or the site's one job serves a paid service (bookings, quotes, leads), the recommended option is Yes → Cloudflare Pages ($0, commercial use allowed); Hobby is recommended only for a genuinely pre-revenue project. Not yet → Vercel Hobby, with the switch trigger written in the Vercel row: at the first commercial use, move to Vercel Pro or Cloudflare Pages. Yes → Vercel Pro or Cloudflare Pages now. If `Budget/month` (§7) is `0` and the profile default has a paid-only requirement (Vercel commercial use → Pro; Instatus custom domain → Pro; Clerk MFA → Pro), name it and ask.
 4. Money model ≠ none → payments provider: default **Paddle** (MoR; Panama is not on its unsupported-country list). Stripe only if the user has a US/supported-country entity. Lemon Squeezy only for an existing account (in migration to Stripe Managed Payments). Ask with the three options and the tax/entity trade-off in each.
 5. Data sensitivity flags → region-aware picks: EU audience → Sentry EU org, PostHog EU, Supabase EU region, Plausible (EU, cookieless) instead of GA4; Clerk has no EU hosting → say so and offer Supabase Auth.
 
@@ -286,7 +286,7 @@ Read `docs/DECISIONS.md` too when it exists: every open item in a `## From …` 
 Portable: write the plan yourself from `references/plan-template.md`, using BRIEF as the spec. Do not run a separate brainstorm; the BRIEF is the spec.
 
 ## Step 4 — v2p sections (the template enforces them)
-- §2 Providers: one row per provider with plan, monthly cost at launch (from the overview table), and the wiring rows it needs (row ids from `references/stack/wiring.md`). The Vercel row states the commercial answer from rule 3.
+- §2 Providers: one row per provider with plan, monthly cost at launch (from the overview table), and the wiring rows it needs (row ids from `references/stack/wiring.md`). The hosting row states the commercial answer from rule 3.
 - §3 Skills: installed rows to use, and at which task.
 - §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 193, saas-web 190, internal-tool 185, native-app 141 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 129, web 48, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap).
