@@ -9,7 +9,7 @@ v2p is a thin orchestrator: each phase reads the previous handoff file and write
 It never reimplements what superpowers or gstack already do; later phases call them.
 Portable pack: if this arrives as one pasted document, the files named below follow it as sections. Run the handshake first and use only the standards sections for the chosen profile.
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
-  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`.
+  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
 - No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
 - No BRIEF and no code → ask "What are we building? One paragraph." and start the handshake. A docs-only folder (README and notes, no code) also goes here; add one line: "`/v2p adopt` merges existing notes into docs/."
 - `/v2p adopt` always runs adopt; with an existing BRIEF it keeps it and runs audit + tidy only.
@@ -43,8 +43,8 @@ AI features, payments, webhooks, i18n, special-category data, GraphQL and file u
 | `adopt` | `phases/adopt.md` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
 | `scavenge` | `phases/scavenge.md` | `.v2p/SCAVENGE.md` | available |
 | `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
-| `execute` | none | none | not available in this version |
-| `review` | none | `.v2p/REVIEW.md` | not available in this version |
+| `execute` | `phases/execute.md` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
+| `review` | `phases/review.md` | `.v2p/REVIEW.md` | available |
 | `deploy` | none | none | not available in this version |
 
 For a phase marked "not available in this version", reply exactly that and stop. Do not improvise the phase.
@@ -60,9 +60,10 @@ For a phase marked "not available in this version", reply exactly that and stop.
 | native-app | `references/standards/core.md`, `references/standards/native-app.md` | none |
 
 - `references/landing-10-sections.md`: only for `landing`.
-- `references/ux-laws.md`: at any UI review.
+- `references/ux-laws.md`: at any UI review, and at review.
 - BRIEF layout: `references/brief-template.md`.
 - SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
+- EXECUTE and REVIEW layouts: `references/execute-template.md` (execute), `references/review-template.md` (review).
 - Adopt: `references/tidy-rules.md` (what should exist, what is debris, what is never touched) and `references/audit-template.md` (layout of `.v2p/AUDIT.md`).
 - Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/alternatives.md` only when a BRIEF constraint or a growth trigger needs a non-default provider or the country-eligibility lists; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
 - Source rule for every v2p file: no `---` horizontal rules (use `***`).
@@ -295,12 +296,12 @@ Portable: write the plan yourself from `references/plan-template.md`, using BRIE
 - §4b (landing only): one row per section of `references/landing-10-sections.md`: kept or omitted (reason in BRIEF §10), and the task that meets its Check.
 - §3 Skills: installed rows to use, and at which task.
 - §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 193, saas-web 190, internal-tool 185, native-app 141 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 129, web 48, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
-- §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap).
+- §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap). A review task or a launch task does not belong in §5: review and deploy are phases.
+- Verifier convention: prefer self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains) — execute treats exit 0 as pass and only compares bare-number expecteds. Give network commands a timeout (`curl -m 10`).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
 
 ## Step 5 — Write and hand off
-Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute (not available in this version)`.
-Do **not** ask how to execute the plan; execute is not available yet.
+Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute`.
 
 
 ***
@@ -410,11 +411,12 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 ### Task 1: <name>
 **Files:** …  **Interfaces:** …
 **Verifier:** mechanical: `<command>` → `<expected output/exit code>`   |   manual: <who checks what, where>
+<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds; network commands carry a timeout (`curl -m 10`)>
 - [ ] Step 1 … (writing-plans step style)
 
 ## 6. Handoff
 Tasks: <n> (mechanical <m>, manual <k>). `/ralph-loop` eligible: tasks <ids> (mechanical only, `--max-iterations` required).
-Next: /v2p execute (not available in this version)
+Next: /v2p execute
 ````
 
 ***
@@ -625,6 +627,175 @@ Tracked files are moved like any other; git then shows ` D <path>` and the user 
 `~/.v2p-backups/<project>/<YYYY-MM-DD-HHMMSS>/` mirrors the relative paths. `MANIFEST.tsv` has one row per item (`path sha256 tracked reason restore`; a header comment names the root, the time and the restore command). `restore.sh` has one `mkdir -p … && mv …` per file and one `mkdir -p` per emptied directory. Each move is verified by sha256. v2p never empties the quarantine; the user does.
 
 Portable (no scripts): list the rows as a table with the columns `kind path action tracked age_days`, and the user moves approved items by hand with `mkdir -p ~/.v2p-backups/<project>/<ts>/<dir> && mv <path> ~/.v2p-backups/<project>/<ts>/<path>`. There is no receipt without the scripts; say so.
+
+***
+
+<!-- source: phases/execute.md -->
+# v2p phase: execute
+
+## Purpose
+Implement `.v2p/PLAN.md` task by task with a scope gate, a verifier record and a commit per task; fill the standards evidence as tasks earn it. Writes `.v2p/EXECUTE.md` (and `.v2p/PLAN-AMENDMENTS.md` when scope changes).
+The execution loop itself belongs to a plan-execution method (superpowers in Claude Code); v2p adds the gates around it.
+
+## Preconditions
+- `.v2p/PLAN.md` must have passed mapping's finalize step. Portable: it contains the line `Next: /v2p execute`. Otherwise print `PLAN.md failed its check: re-run /v2p mapping.` and stop.
+- Existing `.v2p/EXECUTE.md` with its receipt → offer: resume (go to `/v2p review`) or re-run.
+- `.v2p/PLAN-AMENDMENTS.md`, if present: read it. Every line in it is scope already granted. PLAN.md itself is never edited during execute.
+- Model guard (router §2).
+
+## Step 0 — Git safety
+- Tracked changes outside `.v2p/` (`git status --porcelain`, ignoring `??` lines and `.v2p/` paths) → print the paths and "Commit or discard these yourself; v2p never stashes or commits another session's changes." Stop.
+- Clean tree → choose where to work. `.v2p/PLAN.md` tracked in git (`git ls-files --error-unmatch .v2p/PLAN.md` succeeds) → a new worktree on a new branch, so the handoff files travel with the branch. Not tracked → a new branch in place: `git switch -c v2p/execute-<YYYY-MM-DD>`. Never work on the default branch.
+- Do not rebase the execute branch while execute runs: each task's scope is measured from its recorded base commit.
+- Portable: tell the user to create the branch and confirm before Step 1.
+
+## Step 1 — Preflight (before Task 1)
+The scan executes; it is not skipped because the plan looks fine.
+1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses and N/A reasons kept, evidence empty).
+2. Run the plan's empirical claims: every mechanical Verifier command that can run on the current tree is expected to FAIL now (red before green). A verifier that passes before its task exists is a plan defect: record a ruling in the execution ledger and tell the user.
+3. Scope sanity: a task whose steps `cd` into a new directory (for example a scaffold command that creates a subfolder), or whose Files are outside the project root, is a plan defect. Ruling: scaffold into `.` (adapt the command) or stop and ask.
+4. Task triage: a task whose title starts with `Review`, or whose Verifier needs production URLs or DNS (`<domain>`-style placeholders in every command), is not executed here. List them in one question and, only on the user's yes, mark each skipped with the reason `handed to /v2p review` or `handed to /v2p deploy`.
+
+## Step 2 — Task loop
+Order: PLAN §6 `Order:` line. Independent tasks run in parallel only through the execution method's own fan-out rules. Per task `<n>`:
+1. Start the task record (base commit, branch, tidy count).
+2. Implement with test-driven development: failing test first, then the code. Change only the files in the task's **Files:** list. A needed path outside it is reported with the reason, never touched first.
+3. A reported path: decide. Granted → record the amendment (path + reason) before touching it. Refused → revert it.
+4. Run the task's Verifier commands and record the observed output. A failure goes back to step 2 (a fix round).
+5. Manual part of the Verifier not `none` → ask the user what they saw, where and when; record their words, attributed to them.
+6. Commit once per task, after the verifier passes, on the execute branch only, with the branch check in the same command.
+7. Task review, including an over-engineering pass on the task's diff (`git diff <base>..HEAD`); record its result in one line: `none` or `<k> findings, <m> cut, <k-m> accepted: <one line>`.
+8. Standards rows this task satisfies (PLAN §4 rows the task names, or rows whose evidence hint the verifier output covers): set `done` in `EXECUTE.draft.md` §2 with evidence = the command and its observed output from this run, or a path or URL. Never `[x]`.
+
+Portable: you run the loop yourself. After each task print one row (`task | files changed | verifier command → output the user pasted | manual observation | commit`) and ask the user to run the verifier commands and paste the output; that paste is the evidence. There is no scope gate or receipt without the scripts; say so once.
+
+## Step 3 — Failing verifier
+Inside a task the implementer iterates test-first; the execution method's fix rounds apply (at most 5). The verifier may be re-run any number of times; the last run wins and the attempt count is kept. After 3 failed runs on one task: stop and debug systematically. If the verifier itself is wrong, that is a plan defect: record a ruling in the execution ledger and mark the task skipped with the reason only on the user's yes; never "fix" the verifier (PLAN.md is hash-locked). A skip is never silent: it needs the user's yes and the reason is printed in EXECUTE.md §1.
+
+## Step 4 — Finalize
+Before finalizing, check each `done` row in the draft: a green result is evidence about the check's reach, not about the item. Portable: write `.v2p/EXECUTE.md` from the draft as the template says (fill §1 yourself; say there is no receipt).
+
+## Step 5 — Hand off
+Print the path of `.v2p/EXECUTE.md`, tasks done/skipped, standards done/N-A/pending counts, the branch and `base..head`, the amendments count, then `Next: /v2p review`.
+
+
+***
+
+<!-- source: phases/review.md -->
+# v2p phase: review
+
+## Purpose
+Review the whole execute branch once with the phase-level checks, fix what they find, complete the standards evidence, and hand a receipt to deploy. Writes `.v2p/REVIEW.md`.
+
+## Preconditions
+- `.v2p/EXECUTE.md` must have passed execute's finalize step. Portable: it has a `checked:` line that is not `pending`. Otherwise print `Run /v2p execute first.` and stop.
+- Existing `.v2p/REVIEW.md` with its receipt → offer: resume (keep) or re-run.
+- Clean tree and HEAD on the branch named in the EXECUTE `checked:` line (`branch <b>`); otherwise print what differs and stop.
+- Model guard (router §2).
+- Checkpoints: `.v2p/work/review-<check>.md` is reusable when its line 1 `head:` equals the current `git rev-parse HEAD`; otherwise it is stale: overwrite it, never read it.
+
+## Step 0 — Scope
+`base` and `branch` come from the EXECUTE `checked:` line; the diff under review is `git diff <base>..HEAD`. A file changed on the branch that no PLAN task names (and no amendment grants) is finding #1.
+
+## Step 1 — Runs
+Each check writes a checkpoint first (line 1: `head: <sha> · check: <name> · run: <exact invocation>`, then one finding per line: `- <path:line> · <severity> · <one line>`), then one row in REVIEW.draft.md §1 (`references/review-template.md`).
+
+| check | what runs | on | required |
+|---|---|---|---|
+| code-review | a code review of the branch diff | the diff | always |
+| simplify | an over-engineering review of the diff, then of the whole repo | diff, then repo | always |
+| security | a security review of the diff | the diff | always |
+| verification | re-run the command cited by every `done` row of EXECUTE §2; output that no longer matches is a finding | evidence table | always |
+| ux-laws | `references/ux-laws.md` checks plus a visual design review of the running preview | UI | always (every profile has UI) |
+| i18n | a translation-quality pass on the locale files named in PLAN | locale files | only when BRIEF §9 `Conditional blocks ON` contains `i18n` |
+| codex | an independent second-opinion review of the diff (read-only; it never edits) | the diff | always; may be `unavailable: <reason>` |
+| qa | a QA pass on the preview URL; re-checks after fixes | running app | web profiles; native-app: `manual: <who ran what on which device>` |
+
+Portable: run each check yourself, as a separate pass with its own list; the codex row reads `unavailable: portable` unless the user pastes a second model's review.
+
+## Step 2 — Adjudicate and fix
+Every finding gets one row in REVIEW.draft.md §2 with a status: `fixed <sha>` (each fix its own commit, test first), `accepted: <reason>`, or `open: <reason>`. `open` is allowed only when the reason names the deploy task or a BRIEF §. A fix touches only the finding's paths; after each fix, check the branch scope again: a path outside every task's scope is itself a finding (its own §2 row, adjudicated like any other). Update the draft's `diff: <base>..<head>` after the last fix commit.
+
+## Step 3 — Standards evidence
+Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with evidence (a command and its output from this phase, a path or a URL) or `N/A` citing `BRIEF §`; `pending` only as `pending | deferred to deploy: <what production state it needs>`.
+
+## Step 4 — Threat model and docs
+`docs/threat-model.md` exists and names every entry point of PLAN `## Threat Model`; `docs/ARCHITECTURE.md` module map matches the tree (core.md Modularity item 1); the tidy check reports 0 violations, or each one is listed with a reason.
+
+## Step 5 — Finalize
+Portable: write `.v2p/REVIEW.md` from the draft; there is no receipt without the scripts; say so.
+
+## Step 6 — Hand off
+Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)`, then `Next: /v2p deploy (not available in this version)`.
+
+
+***
+
+<!-- source: references/execute-template.md -->
+# EXECUTE template
+
+Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept, evidence empty); execute fills evidence as tasks earn it.
+
+Rules for §2: statuses are exactly `done`, `pending` or `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
+Portable: fill §1 yourself, one row per PLAN task, from what was actually run; there is no receipt without the scripts, so say so under the table.
+
+````
+# EXECUTE — <project name>
+checked: pending   ← the finalize step replaces this line: tasks <done>/<total> · skipped <k> · standards done <d> · N/A <a> · pending <p> · branch <b> · base <sha> · head <sha>
+written: <YYYY-MM-DD> by v2p execute · reads: .v2p/PLAN.md (<plan hash, first 12>) · mode: subagent-driven | inline · amendments: <n> (.v2p/PLAN-AMENDMENTS.md | none)
+
+## 1. Tasks
+<generated by the finalize step from the task records; do not write by hand>
+| task | base..head | drift | verifier | manual | ponytail-review |
+|---|---|---|---|---|---|
+
+## 2. Standards (copied from PLAN §4; execute fills evidence; review completes it)
+| item | file | status | evidence |
+|---|---|---|---|
+Rows: <n> (must equal PLAN §4)
+
+Next: /v2p review
+````
+
+***
+
+<!-- source: references/review-template.md -->
+# REVIEW template
+
+Copy the block below into `.v2p/REVIEW.draft.md` at review Step 1 and replace every `<…>`. §3 starts as a copy of EXECUTE §2 and must end complete.
+
+Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit.
+
+````
+# REVIEW — <project name>
+checked: pending   ← the finalize step replaces: runs <r>/<required> · findings <f> (fixed <x> · accepted <a> · open <o>) · standards done <d> · N/A <n> · deferred <k> · verifiers <v>/<v> pass · branch <b> · head <sha>
+written: <YYYY-MM-DD> by v2p review · reads: .v2p/EXECUTE.md (<hash, first 12>) · diff: <base>..<head>
+
+## 1. Runs
+| check | run (exact command or skill invocation) | findings |
+|---|---|---|
+| code-review | /review … | 3 findings |
+| codex | /codex review | 2 findings   ← or: unavailable: <reason> |
+Required rows: code-review, simplify, security, verification, ux-laws, codex, qa (+ i18n when BRIEF §9 has i18n ON)
+
+## 2. Findings
+| # | check | path:line | severity | status |
+|---|---|---|---|---|
+| 1 | code-review | app/api/contact/route.ts:41 | high | fixed a1b2c3d |
+| 2 | codex | … | low | accepted: <reason> |
+Rows: <f> = sum of §1 findings counts
+
+## 3. Standards evidence (complete)
+| item | file | status | evidence |
+|---|---|---|---|
+| Uptime Monitoring | core.md | pending | deferred to deploy: needs the production URL |
+Rows: <n> = PLAN §4
+
+## 4. Pre-deploy
+pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)
+
+Next: /v2p deploy (not available in this version)
+````
 
 ***
 

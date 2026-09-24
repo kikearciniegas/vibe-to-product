@@ -1,6 +1,6 @@
 # v2p roadmap
 
-Status as of 2026-09-23. Decisions come from the user; each slice gets a spec in `docs/specs/` before it is built.
+Status as of 2026-09-24. Decisions come from the user; each slice gets a spec in `docs/specs/` before it is built.
 
 ## Done
 - **Slice 1:** router, handshake, standards by profile, portable pack.
@@ -15,11 +15,19 @@ Status as of 2026-09-23. Decisions come from the user; each slice gets a spec in
 - **Crash-safe checkpoints:** subagent results are saved to `.v2p/work/` so a re-run resumes instead of starting over.
 - **Hook-enforced gates (proposal):** a PreToolUse hook blocks direct writes to the handoff files. Installing it into global settings is a separate decision for you.
 
-## Slice 4: execute + review, with drift checks
-Checks run on a tiered cadence:
-- **Every task:** the diff against PLAN, plus `ponytail-audit` on the diff.
-- **Every phase:** `/code-review`, `/simplify`, `/security-review`, and `/translation-quality` when i18n is on.
-- **Before deploy:** a full `claude-security` scan plus a Strix pentest.
+## Slice 4: execute + review (built 2026-09-24 · branch slice-4-execute-review · live test pending)
+- **Execute:** runs the PLAN task by task through superpowers subagent-driven development (implementer `builder`/`quick`, reviewer `planner`), one commit per task after its verifier passes, on a v2p branch or worktree. Scope changes go to `.v2p/PLAN-AMENDMENTS.md`; PLAN.md is never edited.
+- **Review:** one pass over the whole branch; findings are fixed, accepted or left open for deploy; the standards evidence is completed; the gate re-runs every PLAN verifier before it writes `.v2p/REVIEW.md`.
+
+Checks run on a tiered cadence (spec: `docs/specs/slice-4-spec.md` §4):
+
+| Tier | Trigger | What runs | Gate |
+|---|---|---|---|
+| every task | main thread, before the commit | `task-record.sh verify` = `drift-check.sh` (diff vs the task's Files list, branch, base, tidy delta) + the task's verifier commands | `finalize-execute.sh` |
+| every task | task reviewer | `ponytail-review` on the task's diff (the diff skill; `ponytail-audit` is the whole-repo one) | `finalize-execute.sh` (shape only) |
+| every task | implementer | test-driven development | reviewer prompt (not scripted) |
+| every phase | review, once over the branch | `/review`, `/simplify` + `ponytail-review` → `ponytail-audit`, `/security-review` + `claude-security` (low effort), `translation-quality` when i18n is on, ux-laws + `/design-review`, `/qa`, `/codex review` | `finalize-review.sh` (runs, findings, verifier re-run) |
+| before deploy | slice 5 | a full `claude-security` scan plus a Strix pentest | REVIEW §4 hand-off line |
 
 Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` skill; `superpowers:verification-before-completion` is the equivalent.
 

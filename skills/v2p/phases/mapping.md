@@ -53,12 +53,12 @@ Planning runs in the `planner` agent: spawn it with the Agent tool and `subagent
 - §4b (landing only): one row per section of `references/landing-10-sections.md`: kept or omitted (reason in BRIEF §10), and the task that meets its Check.
 - §3 Skills: installed rows to use, and at which task.
 - §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. Greenfield: **one row per checklist item** of the loaded files (landing 193, saas-web 190, internal-tool 185, native-app 141 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 129, web 48, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
-- §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap).
+- §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap). A review task or a launch task does not belong in §5: review and deploy are phases.
+- Verifier convention: prefer self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains) — execute treats exit 0 as pass and only compares bare-number expecteds. Give network commands a timeout (`curl -m 10`).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
 
 ## Step 5 — Write and hand off
-Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute (not available in this version)`.
-Do **not** ask how to execute the plan; execute is not available yet.
+Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute`.
 <!-- claude-only -->
 In Claude Code, write `.v2p/PLAN.draft.md` instead (never `PLAN.md` directly) and run `sh <this skill's dir>/scripts/finalize-plan.sh .v2p` until it prints `PASS`. It checks one Verifier line per task, one §4 row per standards item, the §2 total against the BRIEF budget (or the override line), no `---` rule, the `## Architecture` and `## Threat Model` sections, and `## 4b` for landing; it renames the draft to `PLAN.md`, writes the receipt `.v2p/.plan-pass` and clears `.v2p/work/mapping-*`.
 <!-- /claude-only -->

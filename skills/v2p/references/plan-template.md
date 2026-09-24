@@ -51,11 +51,12 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 ### Task 1: <name>
 **Files:** …  **Interfaces:** …
 **Verifier:** mechanical: `<command>` → `<expected output/exit code>`   |   manual: <who checks what, where>
+<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds; network commands carry a timeout (`curl -m 10`)>
 - [ ] Step 1 … (writing-plans step style)
 
 ## 6. Handoff
 Tasks: <n> (mechanical <m>, manual <k>). `/ralph-loop` eligible: tasks <ids> (mechanical only, `--max-iterations` required).
-Next: /v2p execute (not available in this version)
+Next: /v2p execute
 ````
 
 ***

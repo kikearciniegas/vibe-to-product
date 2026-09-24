@@ -20,8 +20,8 @@ ln -s "$PWD/skills/v2p" ~/.claude/skills/v2p
 | `adopt` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
 | `scavenge` | `.v2p/SCAVENGE.md` | available |
 | `mapping` | `.v2p/PLAN.md` | available |
-| `execute` | none | planned |
-| `review` | `.v2p/REVIEW.md` | planned |
+| `execute` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
+| `review` | `.v2p/REVIEW.md` | available |
 | `deploy` | none | planned |
 
 ## Profiles
@@ -42,14 +42,23 @@ The standards hold 226 checklist items across six files (`grep -c '^- \[ \]' ski
 | `skills/v2p/phases/scavenge.md` | evidence gathering: reference architecture, patterns, integrations, obligations, brownfield inventory |
 | `skills/v2p/phases/mapping.md` | providers, skills, standards rows and verifiable tasks into `.v2p/PLAN.md` |
 | `skills/v2p/phases/adopt.md` | existing code: scan, derived BRIEF, AUDIT, canonical files, merges, quarantine |
+| `skills/v2p/phases/execute.md` | plan execution task by task: scope gate, verifier record, one commit per task, standards evidence |
+| `skills/v2p/phases/review.md` | one review of the whole branch: runs, adjudicated findings, completed evidence, receipt for deploy |
+| `skills/v2p/references/execute-template.md` | layout of `.v2p/EXECUTE.md` |
+| `skills/v2p/references/review-template.md` | layout of `.v2p/REVIEW.md` |
 | `skills/v2p/references/audit-template.md` | layout of `.v2p/AUDIT.md` |
 | `skills/v2p/references/tidy-rules.md` | canonical files, debris, scattered notes, never-touch list |
 | `skills/v2p/scripts/tidy-check.sh` | read-only probe and tidy check (Claude Code only) |
 | `skills/v2p/scripts/quarantine.sh` | moves approved tidy rows to `~/.v2p-backups/` with a manifest and `restore.sh`; never deletes (Claude Code only) |
 | `skills/v2p/scripts/finalize-audit.sh` | gate that turns `AUDIT.draft.md` into `AUDIT.md` + receipt (Claude Code only) |
 | `skills/v2p/scripts/finalize-plan.sh` | gate that turns `PLAN.draft.md` into `PLAN.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/drift-check.sh` | read-only scope gate: changed paths vs the PLAN task's Files list, branch, base, tidy delta (Claude Code only) |
+| `skills/v2p/scripts/task-record.sh` | the only writer of execute's per-task records and `.v2p/PLAN-AMENDMENTS.md` (Claude Code only) |
+| `skills/v2p/scripts/finalize-execute.sh` | gate that turns `EXECUTE.draft.md` into `EXECUTE.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/finalize-review.sh` | gate that re-runs the PLAN verifiers and turns `REVIEW.draft.md` into `REVIEW.md` + receipt (Claude Code only) |
 | `skills/v2p/hooks/guard-finals.sh`, `hooks.json` | proposed PreToolUse hook that blocks direct writes to the handoff files; not installed |
 | `tests/fixture-messy.sh`, `tests/test-tidy.sh` | messy sample project and the script tests (sh and zsh) |
+| `tests/fixture-execute.sh`, `tests/test-execute.sh`, `tests/test-finalize-review.sh`, `tests/fixtures/finalize-review/` | execute fixture project and the execute/review script tests (sh and zsh) |
 | `skills/v2p/references/brief-template.md` | layout of `.v2p/BRIEF.md` |
 | `skills/v2p/references/scavenge-template.md` | layout of `.v2p/SCAVENGE.md` |
 | `skills/v2p/references/plan-template.md` | layout of `.v2p/PLAN.md` |
@@ -84,11 +93,16 @@ sh build-portable.sh && grep -c 'Rafael Arciniegas' dist/v2p-portable.md   # 1
 grep -cE '^\| `(scavenge|mapping)` \| `phases/(scavenge|mapping)\.md` \| `\.v2p/(SCAVENGE|PLAN)\.md` \| available' skills/v2p/SKILL.md   # 2
 grep -rn '(verified: 2026-09)' skills/v2p/references/stack | grep -vc 'https\?://'   # 0
 grep -c '<!-- source: references/stack/' dist/v2p-portable.md; grep -c 'skills-[c]atalog\|model-[r]outing' dist/v2p-portable.md   # 3, 0
-grep -c '| [a]vailable |' README.md; grep -c 'skills-[c]atalog' README.md   # 4, 1
+grep -c '| [a]vailable |' README.md; grep -c 'skills-[c]atalog' README.md   # 6, 1
 grep -cE '^\| `adopt` \| `phases/adopt\.md` \| .*\| available' skills/v2p/SKILL.md   # 1
 awk '/^## 2\./{f=1} /^## 5\./{f=0} f' skills/v2p/references/tidy-rules.md | grep -oE '`[^`]+`' | tr -d '`' | grep -E '[*.]' | while IFS= read -r t; do cat skills/v2p/scripts/tidy-check.sh skills/v2p/scripts/quarantine.sh | tr -d '\\' | grep -qF -- "$t" || echo "UNMATCHED: $t"; done   # no output
 grep -c '\.v2p/work/' skills/v2p/phases/scavenge.md skills/v2p/phases/adopt.md   # 3 or more each
 sh build-portable.sh && grep -c '<!-- source: phases/adopt.md -->' dist/v2p-portable.md   # 1
+grep -cE '^\| `(execute|review)` \| `phases/(execute|review)\.md` \| .*\| available' skills/v2p/SKILL.md; grep -c 'not available in this version' skills/v2p/SKILL.md   # 2, 2
+sh tests/test-execute.sh | tail -1; sh tests/test-finalize-review.sh | tail -1   # 0 failures each
+sh build-portable.sh && grep -c '<!-- source: phases/\(execute\|review\)\.md -->' dist/v2p-portable.md; grep -c 'AskUserQuestion\|claude-only\|task-record\|drift-check\|finalize-execute\|finalize-review\|subagent_type' dist/v2p-portable.md   # 2, 0
+grep -c '(stub)' skills/v2p/references/model-routing.md; grep -c 'ponytail-review' skills/v2p/references/model-routing.md skills/v2p/references/skills-cat*.md   # 1; 1 or more each
+awk '/^## 4\./{f=1;next} /^## /{f=0} f' skills/v2p/references/tidy-rules.md | grep '^- Lockfiles' | grep -oE '`[^`]+`' | tr -d '`' | while IFS= read -r t; do grep -qF -- "$t" skills/v2p/scripts/drift-check.sh || echo "UNMATCHED: $t"; done   # no output
 ```
 
 The full list, including the referenced-path and no-item-lost checks, is in `docs/specs/slice-1-spec.md` §6.
