@@ -19,8 +19,8 @@ copyright='Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.'
     awk '
       NR == 1 && $0 == "---" { fm = 1; next }
       fm { if ($0 == "---") fm = 0; next }
-      /<!-- claude-only -->/ { skip = 1; next }
-      /<!-- \/claude-only -->/ { skip = 0; next }
+      /^<!-- claude-only -->[ \t]*$/ { skip = 1; next }
+      /^<!-- \/claude-only -->[ \t]*$/ { skip = 0; next }
       skip { next }
       /^Copyright © 2026 Rafael Arciniegas/ { next }
       { print }

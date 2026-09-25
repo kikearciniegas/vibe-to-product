@@ -9,6 +9,16 @@ v2p is a thin orchestrator: each phase reads the previous handoff file and write
 It never reimplements what superpowers or gstack already do; later phases call them.
 Portable pack: if this arrives as one pasted document, the files named below follow it as sections. Run the handshake first and use only the standards sections for the chosen profile.
 Receipts, every phase: when a v2p script or gate refuses or blocks, stop and show the user its output; never write, edit or seal a `.v2p/` handoff file, `.v2p/work/` record or `.*-pass` receipt by hand.
+Blocks between `<!-- claude-only -->` markers apply to Claude Code only; other runtimes skip them.
+
+## 2. Entry
+Optional argument: `handshake | adopt | scavenge | mapping | execute | review | deploy`.
+
+**Model guard:** before `adopt`, `scavenge`, `mapping`, `execute` or `review`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
+
+**Before asking the first question of any phase — including `adopt` — read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
+
+No argument: probe the directory first. Portable: ask the user whether this folder has code and whether `.v2p/BRIEF.md` exists.
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
   - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
 - No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
