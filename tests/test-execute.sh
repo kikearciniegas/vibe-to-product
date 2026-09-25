@@ -159,6 +159,33 @@ for SH in sh zsh; do
   rm -f PWNED; printf -- '- 2026-09-24T00:00:00 · task 2 · files += `{x,$(touch PWNED)}` · malicious\n' > .v2p/PLAN-AMENDMENTS.md
   DC 2; is "18 brace injection exit" $rc 1; has "18 brace injection msg" "$out" "(unsafe characters)"; is "18 no PWNED" "$(test -f PWNED && echo yes)" ""
   cd "$base"
+  # 19. start --base: audited re-start when `start` ran late (live run: base = the task's own commit). b0 = true base,
+  # c1 = an out-of-scope commit before the late start, so the base in force decides whether outside.txt drifts.
+  f19=$base/f19-$SH; sh "$here/tests/fixture-execute.sh" "$f19" >/dev/null 2>&1; cd "$f19"; A=.v2p/PLAN-AMENDMENTS.md; P1=.v2p/work/.execute-task-1-pass
+  b0=$(git rev-parse HEAD); echo x > outside.txt; git add -A; git commit -qm 'outside'; c1=$(git rev-parse HEAD)
+  TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  git add -A; git commit -qm 'feat: greeting script'; TR verify 1; is "19 late-start verify" $rc 0; TR ponytail 1 none
+  s0=$(sha $rec1); orphan=$(git commit-tree "HEAD^{tree}" -m orphan)
+  TR start 1 --base "$orphan" "why"; is "19 non-ancestor exit" $rc 2; has "19 non-ancestor msg" "$out" "is not an ancestor of HEAD"
+  TR start 1 --base deadbeef "why"; is "19 nonexistent exit" $rc 2; has "19 nonexistent msg" "$out" "does not resolve to a commit"
+  TR start 1 --base "$b0"; is "19 no reason exit" $rc 2; has "19 no reason msg" "$out" "the reason is required"
+  TR start 1 --base "$b0" ""; is "19 empty reason exit" $rc 2
+  TR start 1 --base "$b0" "two
+lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "must be one line"
+  is "19 record unchanged by refusals" "$(sha $rec1)" "$s0"; is "19 no amendments written" "$(test -f $A && echo yes)" ""
+  TR start 1; has "19 re-start without --base resumes" "$out" "resume: task 1 (base $c1)"; is "19 resume keeps record" "$(sha $rec1)" "$s0"
+  TR start 1 --base "$b0" "start ran after the implementer committed"; is "19 --base exit" $rc 0
+  is "19 base updated" "$(sed -n 's/.* · base: \([^ ]*\) .*/\1/p' $rec1)" "$b0"
+  has "19 amendment line" "$(cat $A)" "· task 1 · base := $b0 (was $c1) · start ran after the implementer committed"
+  is "19 seal valid" "$(cat $P1)" "$(sha $rec1)"; has "19 verifier reset" "$(cat $rec1)" "verifier: pending · attempts: 0"
+  hasnt "19 ponytail reset" "$(cat $rec1)" "ponytail-review:"; hasnt "19 head reset" "$(cat $rec1)" "head:"
+  DC 1; is "19 drift from new base exit" $rc 1; has "19 drift from new base" "$out" "DRIFT file outside.txt"
+  TR start 1 --base "$c1" "outside.txt predates the task"; is "19 second --base exit" $rc 0
+  has "19 second amendment" "$(cat $A)" "· task 1 · base := $c1 (was $b0) · outside.txt predates the task"
+  TR verify 1; is "19 re-start verify pass" $rc 0; has "19 verifier pass" "$(cat $rec1)" "verifier: pass · attempts: 1 · exit 0"
+  TR ponytail 1 none; is "19 ponytail" $rc 0; TR skip 2 "not in this test"; TR skip 3 "not in this test"
+  cp "$base/draft" .v2p/EXECUTE.draft.md; FE; is "19 finalize accepts re-started record" $rc 0; has "19 finalize PASS" "$out" "PASS: 1/3 tasks (2 skipped)"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

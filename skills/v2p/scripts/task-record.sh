@@ -3,6 +3,8 @@
 # and of .v2p/PLAN-AMENDMENTS.md. PLAN.md is never edited: scope granted mid-execute is appended here.
 # Usage: sh task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]   (exit 0 ok · 1 fail · 2 usage)
 #   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt
+#   start <n> --base <sha> "<why>"  re-start: replaces any record for <n> (verifier/manual/ponytail reset) with base
+#                              <sha> (an ancestor of HEAD); appends `base := <sha> (was <old>)` to PLAN-AMENDMENTS.md
 #   verify <n>                 drift-check.sh <n>, then every mechanical Verifier command of the task; writes the result
 #   manual <n> "<text>"        the user's observation for the manual part of the Verifier
 #   ponytail <n> "<text>"      "none" or "<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>" (a+d+r=k);
@@ -14,9 +16,14 @@
 # command's exit code — mapping's Verifier convention asks for self-checking commands.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); S=$skill/scripts
 usage() { echo "usage: task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]" >&2; exit 2; }
-cmd=$1; n=$2
+cmd=$1; n=$2; nb=
 case $cmd in start|verify) dd=$3 ;; manual|ponytail|skip) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
 case $n in ''|*[!0-9]*) usage ;; esac
+if [ "$cmd" = start ] && [ "$3" = --base ]; then nb=$4; why=$5; dd=$6
+  [ -n "$nb" ] && [ -n "$why" ] || { echo "ERROR: start <n> --base <sha> \"<reason>\" (the reason is required)" >&2; exit 2; }
+  case $why in *"
+"*) echo "ERROR: the reason must be one line" >&2; exit 2 ;; esac
+fi
 d=${dd:-.v2p}; [ -d "$d" ] || { echo "ERROR: $d not found" >&2; exit 2; }
 d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 2
 plan=$d/PLAN.md; rec=$d/work/execute-task-$n.md; pass=$d/work/.execute-task-$n-pass; amend=$d/PLAN-AMENDMENTS.md
@@ -30,17 +37,24 @@ sealed() { [ -f "$rec" ] && [ -f "$pass" ] && [ "$(shasum -a 256 "$rec" | cut -d
 put() { K=$1 awk 'skip && /^  /{next} {skip=0} index($0, ENVIRON["K"] ": ")==1 || $0==ENVIRON["K"] ":" {skip=1; next} {print}' "$rec" > "$tmp"
   printf '%s: %s\n' "$1" "$2" | sed 's/: $/:/' >> "$tmp"; [ -n "$3" ] && sed 's/^/  /' "$3" >> "$tmp"; mv "$tmp" "$rec"; }
 tline() { awk -v n="$n" -v k="$1" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && index($0, "**" k ":**")==1 {print; exit}' "$plan"; }
-write_start() {
+write_start() { b=${1:-$(git rev-parse HEAD)}
   title=$(sed -n "s/^### Task $n: //p" "$plan" | head -n 1)
   files=$(tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g' | tr '\n' ' ' | sed 's/ $//')
   tidy=$(sh "$S/tidy-check.sh" --tsv "$root" | grep -c .)
   printf 'written: %s · phase: execute · part: task-%s · plan: %s\ntask: %s · title: %s\nbranch: %s · base: %s · tidy: %s\nfiles: %s\nverifier: pending · attempts: 0\n' \
-    "$(now)" "$n" "$planpass" "$n" "$title" "$(git rev-parse --abbrev-ref HEAD)" "$(git rev-parse HEAD)" "$tidy" "$files" > "$rec"; seal; }
+    "$(now)" "$n" "$planpass" "$n" "$title" "$(git rev-parse --abbrev-ref HEAD)" "$b" "$tidy" "$files" > "$rec"; seal; }
+amend_line() { [ -f "$amend" ] || echo '# PLAN amendments — scope granted during execute (PLAN.md itself is never edited)' > "$amend"
+  printf -- '- %s · task %s · %s\n' "$(now)" "$n" "$1" >> "$amend"; }
 fresh() { [ -f "$rec" ] && [ "$(sed -n 's/.* · plan: //p' "$rec" | head -n 1)" = "$planpass" ]; }
 need() { fresh || { echo "ERROR: no current record for task $n (run: task-record.sh start $n)" >&2; exit 2; }
   sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }; }
 case $cmd in
 start)
+  if [ -n "$nb" ]; then
+    b=$(git rev-parse -q --verify "$nb^{commit}") || { echo "ERROR: --base $nb does not resolve to a commit" >&2; exit 2; }
+    git merge-base --is-ancestor "$b" HEAD || { echo "ERROR: --base $nb is not an ancestor of HEAD" >&2; exit 2; }
+    old=; [ -f "$rec" ] && old=$(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec" | head -n 1)
+    amend_line "base := $b (was ${old:-none}) · $why"; write_start "$b"; echo "restarted: task $n (base $b, was ${old:-none})"; exit 0; fi
   if fresh; then sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }
     echo "resume: task $n (base $(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec"))"; exit 0; fi
   write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
@@ -86,8 +100,7 @@ allow)
   # and inside the same safe character set drift-check enforces, before it is written anywhere
   case $p in *[!]A-Za-z0-9._/@+*?[-]*) echo "ERROR: unsafe path $p (unsafe characters)" >&2; exit 2 ;; esac
   case $p in /*|..|../*|*/..|*/../*) echo "ERROR: unsafe path $p (must be relative, no .. segment)" >&2; exit 2 ;; esac
-  [ -f "$amend" ] || echo '# PLAN amendments — scope granted during execute (PLAN.md itself is never edited)' > "$amend"
-  printf -- '- %s · task %s · files += `%s` · %s\n' "$(now)" "$n" "$p" "$why" >> "$amend"
+  amend_line "files += \`$p\` · $why"
   put files "$(sed -n 's/^files: *//p' "$rec") $p"; seal; echo "allowed: task $n += $p" ;;
 skip)
   t=$3; [ -n "$t" ] || { echo "ERROR: skip needs a reason" >&2; exit 2; }

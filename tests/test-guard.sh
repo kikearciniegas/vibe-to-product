@@ -36,6 +36,7 @@ for SH in sh zsh; do
   # allow: the scripts, reads, git, ordinary files
   A "sh $S/task-record.sh verify 5"
   A "sh $S/task-record.sh start 5"
+  A "sh $S/task-record.sh start 8 --base 4960cfc \"start ran after the implementer committed\""
   A "sh $S/task-record.sh allow 5 src/x.tsx \"reviewer asked\""
   A "sh $S/finalize-execute.sh .v2p"
   A "sh $S/drift-check.sh 5"
