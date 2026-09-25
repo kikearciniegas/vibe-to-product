@@ -239,6 +239,13 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   is "23 sealed" "$(cat .v2p/work/.execute-task-1-pass)" "$(sha $rec1)"
   TR verify 1; is "23 notes survive verify" "$(grep -c '^note: ' $rec1)" 2
   cd "$base"
+  # 24. ponytail refuses while the verifier is pending (live Task 11 was reviewed before verify)
+  f24=$base/f24-$SH; sh "$here/tests/fixture-execute.sh" "$f24" >/dev/null 2>&1; cd "$f24"
+  TR start 1; s0=$(sha $rec1); TR ponytail 1 none; is "24 pending exit" $rc 2; has "24 pending msg" "$out" "run verify first"
+  is "24 record unchanged" "$(sha $rec1)" "$s0"
+  mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh; git add -A; git commit -qm 'feat: greet'
+  TR verify 1; is "24 verify" $rc 0; TR ponytail 1 none; is "24 after verify exit" $rc 0
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

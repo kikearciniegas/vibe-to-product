@@ -11,6 +11,7 @@
 #                              `by user` (live: the controller signed the user's name on its own checks, obs. 0210)
 #   ponytail <n> "<text>"      "none" or "<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>" (a+d+r=k);
 #                              run after verify passes on the committed head: also records head: (range base..head).
+#                              Refused while verifier: is pending (live Task 11 was reviewed before verify).
 #                              Only this writer enforces the format; readers (finalize-execute) accept older lines too.
 #   allow <n> <path> "<why>"   scope amendment: appends to .v2p/PLAN-AMENDMENTS.md and the record's files: line
 #   skip <n> "<reason>"        task not executed here (only on the user's yes)
@@ -98,7 +99,8 @@ note)
   need; t=$3; [ -n "$t" ] || { echo "ERROR: note needs a text" >&2; exit 2; }; reason "$t"
   printf 'note: %s · by controller · %s\n' "$t" "$(date +%Y-%m-%d)" >> "$rec"; seal; echo "note: recorded for task $n" ;;
 ponytail)
-  need; t=$3; fmt="'none' or '<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>' (a+d+r=k)"
+  need; grep -q '^verifier: pending' "$rec" && { echo "ERROR: task $n verifier is pending: run verify first (task-record.sh verify $n), then ponytail" >&2; exit 2; }
+  t=$3; fmt="'none' or '<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>' (a+d+r=k)"
   if [ "$t" != none ]; then
     s=$(printf '%s\n' "$t" | sed -n 's/^\([0-9][0-9]*\) findings, \([0-9][0-9]*\) applied, \([0-9][0-9]*\) deferred, \([0-9][0-9]*\) rejected: *[^ ].*/\1 \2 \3 \4/p' |
       awk 'NR == 1 { print ($2 + $3 + $4 == $1) ? "ok" : $2 " applied + " $3 " deferred + " $4 " rejected != " $1 " findings" }')
