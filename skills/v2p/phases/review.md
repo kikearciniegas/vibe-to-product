@@ -65,7 +65,7 @@ Claude Code: `planner` audits the table read-only and returns the rows whose evi
 ## Step 5 — Finalize
 Portable: write `.v2p/REVIEW.md` from the draft; there is no receipt without the scripts; say so.
 <!-- claude-only -->
-Claude Code: `sh <this skill's dir>/scripts/finalize-review.sh .v2p` until it prints `PASS`. It checks every required run row, one §2 row per finding (fix commits exist), §3 against PLAN §4, the draft's head = HEAD, the branch and a clean tree, and it re-runs every mechanical PLAN verifier of the tasks EXECUTE did not skip or defer (expect minutes). It writes `REVIEW.md`, the receipt `.v2p/.review-pass`, and clears `.v2p/work/review-*`. Never write `REVIEW.md` by hand.
+Claude Code: `sh <this skill's dir>/scripts/finalize-review.sh .v2p` until it prints `PASS`. It checks every required run row, one §2 row per finding (fix commits exist), §3 against PLAN §4, the draft's head = HEAD, the branch and a clean tree, and it re-runs every mechanical PLAN verifier of the tasks EXECUTE did not skip or defer (expect minutes). A verifier that cannot pass as written (a plan defect, e.g. a raw `wc -l` comparison) is never edited: on the user's yes (`AskUserQuestion`, with the evidence that the property holds), add `ruling: task <n> · plan defect · <evidence>` to the draft; that verifier is not re-run and the count shows in the PASS line. It writes `REVIEW.md`, the receipt `.v2p/.review-pass`, and clears `.v2p/work/review-*`. Never write `REVIEW.md` by hand.
 <!-- /claude-only -->
 
 ## Step 6 — Hand off

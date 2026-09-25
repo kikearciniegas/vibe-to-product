@@ -81,6 +81,19 @@ for SH in sh zsh; do
   shasum -a 256 .v2p/EXECUTE.md | cut -d' ' -f1 > .v2p/.execute-pass
   printf 'echo hi there\n' > src/greet.sh; git commit -qam 'change greeting'; sub "..$H" "..$(git rev-parse HEAD)"
   FR; is "13 deferred exit" $rc 0; hasnt "13 deferred not re-run" "$out" "run: task 1"; has "13 others still run" "$out" "run: task 2:"
+  # 14. a verifier wrong as written is ruled a plan defect (live Task 5: raw `wc -l` padded on macOS): with the
+  # user-approved ruling line it is not re-run and is counted; without it, or malformed, the review fails.
+  rm .v2p/REVIEW.md .v2p/.review-pass
+  printf 'echo bye\n' > src/greet.sh; git commit -qam 'break task 2 verifier'
+  cp "$base/good-$SH" "$P"; sub "..$H" "..$(git rev-parse HEAD)"; cp "$P" "$base/p14-$SH"
+  FR; is "14 no ruling exit" $rc 1; has "14 no ruling fails" "$out" "FAIL: verifier of task 2 fails"
+  cp "$base/p14-$SH" "$P"; printf 'ruling: task 2 plan defect\n' >> "$P"
+  FR; is "14 malformed exit" $rc 1; has "14 malformed msg" "$out" "FAIL: malformed ruling line"
+  cp "$base/p14-$SH" "$P"; printf 'ruling: task 9 · plan defect · x\n' >> "$P"
+  FR; is "14 unknown task exit" $rc 1; has "14 unknown task msg" "$out" "FAIL: ruling names task 9"
+  cp "$base/p14-$SH" "$P"; printf 'ruling: task 2 · plan defect · grep target moved; property checked by hand\n' >> "$P"
+  FR; is "14 ruled exit" $rc 0; has "14 ruled not re-run" "$out" "ruling: task 2 verifier not re-run (plan defect)"
+  has "14 PASS counts it" "$out" "rulings 1 ->"; has "14 checked counts it" "$(grep '^checked:' .v2p/REVIEW.md)" "· rulings 1 ·"
   cd "$base"
 done
 SH=all; is "12 source untouched" "$(shasum -a 256 < "$src")" "$sum0"

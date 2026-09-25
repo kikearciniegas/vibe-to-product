@@ -70,10 +70,17 @@ dirty=$(git status --porcelain --untracked-files=all -- . | grep -v "^.. ${pre}\
 # 9. re-run every mechanical verifier of the tasks EXECUTE §1 did not skip or defer (same strict parser as task-record.sh);
 # a deferred one needs a credential that does not exist until deploy (live incident), and deploy re-checks it
 skipped=$(rows '## 1.' "$ex" | awk -F'|' '{t=$2; v=$5; gsub(/ /,"",t); gsub(/^ +/,"",v); if (v ~ /^(skipped|deferred)/) print t}')
-vt=0; vp=0
+vt=0; vp=0; nr=0
 grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}' > "$tmp.r"
+# a verifier wrong as written (live Task 5: raw `wc -l` padded on macOS) is ruled a plan defect on the user's yes:
+# `ruling: task <n> · plan defect · <evidence>`. Not re-run, counted in checked/PASS so it is never silent.
+bad=$(grep '^ruling:' "$draft" | grep -vE '^ruling: task [0-9]+ · plan defect · [^ ].*')
+[ -z "$bad" ] || { echo "FAIL: malformed ruling line(s) (want 'ruling: task <n> · plan defect · <evidence>'):"; printf '%s\n' "$bad"; fail=1; }
+ruled=$(sed -n 's/^ruling: task \([0-9][0-9]*\) · plan defect · [^ ].*/\1/p' "$draft")
+for n in $ruled; do grep -qx "$n" "$tmp.r" || { echo "FAIL: ruling names task $n, not in PLAN"; fail=1; }; done
 while IFS= read -r n; do
   printf '%s\n' "$skipped" | grep -qx "$n" && continue
+  if printf '%s\n' "$ruled" | grep -qx "$n"; then echo "ruling: task $n verifier not re-run (plan defect)"; nr=$((nr + 1)); continue; fi
   awk -v n="$n" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Verifier:\*\*/ {print; exit}' "$plan" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"
   while IFS= read -r m; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
@@ -88,9 +95,9 @@ while IFS= read -r n; do
   done < "$tmp.c"
 done < "$tmp.r"
 [ "$fail" -eq 0 ] || { echo "FAIL: REVIEW.md not written"; exit 1; }
-c="checked: runs $runs/$nreq · findings $fsum (fixed $fx · accepted $fa · open $fo) · standards done $sd · N/A $sa · deferred $sk · verifiers $vp/$vt pass · branch $now · head $head"
+c="checked: runs $runs/$nreq · findings $fsum (fixed $fx · accepted $fa · open $fo) · standards done $sd · N/A $sa · deferred $sk · verifiers $vp/$vt pass · rulings $nr · branch $now · head $head"
 awk -v c="$c" '/^checked: /{print c; next} {print}' "$draft" > "$out" && rm "$draft"
 # Receipt: deploy accepts REVIEW.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.review-pass"
 find "$d/work" -name 'review-*' -exec rm -f {} + 2>/dev/null
-echo "PASS: runs $runs/$nreq, findings $fsum, standards done $sd, verifiers $vp/$vt -> $out"
+echo "PASS: runs $runs/$nreq, findings $fsum, standards done $sd, verifiers $vp/$vt, rulings $nr -> $out"
