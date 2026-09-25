@@ -15,7 +15,7 @@ Status as of 2026-09-25. Decisions come from the user; each slice gets a spec in
 - **Crash-safe checkpoints:** subagent results are saved to `.v2p/work/` so a re-run resumes instead of starting over.
 - **Hook-enforced gates (proposal):** a PreToolUse hook blocks direct writes to the handoff files. Installing it into global settings is a separate decision for you.
 
-## Slice 4: execute + review (built 2026-09-24 · 1fce294 · live test pending)
+## Slice 4: execute + review (built 2026-09-24 · 1fce294 · live-tested 2026-09-25 on the landing fixture: execute PASS 11/19, review PASS with 1 ruling; the fixes it surfaced are merged)
 - **Execute:** runs the PLAN task by task through superpowers subagent-driven development (implementer `builder`/`quick`, reviewer `planner`), one commit per task after its verifier passes, on a v2p branch or worktree. Scope changes go to `.v2p/PLAN-AMENDMENTS.md`; PLAN.md is never edited.
 - **Review:** one pass over the whole branch; findings are fixed, accepted or left open for deploy; the standards evidence is completed; the gate re-runs every PLAN verifier before it writes `.v2p/REVIEW.md`.
 
@@ -52,6 +52,12 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
 - Slice 5 live: a Strix run (needs Docker) and the first real deploy of the fixture (needs a GitHub remote; use a throwaway copy).
 - The duplicate `agent-reach` in `~/.agents/skills` (managed by `npx skills`), not cleaned up.
+- `finalize-review.sh` should check PLAN.md against its receipt, as `finalize-deploy.sh` does: both re-run PLAN verifiers through `sh -c`.
+- Re-verifying a finished task: `drift-check.sh` compares base..HEAD, so later tasks' commits always show as drift; needs a design choice.
+- Guard hook false positive: a multi-line Bash command that mentions a `.v2p/` final on one line and a write on another is blocked.
+- `finalize-execute.sh` has no check that the recorded head keeps up with the branch head.
+- Implementer routing (`builder` vs `quick`) is prose in execute.md, not scripted.
+- The slice-5 spec says the guard hook is not installed; it is (global settings), so the spec line is stale.
 
 ***
 Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.
