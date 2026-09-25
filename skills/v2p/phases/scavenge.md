@@ -58,14 +58,14 @@ In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/
 <!-- /claude-only -->
 
 ## Execution
-Portable: do steps 1–4 yourself in one pass. List the applicable questions, answer them within the budget, fill `references/scavenge-template.md`, write `.v2p/SCAVENGE.md` (or print it in one code block if you cannot write files), then print `Next: /v2p mapping`.
+Portable: do steps 1–4 yourself in one pass. List the applicable questions, answer them within the budget, fill `references/scavenge-template.md`, write `.v2p/SCAVENGE.md` (or print it in one code block if you cannot write files), then print `Next: /v2p brand`.
 
 <!-- claude-only -->
 ### Claude Code
 1. Main thread reads BRIEF, lists the applicable questions and prints them (≤7 lines).
 2. Spawn in parallel: `planner` (Fable) with Q1–Q5 and the rules above; it returns the filled §1–§5 text and its fetch count (planner does not write files). The main thread writes that result to `.v2p/work/scavenge-q1-5.md` the moment it arrives, before any other action. Brownfield Q6 is copied from `.v2p/AUDIT.md` §1 by the main thread; no subagent.
 3. Q7 (and Q5's social search) runs in **one `quick` subagent, never on the main thread**: the `last30days` skill is ~240 KB, and loading it once per subject exhausted the main context in testing. The subagent invokes the `last30days` skill through the Skill tool **once**, for the first subject (topic: `<subject> changes`). For each remaining subject it reruns the exact engine command that first run used, changing only the topic. Before returning, it writes its result to `.v2p/work/scavenge-q7.md` itself. It returns only the §6 table rows: each row has the finding with its URL, or `none found · searched: /last30days "<topic>"`, or, after two failures, `none found · searched: /last30days failed (<error>)`. Then, for each subject, it reads the official changelog/news page (one reserved fetch) and records entries dated in the last 30 days, or `no entries in window · <URL>`. A community signal is marked confirmed only when that page shows it.
-4. Main thread assembles `.v2p/SCAVENGE.draft.md` from `references/scavenge-template.md` and runs `scripts/finalize-scavenge.sh` until it prints `PASS`, prints the path and `Next: /v2p mapping`.
+4. Main thread assembles `.v2p/SCAVENGE.draft.md` from `references/scavenge-template.md` and runs `scripts/finalize-scavenge.sh` until it prints `PASS`, prints the path and `Next: /v2p brand`.
 
 `AskUserQuestion` only for resume/re-run. Nothing else is asked; open items go to `[OPEN: …]`.
 <!-- /claude-only -->

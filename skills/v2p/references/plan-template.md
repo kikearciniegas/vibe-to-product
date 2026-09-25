@@ -10,7 +10,7 @@ Copy the block below into `.v2p/PLAN.md` and replace every `<…>`. §2–§6 ar
 **Goal:** <one sentence = BRIEF §3 + §4 90-day metric>
 **Architecture:** <2–3 sentences>
 **Tech Stack:** <from §2 below>
-**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md (<or: scavenge: skipped>)
+**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md (<or: scavenge: skipped>) · .v2p/DESIGN.md
 
 ## Global Constraints
 <one line each, verbatim from BRIEF §5 non-goals, §7 constraints, standards hard rules: no `any`, no secrets in client code>
@@ -52,7 +52,7 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 **Files:** …  **Interfaces:** …
 <Files rule: a scaffold/generator task lists the generator's output files (or a glob such as `src/app/*`); every file path named in **Interfaces:** appears in this task's **Files:** or an earlier task's>
 **Verifier:** mechanical: `<command>` → `<expected output/exit code>`   |   manual: <who checks what, where>
-<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '` — never compare raw `wc -l` (macOS pads it). No bare `&`: a server is started by the test runner (e.g. Playwright `webServer`) or by a script that waits for the port. Every `curl` carries `-m <s>`>
+<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '` — never compare raw `wc -l` (macOS pads it). No bare `&`: a server is started by the test runner (e.g. Playwright `webServer`) or by a script that waits for the port. Every `curl` carries `-m <s>`. Tokens task: `sed -n '/^colors:/,/^[a-z]/p' .v2p/DESIGN.md | grep -oE '#[0-9a-fA-F]{6}' | sort -u | while read -r c; do grep -qi "$c" src/app/globals.css || exit 1; done` → exit 0>
 - [ ] Step 1 … (writing-plans step style)
 
 ## 6. Handoff

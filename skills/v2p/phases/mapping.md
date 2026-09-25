@@ -1,7 +1,7 @@
 # v2p phase: mapping
 
 ## Purpose
-Turn BRIEF + SCAVENGE into `.v2p/PLAN.md`: an executable plan with providers, skills, pre-filled standards rows, and tasks that each carry a verifier.
+Turn BRIEF + SCAVENGE + DESIGN into `.v2p/PLAN.md`: an executable plan with providers, skills, pre-filled standards rows, and tasks that each carry a verifier.
 Plan-writing itself follows a plan-writing method (superpowers in Claude Code); v2p adds the sections below.
 
 ## Preconditions
@@ -14,6 +14,10 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 - BRIEF §1 `Code: existing …` → `.v2p/AUDIT.md` must exist and have passed adopt's finalize step. Otherwise print `Run /v2p adopt first.` and stop.
 <!-- claude-only -->
   In Claude Code: `sh <this skill's dir>/scripts/check-pass.sh .v2p/AUDIT.md .v2p/.audit-pass` must print `OK`.
+<!-- /claude-only -->
+- `.v2p/DESIGN.md` must have passed brand's finalize step. Portable: it ends with `Next: /v2p mapping`. Otherwise print `Run /v2p brand first.` and stop. Its Overview `Status: placeholder` → print "DESIGN.md is a placeholder: the tokens task must keep a single swap point; re-theme later via /v2p brand".
+<!-- claude-only -->
+  In Claude Code: `sh <this skill's dir>/scripts/check-pass.sh .v2p/DESIGN.md .v2p/.brand-pass` must print `OK`.
 <!-- /claude-only -->
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
 - Checkpoint: `.v2p/work/mapping-plan.md` is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date; print "resuming from .v2p/work/mapping-plan.md" and do not re-plan. Otherwise it is stale: overwrite it, never read it.
@@ -37,13 +41,14 @@ Closed choices are asked; everything else is defaulted with one line saying so.
 Portable: write `none` in PLAN §3.
 <!-- claude-only -->
 From `references/skills-catalog.md`, list only rows whose "use when" matches the profile / blocks ON and whose status is `installed`. `suggested` rows appear under "Optional, install first"; never auto-installed.
+Design rows, always when the plan has UI tasks: `impeccable | every UI task`, `make-interfaces-feel-better | UI task review (quick) and review (full)`, `apple-design | native-app or gesture UI tasks`, `ui-ux-pro-max + ui-ux-pro-max-extras | tokens task (stack query)`; `animate` (emil) only for an animation or transition task; `img2threejs` only for a 3D object from a photo.
 <!-- /claude-only -->
 
 ## Step 3 — Write the plan
 Read `docs/DECISIONS.md` too when it exists: every open item in a `## From …` section becomes a task or an explicit non-goal in the PLAN.
 Portable: write the plan yourself from `references/plan-template.md`, using BRIEF as the spec. Do not run a separate brainstorm; the BRIEF is the spec.
 <!-- claude-only -->
-Planning runs in the `planner` agent: spawn it with the Agent tool and `subagent_type: "planner"`. Never a general-purpose agent and never a fork (both run on the caller's model). Pass it: BRIEF, SCAVENGE, `docs/DECISIONS.md` if present, the provider decisions, the skills list, the standards files from BRIEF §9, and this instruction: "Use `superpowers:writing-plans` and load `writing-plans-extras` in the same turn. Plan location: `.v2p/PLAN.md` (overrides the skill default). Spec path in the header: `.v2p/BRIEF.md` + `.v2p/SCAVENGE.md`. Add the v2p sections from `references/plan-template.md` around the skill's own task structure. Do not run brainstorming — the BRIEF is the spec." Planner returns the PLAN body; the main thread writes it to `.v2p/work/mapping-plan.md` the moment it arrives (line 1: `written: <YYYY-MM-DDTHH:MM> · phase: mapping · part: plan · brief: <BRIEF written date>`), before any other action.
+Planning runs in the `planner` agent: spawn it with the Agent tool and `subagent_type: "planner"`. Never a general-purpose agent and never a fork (both run on the caller's model). Pass it: BRIEF, SCAVENGE, DESIGN, `docs/DECISIONS.md` if present, the provider decisions, the skills list, the standards files from BRIEF §9, and this instruction: "Use `superpowers:writing-plans` and load `writing-plans-extras` in the same turn. Plan location: `.v2p/PLAN.md` (overrides the skill default). Spec line in the header: `**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md · .v2p/DESIGN.md`. Add the v2p sections from `references/plan-template.md` around the skill's own task structure. Do not run brainstorming — the BRIEF is the spec." Planner returns the PLAN body; the main thread writes it to `.v2p/work/mapping-plan.md` the moment it arrives (line 1: `written: <YYYY-MM-DDTHH:MM> · phase: mapping · part: plan · brief: <BRIEF written date>`), before any other action.
 <!-- /claude-only -->
 
 ## Step 4 — v2p sections (the template enforces them)
@@ -56,7 +61,16 @@ Planning runs in the `planner` agent: spawn it with the Agent tool and `subagent
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap). A review task or a launch task does not belong in §5: review and deploy are phases.
 - Verifier convention: prefer self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains) — execute treats exit 0 as pass and only compares bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '`; never compare raw `wc -l` (macOS left-pads it, so `test "$(… | wc -l)" = 0` never passes). No bare `&` in a Verifier (it backgrounds the whole `&&` chain and races the next command): a server is started by the test runner (e.g. Playwright `webServer`) or by a script with an explicit wait-for-port, on a private port (e.g. `-p 31<nn>`), never a shared default such as 3000. Every `curl` carries `-m <seconds>`. A Verifier command cannot contain a backtick: the parser ends the command there and runs a fragment (match a literal backtick with `.` instead). A verifier that requires several terms checks each one separately (`for w in a b c; do grep -qi "$w" f || exit 1; done`), never one combined count (`grep -c 'a|b|c'` ≥ N passes with one term missing).
 - Files completeness: a scaffold or generator task (create-next-app and the like) lists the generator's output files, or a glob such as `src/app/*`. Every file path named in a task's **Interfaces:** line appears in that task's **Files:** or an earlier task's; name the file, not only the symbol (`publicEnv` in `src/lib/public-env.ts`). A `Modify` path is the full repo path of a file that exists now or that this or an earlier task creates (`src/app/globals.css`, never bare `globals.css`). A task that adds or changes user-facing text lists every locale file in Files (e.g. both `src/i18n/es.json` and `src/i18n/en.json`; 4 of 19 live tasks needed an amendment for this).
+- Design tokens and UI (from `.v2p/DESIGN.md`; its frontmatter is normative, never re-invented): one **tokens task** early in the order. Files = the stylesheet or theme file the stack owns (Next.js + Tailwind v4: `src/app/globals.css`; native: the theme file) plus the font wiring file (fonts via `next/font/google` unless a DESIGN.md Sources `font:` line names another licence). Verifier (mechanical, self-checking): `sed -n '/^colors:/,/^[a-z]/p' .v2p/DESIGN.md | grep -oE '#[0-9a-fA-F]{6}' | sort -u | while read -r c; do grep -qi "$c" src/app/globals.css || exit 1; done` → exit 0, plus `for w in "<display face first word>" "<body face first word>"; do grep -q "$w" <font wiring file> || exit 1; done` → exit 0. A **logo task** when Logo Rules names files that do not exist, or says `pending` (a wordmark from `typography.display`; no skill draws a vector logo). An **imagery task** when Imagery names assets. Every UI task's steps name the design skill it loads (execute's dispatch lists them). The Must-Avoid bullets become the verifier terms of the landing `Anti-"made-by-AI"` row (`references/standards/landing.md`).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
+
+## Cycle 2+ (after a finished cycle was archived)
+When `.v2p/cycles/*/REVIEW.md` exists and `.v2p/PLAN.md` does not (brand's re-theme archived the cycle):
+- Header adds `cycle: <n> · previous: .v2p/cycles/<dir>`.
+- §2 Providers is copied from the archived PLAN unless BRIEF §7 or §8 changed since (no re-asking); `## Architecture`, `## Threat Model` and §4b are copied.
+- §4 Standards = the archived REVIEW §3 verbatim; the rows the new tasks touch go back to `pending` with the evidence cell emptied (the row count is unchanged).
+- §5 holds only the tasks for the delta (re-theme: tokens, fonts, logo, imagery, copy/voice). Planner instruction: "scope: the DESIGN.md delta against `.v2p/work/brand-incumbent.md`; do not re-plan finished work."
+- Execute and review then run unchanged on a new branch.
 
 ## Step 5 — Write and hand off
 Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute`.

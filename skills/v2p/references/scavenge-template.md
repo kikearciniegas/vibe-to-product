@@ -43,7 +43,7 @@ fetches: Q1–Q5 <n>/20 · Q7 <n>/5 · links: <ok>/<total> ok · time: <min> · 
 ## 8. Open
 - [OPEN: <question> — answer needed by <mapping task>]   (or: none)
 
-Next: /v2p mapping
+Next: /v2p brand
 ````
 
 ***

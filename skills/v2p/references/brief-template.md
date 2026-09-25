@@ -28,7 +28,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 
 ## 6. Brand
 - Status: <existing (source: <path/url>) | to-create | none>
-- Palette / type / voice / logo: <… | pending brand phase>
+- Palette / type / voice / logo: <… | pending brand phase (brand writes .v2p/DESIGN.md; "existing (source: pending …)" yields a placeholder DESIGN.md until the guide arrives)>
 - Adjectives: <…> · References: <…> · Must-avoid: <…>
 - Locales: <one | list; translated | per-market>
 

@@ -5,7 +5,7 @@ Copy the block below into `.v2p/REVIEW.draft.md` at review Step 1 and replace ev
 In Claude Code, the `checked:` line is written by `scripts/finalize-review.sh`, which also re-runs every mechanical PLAN verifier; leave it as below.
 <!-- /claude-only -->
 
-Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit.
+Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit. The ux-laws run cell names `DESIGN.md` (the visual review ran against it).
 
 ````
 # REVIEW — <project name>
