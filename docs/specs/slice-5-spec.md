@@ -292,3 +292,15 @@ State: REVIEW sealed at `77c6260`, HEAD `15ff1f3`, 34 deferred rows, Task 18 han
 - **Hook still uninstalled**; subagent hook firing unverified (slice 3 note).
 
 **Paths.** Repo `/Users/user/SynologyDrive/code/ai/claude/Projects/personal_skills/vibe-to-product/`: `skills/v2p/SKILL.md`, `skills/v2p/phases/{review,execute,brand,mapping}.md`, `skills/v2p/references/{review-template,execute-template,plan-template,model-routing,skills-catalog}.md`, `skills/v2p/references/stack/{wiring,security,overview}.md`, `skills/v2p/references/standards/{core,web}.md`, `skills/v2p/scripts/{finalize-review,finalize-execute,check-pass,task-record,archive-cycle,tidy-check,drift-check}.sh`, `skills/v2p/hooks/{guard-finals.sh,hooks.json}`, `tests/{test-finalize-review,test-finalize-brand,test-guard,test-build,fixture-execute}.sh`, `tests/fixtures/finalize-review/REVIEW.md`, `build-portable.sh`, `README.md`, `docs/ROADMAP.md`, `docs/specs/slice-6-spec.md`. Live fixture `/Users/user/tmp/v2p-exec/.worktrees/v2p-execute-2026-09-24/{.v2p/REVIEW.md,.v2p/EXECUTE.md,.v2p/PLAN.md,.env.example,docs/}`. Skills `/Users/user/.claude/skills/{setup-deploy,land-and-deploy,canary,ship}/SKILL.md`, `/Users/user/.claude/skills/gstack/land-and-deploy/sections/{readiness-gate,merge-and-deploy,first-run-validation}.md`, `/Users/user/.claude/skills/gstack/browse/dist/browse`. Plugin `/Users/user/.claude/plugins/cache/claude-plugins-official/claude-security/0.11.0/{README.md,skills/claude-security/SKILL.md,skills/claude-security/jobs/scan-codebase.md,skills/claude-security/specs/report-spec.md,scripts/render_report.py,scripts/write_scan_meta.py,scripts/lib/{finding,plugin}.py}`.
+## 10. User decisions (2026-09-25)
+
+- Security gate: full claude-security scan required; Strix optional (Docker + LLM key), installed only on the user's yes.
+- Mechanism: v2p gates + receipt; shipping delegated to gstack /setup-deploy, /land-and-deploy, /canary. No per-provider deploy scripts.
+- Testing: script/fixture tests only; no real deploy in this slice.
+- Q1 PR creation: **gh pr create** (a).
+- Q2 scan tier: **high or max** accepted; phase runs --effort high (a).
+- Q3 Strix target: repo only, before the merge (a), defaulted as recommended.
+- Q4 traffic-only rows: **post-launch allowed and counted** (a).
+- Q5 receipt: **follow-up PR** `chore: deploy receipt` (a).
+- Q6 rollback evidence: user-attributed `rollback:` line, shape-checked (a), defaulted as recommended.
+- Q7 readiness gate: answer C (skip inline review) citing REVIEW.md + scan (a), defaulted as recommended.
