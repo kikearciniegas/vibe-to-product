@@ -20,10 +20,11 @@
 # command's exit code — mapping's Verifier convention asks for self-checking commands.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); S=$skill/scripts
 usage() { echo "usage: task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; }
-# a reason lands in PLAN-AMENDMENTS.md, which drift-check parses: one line, and none of the grant syntax
+# a reason lands in PLAN-AMENDMENTS.md, which drift-check parses: one line, and none of the grant syntax; note/skip/defer
+# text uses the same check (a multi-line skip text was accepted and broke the record's one-line-per-key shape)
 reason() { case $1 in *"
-"*) echo "ERROR: the reason must be one line" >&2; exit 2 ;;
-  *'files +='*|*'base :='*|*'`'*|*' · task '*) echo "ERROR: the reason must not contain 'files +=', 'base :=', a backtick or ' · task '" >&2; exit 2 ;; esac; }
+"*) echo "ERROR: text must be one line" >&2; exit 2 ;;
+  *'files +='*|*'base :='*|*'`'*|*' · task '*) echo "ERROR: text must not contain 'files +=', 'base :=', a backtick or ' · task '" >&2; exit 2 ;; esac; }
 cmd=$1; n=$2; nb=
 case $cmd in start|verify) dd=$3 ;; manual|note|ponytail|skip|defer) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
 case $n in ''|*[!0-9]*) usage ;; esac
@@ -119,11 +120,11 @@ allow)
   amend_line "files += \`$p\` · $why"
   put files "$(sed -n 's/^files: *//p' "$rec") $p"; seal; echo "allowed: task $n += $p" ;;
 skip)
-  t=$3; [ -n "$t" ] || { echo "ERROR: skip needs a reason" >&2; exit 2; }
+  t=$3; [ -n "$t" ] || { echo "ERROR: skip needs a reason" >&2; exit 2; }; reason "$t"
   fresh || write_start; need
   put verifier "skipped — $t"; put head "$(git rev-parse HEAD)"; seal; echo "skipped: task $n — $t" ;;
 defer)
-  t=$3; [ -n "$t" ] || { echo "ERROR: defer needs the missing credential" >&2; exit 2; }
+  t=$3; [ -n "$t" ] || { echo "ERROR: defer needs the missing credential" >&2; exit 2; }; reason "$t"
   fresh || write_start; need
   put verifier "deferred — $t"; put head "$(git rev-parse HEAD)"; seal; echo "deferred: task $n — $t" ;;
 esac

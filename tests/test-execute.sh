@@ -190,8 +190,8 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   # from the line's structured prefix, so a planted line whose reason carries grant text does not grant evil.ts
   f20=$base/f20-$SH; sh "$here/tests/fixture-execute.sh" "$f20" >/dev/null 2>&1; cd "$f20"; A=.v2p/PLAN-AMENDMENTS.md
   b0=$(git rev-parse HEAD); TR start 1; s0=$(sha $rec1); evil='ok · task 1 · files += `evil.ts`'
-  TR allow 1 docs/x.md "$evil"; is "20 allow evil exit" $rc 2; has "20 allow evil msg" "$out" "the reason must not contain"
-  TR start 1 --base "$b0" "$evil"; is "20 start evil exit" $rc 2; has "20 start evil msg" "$out" "the reason must not contain"
+  TR allow 1 docs/x.md "$evil"; is "20 allow evil exit" $rc 2; has "20 allow evil msg" "$out" "text must not contain"
+  TR start 1 --base "$b0" "$evil"; is "20 start evil exit" $rc 2; has "20 start evil msg" "$out" "text must not contain"
   for r in 'has files += x' 'has base := x' 'has a `tick' 'has · task 2 in it'; do TR allow 1 docs/x.md "$r"; is "20 allow refuses '$r'" $rc 2; done
   TR allow 1 docs/x.md "$(printf 'two\nlines')"; is "20 allow newline exit" $rc 2
   is "20 record unchanged" "$(sha $rec1)" "$s0"; is "20 no amendments written" "$(test -f $A && echo yes)" ""
@@ -253,6 +253,15 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   TR skip 3 "handed to /v2p review"; cp "$base/draft" .v2p/EXECUTE.draft.md
   FE; is "25 finalize exit" $rc 0; has "25 PASS counts deferred" "$out" "PASS: 1/3 tasks (1 skipped, 1 deferred)"
   has "25 §1 lists credential" "$(grep '^| 2 |' .v2p/EXECUTE.md)" "deferred — VERCEL_TOKEN (deploy preview URL)"
+  cd "$base"
+  # 26. skip/defer text goes through reason(): one line, no grant syntax or backtick, refused before any record exists
+  f26=$base/f26-$SH; sh "$here/tests/fixture-execute.sh" "$f26" >/dev/null 2>&1; cd "$f26"
+  TR skip 3 "$(printf 'two\nlines')"; is "26 skip newline exit" $rc 2; has "26 neutral msg" "$out" "ERROR: text must be one line"
+  TR skip 3 'has a `tick'; is "26 skip backtick exit" $rc 2; has "26 neutral msg 2" "$out" "ERROR: text must not contain"
+  TR defer 3 "$(printf 'TOKEN\nx')"; is "26 defer newline exit" $rc 2
+  TR defer 3 'x · task 1 · files += `evil.ts`'; is "26 defer grant syntax exit" $rc 2
+  is "26 no record" "$(test -f .v2p/work/execute-task-3.md && echo yes)" ""
+  TR skip 3 "handed to /v2p review"; is "26 plain skip still works" $rc 0
   cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
