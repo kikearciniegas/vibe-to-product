@@ -55,6 +55,9 @@ for SH in sh zsh; do
   B "mv DESIGN.md .v2p/DESIGN.md"; B "echo x > .v2p/.brand-pass"
   A "sh $S/finalize-brand.sh .v2p"; A "sh $S/archive-cycle.sh .v2p"
   W 0 Write "$P/.v2p/DESIGN.draft.md"; W 0 Write "$t/plain/DESIGN.md"
+  # deploy: .v2p/DEPLOY.md is finalize-deploy.sh's; its seal is covered by the -pass rule
+  W 2 Write "$P/.v2p/DEPLOY.md"; W 2 Edit .v2p/DEPLOY.md; B "echo x > .v2p/DEPLOY.md"; B "cp /tmp/d.md $P/.v2p/DEPLOY.md"; B "echo x > .v2p/.deploy-pass"
+  A "sh $S/finalize-deploy.sh .v2p"; A "cat .v2p/DEPLOY.md"; W 0 Write "$P/.v2p/DEPLOY.draft.md"; A "cp /tmp/d.md .v2p/DEPLOY.draft.md"
   check "allow Read tool" 0 Read "{\"file_path\":\"$P/.v2p/work/.execute-task-5-pass\"}"
 done
 rm -rf "$t"; echo "test-guard: $fails failures"
