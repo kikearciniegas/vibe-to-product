@@ -61,7 +61,7 @@ Every Bash command an impeccable script runs gets the prefix `IMPECCABLE_NO_UPDA
 ## Step 2 — Questions
 One question per decision point; independent ones together:
 1. Direction (to-create, re-theme): up to three candidates, each shown as its token table and a font sample line.
-2. Extras (to-create), one multi-select: competitive research? mockups of the first screen? generated imagery?
+2. Extras (to-create), one multi-select: competitive research? mockups of the first screen? generated imagery? Offer mockups only when gstack reports `DESIGN_READY`, and imagery only when `banana-claude` is enabled with its key; otherwise leave the option out (user decision 2026-09-25: no paid image tools for now; previews are HTML, images come from the user).
 3. Re-theme: which incumbent tokens are kept.
 <!-- claude-only -->
 Claude Code: `AskUserQuestion`; question 1 with `preview` = each candidate's token table + font line; question 2 with `multiSelect: true`. gstack skills ask their own decision briefs; do not duplicate them.
