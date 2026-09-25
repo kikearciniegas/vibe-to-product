@@ -142,6 +142,7 @@ for SH in sh zsh; do
   printf '%s\n' '{"url":"https://fixture.test","pages":[]}' > .gstack/canary-reports/2026-09-25-canary.json; no "10 canary without status" "status is not HEALTHY"; reports
   # the scan stamp
   sub "$P" " · scan: $SC" ''; no "10 no scan" "written: line 'scan: ' is not a CLAUDE-SECURITY-<ts> directory"
+  sub "$P" "scan: $SC" 'scan: .gstack'; no "10 scan not a scan dir" "'scan: .gstack' is not a CLAUDE-SECURITY-<ts> directory here"
   sub "$P" "scan: $SC" 'scan: CLAUDE-SECURITY-20260101-000000'; no "10 scan dir missing" "'scan: CLAUDE-SECURITY-20260101-000000' is not a CLAUDE-SECURITY-<ts> directory here"
   mv "$SC/CLAUDE-SECURITY-REVISION-$S12.json" "$SC/CLAUDE-SECURITY-REVISION-$S12-dirty.json"; no "10 dirty stamp" "scan ran on a dirty/unversioned tree"; stamp "$SCANC"
   cp "$SC/CLAUDE-SECURITY-REVISION-$S12.json" "$SC/CLAUDE-SECURITY-REVISION-000000000000.json"; no "10 two stamps" "needs exactly one CLAUDE-SECURITY-REVISION"; stamp "$SCANC"
