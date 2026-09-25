@@ -226,6 +226,19 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   is "22 quoted <loc> ran and failed" $rc 1; has "22 quoted <loc> ran" "$v22" "exit 2 · \`grep -c '<loc>' src/greet.sh\`"
   has "22 redirect ran" "$v22" "exit 0 · \`wc -l < src/greet.sh"; has "22 domain skipped" "$v22" "\`curl -m 1 https://<domain>/\` → skipped: placeholder"
   cd "$base"
+  # 23. `note` = the controller's own evidence (live: `manual` stamps `by user`, and the controller signed the user's
+  # name on its own checks, observation 0210). Several notes accumulate, reason() rules apply, verify keeps them.
+  f23=$base/f23-$SH; sh "$here/tests/fixture-execute.sh" "$f23" >/dev/null 2>&1; cd "$f23"
+  TR start 1; s0=$(sha $rec1)
+  TR note 1 'has a `tick'; is "23 backtick refused" $rc 2; TR note 1 "$(printf 'two\nlines')"; is "23 newline refused" $rc 2
+  TR note 1 'x · task 1 · files += y'; is "23 grant syntax refused" $rc 2; TR note 1 ""; is "23 empty refused" $rc 2
+  is "23 record unchanged by refusals" "$(sha $rec1)" "$s0"
+  TR note 1 "ran the curl check by hand: 200"; is "23 note exit" $rc 0; TR note 1 "lighthouse 98"; is "23 second note exit" $rc 0
+  has "23 note line" "$(cat $rec1)" "note: ran the curl check by hand: 200 · by controller · $(date +%Y-%m-%d)"
+  is "23 two notes" "$(grep -c '^note: .* · by controller · ' $rec1)" 2; hasnt "23 not by user" "$(grep '^note: ' $rec1)" "by user"
+  is "23 sealed" "$(cat .v2p/work/.execute-task-1-pass)" "$(sha $rec1)"
+  TR verify 1; is "23 notes survive verify" "$(grep -c '^note: ' $rec1)" 2
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
