@@ -10,7 +10,7 @@ copyright='Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.'
   for p in SKILL.md phases/handshake.md references/brief-template.md \
     phases/scavenge.md phases/brand.md references/design-template.md phases/mapping.md references/scavenge-template.md references/plan-template.md \
     phases/adopt.md references/audit-template.md references/tidy-rules.md \
-    phases/execute.md phases/review.md references/execute-template.md references/review-template.md \
+    phases/execute.md phases/review.md phases/deploy.md references/execute-template.md references/review-template.md references/deploy-template.md \
     references/standards/core.md references/standards/web.md references/standards/landing.md \
     references/standards/saas-web.md references/standards/internal-tool.md references/standards/native-app.md \
     references/landing-10-sections.md references/ux-laws.md \

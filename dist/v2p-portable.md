@@ -14,13 +14,13 @@ Blocks between `<!-- claude-only -->` markers apply to Claude Code only; other r
 ## 2. Entry
 Optional argument: `handshake | adopt | scavenge | brand | mapping | execute | review | deploy`.
 
-**Model guard:** before `adopt`, `scavenge`, `brand`, `mapping`, `execute` or `review`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
+**Model guard:** before `adopt`, `scavenge`, `brand`, `mapping`, `execute`, `review` or `deploy`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
 
 **Before asking the first question of any phase — including `adopt` — read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
 
 No argument: probe the directory first. Portable: ask the user whether this folder has code and whether `.v2p/BRIEF.md` exists.
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
-  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/DESIGN.md` → offer `brand`; DESIGN exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
+  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/DESIGN.md` → offer `brand`; DESIGN exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists and no `.v2p/DEPLOY.md` → offer `deploy`; DEPLOY exists → print `live since <written date> at <target>` and offer: redeploy (`deploy`) or re-theme (`brand`).
 - No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
 - No BRIEF and no code → ask "What are we building? One paragraph." and start the handshake. A docs-only folder (README and notes, no code) also goes here; add one line: "`/v2p adopt` merges existing notes into docs/."
 - `/v2p adopt` always runs adopt; with an existing BRIEF it keeps it and runs audit + tidy only.
@@ -57,9 +57,7 @@ AI features, payments, webhooks, i18n, special-category data, GraphQL and file u
 | `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
 | `execute` | `phases/execute.md` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
 | `review` | `phases/review.md` | `.v2p/REVIEW.md` | available |
-| `deploy` | none | none | not available in this version |
-
-For a phase marked "not available in this version", reply exactly that and stop. Do not improvise the phase.
+| `deploy` | `phases/deploy.md` | `.v2p/DEPLOY.md` | available |
 
 ## 6. When to load references
 - Standards: per the profile mapping below, at the end of the handshake (to fill BRIEF §9) and by later phases.
@@ -77,8 +75,9 @@ For a phase marked "not available in this version", reply exactly that and stop.
 - SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
 - DESIGN layout: `references/design-template.md` (brand).
 - EXECUTE and REVIEW layouts: `references/execute-template.md` (execute), `references/review-template.md` (review).
+- DEPLOY layout: `references/deploy-template.md` (deploy).
 - Adopt: `references/tidy-rules.md` (what should exist, what is debris, what is never touched) and `references/audit-template.md` (layout of `.v2p/AUDIT.md`).
-- Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/alternatives.md` only when a BRIEF constraint or a growth trigger needs a non-default provider or the country-eligibility lists; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
+- Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/alternatives.md` only when a BRIEF constraint or a growth trigger needs a non-default provider or the country-eligibility lists; `references/stack/wiring.md` and `references/stack/security.md` by execute/review/deploy (mapping reads them only to cite row ids).
 - Source rule for every v2p file: no `---` horizontal rules (use `***`); the DESIGN.md frontmatter fence is the one exception.
 
 
@@ -929,7 +928,54 @@ Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with
 Portable: write `.v2p/REVIEW.md` from the draft; there is no receipt without the scripts; say so.
 
 ## Step 6 — Hand off
-Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)`, then `Next: /v2p deploy (not available in this version)`.
+Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)`, then `Next: /v2p deploy`.
+
+
+***
+
+<!-- source: phases/deploy.md -->
+# v2p phase: deploy
+
+## Purpose
+Ship the reviewed branch behind a full security scan, complete the deferred evidence on the live site, and seal a receipt. v2p owns the gates; the shipping itself is delegated. Writes `.v2p/DEPLOY.md`.
+
+## Preconditions
+- `.v2p/REVIEW.md` must have passed review's finalize step. Portable: it has a `checked:` line that is not `pending`. Otherwise print `Run /v2p review first.` and stop.
+- Clean tree and HEAD on the branch named in the REVIEW `checked:` line (`branch <b>`); otherwise print what differs and stop.
+- When the PLAN's Spec line names `.v2p/DESIGN.md`, DESIGN.md is still the one brand finalized.
+- A git remote on GitHub and an authenticated GitHub CLI (`gh auth status`): the merge-and-deploy step is GitHub-only and needs a pull request. Otherwise take the portable path below (merge by hand) and say there is no receipt.
+- Existing `.v2p/DEPLOY.md` with its receipt → print `live since <written date> at <target>` and offer: resume (keep it) or redeploy. A redeploy of the same reviewed cycle moves the old receipt aside first (`.v2p/DEPLOY.<date>.md`, on the user's yes); it is never overwritten silently. A re-theme archives it with its cycle.
+- Model guard (router §2).
+- Checkpoints: `.v2p/work/deploy-<step>.md` is reusable when its line 1 `head:` equals the current `git rev-parse HEAD`; otherwise it is stale: overwrite it, never read it.
+
+## Step 0 — Scope
+Print: the PLAN §2 hosting row, `Total monthly at launch`, the commercial answer, the BRIEF §7 budget; the PLAN task execute handed to deploy (EXECUTE §1 `skipped — handed to /v2p deploy`) and its steps; EXECUTE §1 `deferred — <credential>` rows; the count of REVIEW §3 `deferred to deploy` rows and every REVIEW §2 `open:` row (each is closed here: a fix commit, or `accepted:` in §2 of this draft). Start `.v2p/DEPLOY.draft.md` from `references/deploy-template.md` and write `## 0. Target`.
+
+## Step 1 — Security gate
+1. Full security scan of the whole repository at its high effort tier, on a clean tree at HEAD (a scan of a dirty tree does not count). Every finding becomes one §2 row (`id`, `severity`, `path:line`). Record the scan's output directory as `scan:` on the `written:` line and the count in the §1 security-full row.
+2. Fixes: each finding is fixed in its own commit (test first; only the finding's paths), or accepted with a reason. A CRITICAL or HIGH finding is accepted only with the user's reason in their words. Nothing is left `open`. Every commit made after the scan must be a §2 `fixed <sha>`; any other commit means the scan runs again.
+3. Strix (optional white-box pentest of the repository, before the merge; never against production): offered only when Docker runs and an LLM key is configured (check the variable names only; never print a value). Not installed → ask once whether to install it; its installer is `curl -sSL https://strix.ai/install | bash` (verified: 2026-09), so it is read before it runs. Declined or not possible → the strix row reads `unavailable: <reason>`. Run `strix --target .`; each finding is a §2 row with check `strix`.
+Portable: run whatever scanner the user has (or none) and say so; the strix row reads `unavailable: portable`; there is no receipt.
+
+## Step 2 — Provisioning (the PLAN deploy task)
+Walk the deploy task's steps with the user: dashboards, DNS, and secrets into the host's secret store (`references/stack/wiring.md` W27, W30, W33). The user types every value; v2p never asks for, prints or stores one. Write or verify `docs/secrets.md`: every `.env.example` name with its owner, rotation and where it lives, and no value. Then configure the deploy: platform, production URL, deploy trigger, health check, merge method. Copy the production URL's host to `target: https://<host>` on the `written:` line. The credentials of EXECUTE §1 `deferred — <credential>` rows are confirmed as set before the verifiers re-run.
+Portable: the same steps, by hand.
+
+## Step 3 — Go live
+The one-way door: ask once, "Scan clean, runbook done. Open the pull request and deploy now?" On yes: open a pull request from the review branch into the base branch and record `pr: #<n> · base: <base>` on the `written:` line; merge it, wait for the deploy, verify the production URL once, and write the deploy report (verdict `DEPLOYED AND VERIFIED` required). Then watch the site for 10 minutes (overall status `HEALTHY` required). Record both report paths in §1.
+Portable: merge by hand, `curl -m 10 -sI https://<host>` and paste the output; there is no receipt.
+
+## Step 4 — Rollback rehearsal
+The user promotes the previous deployment and rolls forward again (Vercel: Deployments → Promote to Production; Cloudflare Workers: Deployments → Rollback, or `npx wrangler rollback`; Netlify: Deploys → Publish deploy). Ask for the timestamp, the elapsed seconds and the method, and write `rollback: rehearsed <ISO timestamp> · elapsed <n>s · method: <text> · by user`. Also write the same evidence into the log the PLAN names (e.g. `docs/slo.md`) as part of the deploy task's docs commit, before the merge.
+
+## Step 5 — Standards
+Copy REVIEW §3 into draft §3. Every `deferred to deploy` row becomes `done` with evidence from this phase (a command and its output, a report path, a URL), `N/A` citing `BRIEF §`, or `pending | post-launch: <trigger and date>` for what only traffic produces (Core Web Vitals field data, a CSP Report-Only window). Confirm the post-launch set with the user.
+
+## Step 6 — Finalize
+Portable: write `.v2p/DEPLOY.md` from the draft; there is no receipt without the scripts; say so.
+
+## Step 7 — Hand off
+Print the path, the `checked:` counts, `live: https://<host>`, then `Next: live — commit .v2p/DEPLOY.md and .v2p/.deploy-pass on this branch and open the follow-up pull request "chore: deploy receipt"; re-theme with /v2p brand; redeploy with /v2p deploy`.
 
 
 ***
@@ -997,7 +1043,53 @@ Rows: <n> = PLAN §4
 ## 4. Pre-deploy
 pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)
 
-Next: /v2p deploy (not available in this version)
+Next: /v2p deploy
+````
+
+***
+
+<!-- source: references/deploy-template.md -->
+# DEPLOY template
+
+Copy the block below into `.v2p/DEPLOY.draft.md` at deploy Step 0 and replace every `<…>`. §3 starts as a copy of REVIEW §3 and must end complete.
+
+Rules: §1 has the five rows. Results are `<n> findings` (security-full, strix; strix may read `unavailable: <reason>`) or a path (setup-deploy → the project `CLAUDE.md` `## Deploy Configuration` section, land-and-deploy → `.gstack/deploy-reports/<file>.md`, canary → `.gstack/canary-reports/<file>.json`). §2 has one row per security-full or strix finding, status `fixed <commit sha>` or `accepted: <reason>`, never `open`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `post-launch: <trigger and date>`. §4 lines are literal shapes. `target:` is `https://` plus the bare production host, the same host as the project `CLAUDE.md` `Production URL`. No secret value anywhere: names only.
+
+````
+# DEPLOY — <project name>
+checked: pending   ← the finalize step replaces: scan <effort> <sha12> · findings <f> (fixed <x> · accepted <a>) · verifiers <v>/<v> pass · placeholders left <k> · rulings <r> · standards done <d> · N/A <n> · post-launch <p> · live 2/2 · canary HEALTHY · rollback <s>s · branch <b> · head <sha>
+written: <YYYY-MM-DD> by v2p deploy · reads: .v2p/REVIEW.md (<hash, first 12>) · target: https://<host> · scan: CLAUDE-SECURITY-<ts> · pr: #<n> · base: <base branch>
+
+## 0. Target
+host: <PLAN §2 hosting row provider/plan> · commercial: <yes/no, PLAN §2> · total monthly: $<n> (PLAN §2) · budget: $<n> (BRIEF §7) · deploy task: PLAN Task <n> · deferred verifiers: <task list or none>
+
+## 1. Runs
+| check | run (exact command or skill invocation) | result |
+|---|---|---|
+| security-full | <full-repository security scan, effort high> | 2 findings |
+| strix | strix --target . (strix_runs/<run>) | 0 findings   ← or: unavailable: <reason> |
+| setup-deploy | <deploy configuration step> | CLAUDE.md ## Deploy Configuration (platform <p>) |
+| land-and-deploy | <merge + deploy + verify> https://<host> | .gstack/deploy-reports/<date>-pr<n>-deploy.md |
+| canary | <post-deploy watch> https://<host> --duration 10m | .gstack/canary-reports/<date>-canary.json |
+
+## 2. Findings
+| # | check | id | severity | path:line | status |
+|---|---|---|---|---|---|
+| 1 | security-full | F1 | HIGH | src/app/api/contact/route.ts:41 | fixed a1b2c3d |
+Rows: <f> = §1 security-full + strix counts
+
+## 3. Standards (complete)
+| item | file | status | evidence |
+|---|---|---|---|
+| Rollback Strategy | core.md | done | rehearsed 2026-09-26T10:12:00Z · 41s · Vercel promote previous |
+| Core Web Vitals Audit | core.md | pending | post-launch: 28 days of field data, 2026-10-24 |
+Rows: <n> = REVIEW §3
+
+## 4. Live
+rollback: rehearsed <YYYY-MM-DDTHH:MM:SSZ> · elapsed <n>s · method: <what was promoted where> · by user
+secrets: docs/secrets.md · <n> names · values: none
+
+Next: live
 ````
 
 ***

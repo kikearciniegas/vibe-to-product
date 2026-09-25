@@ -1,5 +1,5 @@
 #!/bin/sh
-# Re-theme (or any post-review iteration): move the finished cycle's PLAN, EXECUTE, REVIEW, PLAN-AMENDMENTS and their
+# Re-theme (or any post-review iteration): move the finished cycle's PLAN, EXECUTE, REVIEW, DEPLOY, PLAN-AMENDMENTS and their
 # receipts into .v2p/cycles/<date>/ (the hashes still verify there), so mapping can write a short cycle-2 PLAN and
 # nothing is ever edited under a hash lock. Runs only after the new DESIGN.md passed finalize-brand.sh, so a failed
 # brand run leaves the finished cycle intact. Never touches BRIEF, SCAVENGE, AUDIT or DESIGN.
@@ -16,7 +16,7 @@ if sed -n '2,/^---$/p' "$d/DESIGN.md" | grep -q '^description: *"\{0,1\}PLACEHOL
 dest=$d/cycles/$(date +%Y-%m-%d)
 [ -e "$dest" ] && { echo "FAIL: ${dest#"$root"/} exists (one archive per day)"; exit 1; }
 mkdir -p "$dest"; k=0
-for f in PLAN.md EXECUTE.md REVIEW.md PLAN-AMENDMENTS.md .plan-pass .execute-pass .review-pass; do
+for f in PLAN.md EXECUTE.md REVIEW.md DEPLOY.md PLAN-AMENDMENTS.md .plan-pass .execute-pass .review-pass .deploy-pass; do
   [ -e "$d/$f" ] || continue
   if git ls-files --error-unmatch "$d/$f" >/dev/null 2>&1; then git mv "$d/$f" "$dest/$f"; else mv "$d/$f" "$dest/$f"; fi || { echo "FAIL: could not move $f"; exit 1; }
   k=$((k + 1))

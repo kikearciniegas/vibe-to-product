@@ -1,6 +1,6 @@
 # v2p roadmap
 
-Status as of 2026-09-24. Decisions come from the user; each slice gets a spec in `docs/specs/` before it is built.
+Status as of 2026-09-25. Decisions come from the user; each slice gets a spec in `docs/specs/` before it is built.
 
 ## Done
 - **Slice 1:** router, handshake, standards by profile, portable pack.
@@ -27,13 +27,14 @@ Checks run on a tiered cadence (spec: `docs/specs/slice-4-spec.md` §4):
 | every task | task reviewer | `ponytail-review` on the task's diff (the diff skill; `ponytail-audit` is the whole-repo one) | `finalize-execute.sh` (shape only) |
 | every task | implementer | test-driven development | reviewer prompt (not scripted) |
 | every phase | review, once over the branch | `/review`, `/simplify` + `ponytail-review` → `ponytail-audit`, `/security-review` + `claude-security` (low effort), `translation-quality` when i18n is on, ux-laws + `/design-review`, `/qa`, `/codex review` | `finalize-review.sh` (runs, findings, verifier re-run) |
-| before deploy | slice 5 | a full `claude-security` scan plus a Strix pentest | REVIEW §4 hand-off line |
+| before deploy | deploy, once over the whole repo | a full `claude-security` scan (effort high), Strix when Docker and an LLM key exist, then gstack `/setup-deploy`, `/land-and-deploy`, `/canary` | `finalize-deploy.sh` |
 
 Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` skill; `superpowers:verification-before-completion` is the equivalent.
 
-## Slice 5: deploy
-- Pre-deploy audit and provider choice.
-- Strix: not installed; it needs Docker and an LLM API key. It is installed through the installing-third-party-tools skill when first needed.
+## Slice 5: deploy (built 2026-09-25 · live test pending)
+- **Gate first:** deploy reads the sealed REVIEW.md, runs the full `claude-security` scan (whole repo, effort high) and fixes or accepts every finding; Strix is optional (Docker + an LLM key, installed only on your yes).
+- **Shipping is delegated:** the PLAN's deploy runbook is walked with you (values never pass through v2p), then gstack `/setup-deploy`, a `gh pr create`, `/land-and-deploy <url>` and `/canary <url>`; no per-provider deploy script.
+- **Receipt:** `finalize-deploy.sh` checks the scan stamp and commit accounting, the deploy and canary reports, the merge into `origin/<base>`, every PLAN verifier re-run against the live host, two live curls, the rollback line and the secrets register, then writes the deploy receipt.
 
 ## Cross-cutting
 - **Regression suite:** fixture projects (empty, landing brief, messy brownfield) run headless with `claude -p`. They assert that phase files were read, that the `PASS` lines appear, and that the gates hold. This replaces the manual testing done today.
@@ -49,6 +50,7 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
 ## Open items
 - Slice 6: brand (built 2026-09-25): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`); the test project's guide is still pending, so it re-themes when `brand.pdf` arrives. Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
+- Slice 5 live: a Strix run (needs Docker) and the first real deploy of the fixture (needs a GitHub remote; use a throwaway copy).
 - The duplicate `agent-reach` in `~/.agents/skills` (managed by `npx skills`), not cleaned up.
 
 ***
