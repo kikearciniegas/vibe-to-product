@@ -77,7 +77,8 @@ grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}' > "$tmp.r"
 bad=$(grep '^ruling:' "$draft" | grep -vE '^ruling: task [0-9]+ · plan defect · [^ ].*')
 [ -z "$bad" ] || { echo "FAIL: malformed ruling line(s) (want 'ruling: task <n> · plan defect · <evidence>'):"; printf '%s\n' "$bad"; fail=1; }
 ruled=$(sed -n 's/^ruling: task \([0-9][0-9]*\) · plan defect · [^ ].*/\1/p' "$draft")
-for n in $ruled; do grep -qx "$n" "$tmp.r" || { echo "FAIL: ruling names task $n, not in PLAN"; fail=1; }; done
+unk=$(printf '%s\n' "$ruled" | grep . | grep -vxF -f "$tmp.r")
+[ -z "$unk" ] || { echo "FAIL: ruling names task(s) not in PLAN: $(printf '%s' "$unk" | tr '\n' ' ')"; fail=1; }
 while IFS= read -r n; do
   printf '%s\n' "$skipped" | grep -qx "$n" && continue
   if printf '%s\n' "$ruled" | grep -qx "$n"; then echo "ruling: task $n verifier not re-run (plan defect)"; nr=$((nr + 1)); continue; fi
