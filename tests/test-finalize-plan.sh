@@ -92,6 +92,21 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   rep "$V2" '**Verifier:** mechanical: `grep -c a f` → 1, `echo ok` → `ok`, `test -f "x"` → exit 0   |   manual: open `/` → see it'; is "10c several commands pass" $rc 0
   rep "$V2" '**Verifier:** mechanical: `grep -c a f` → 1, `grep -c '"'"'`b'"'"' f` → 2'; has "10c second command backtick" "$out" "cannot contain a backtick"
   rep "$V2" '**Verifier:** manual: read `@x/y` usage, open `/es/gracias`. Sub-check: `npm run e2e` → exit 0'; is "10c prose pairs before the command pass (live Task 7)" $rc 0
+  # 10d. a Modify path exists now or is Created by this or an earlier task (live Task 17: bare `globals.css`)
+  mf() { rep "$V1" "$V1
+**Files:** $1" "$V2" "$V2
+**Files:** $2"; }
+  mf 'Create `src/app/*`' 'Create `src/x.tsx`; Modify `globals.css`'; is "10d bare globals.css exit" $rc 1
+  has "10d bare globals.css" "$out" "FAIL: Task 2 Files: Modify \`globals.css\` is neither in the repo nor in a Create of Tasks 1-2"
+  mf 'Create `src/app/*`' 'Modify `src/app/globals.css`, `src/app/[locale]/page.tsx`'; is "10d created by an earlier glob" $rc 0
+  mf 'Modify `src/app/page.tsx`' 'Create `src/app/*`'; has "10d later Create does not count" "$out" "FAIL: Task 1 Files: Modify \`src/app/page.tsx\`"
+  mf 'Create `src/a.ts`, Modify `src/a.ts`' 'Modify `src/a.ts`'; is "10d same-task Create counts" $rc 0
+  mkdir -p "$w/src"; echo x > "$w/src/old.ts"; echo x > "$w/next.config.ts"
+  mf 'Modify `src/old.ts`' "Modify \`next.config.ts\` (\`withSentryConfig\`, \`tunnelRoute: '/x'\`), \`src/old.ts\` (\`legal.*\`)"; is "10d existing files, code tokens ignored" $rc 0
+  mf 'Modify `lib/*.ts`' 'Modify `src/{old,new}.ts`'; has "10d glob matches nothing" "$out" "Modify \`lib/*.ts\` is neither"
+  has "10d brace: missing alternative" "$out" "Modify \`src/new.ts\` is neither"; hasnt "10d brace: existing alternative" "$out" "\`src/old.ts\` is neither"
+  mf 'Modify `src/*.ts`' 'Create `src/sections/{Hero,Faq}.tsx`; Modify `src/sections/*.tsx`'; is "10d globs match existing / created paths" $rc 0
+  rm -r "$w/src" "$w/next.config.ts"
   rep "$V2" "$V2
 **Files:** Create \`src/booking.ts\`  **Interfaces:** Produces \`book()\` in \`src/booking/api.ts\`"
   is "10 files exit" $rc 1; has "10 iface path missing" "$out" "FAIL: Task 2 Interfaces names \`src/booking/api.ts\`, absent from the Files of Tasks 1-2"

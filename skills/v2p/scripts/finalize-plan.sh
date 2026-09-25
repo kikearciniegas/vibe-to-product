@@ -40,6 +40,10 @@ fi
 # backticks keep the count even and pass: the rule catches the live shape, not every one.
 # Files completeness: a backticked Interfaces path (has `/` and an extension; not a URL or a route) must appear
 # in the Files of this task or an earlier one (`{a,b}` and `*` in Files are expanded / matched).
+# Modify paths (live Task 17 wrote bare `globals.css` for src/app/globals.css): a token after `Modify`, up to the next
+# `Create`/`;`/end, must exist in the repo now or be matched by a Create of Tasks 1-t (any Files text outside a Modify
+# segment counts as Create). A code token is skipped: a character drift-check would ignore, or neither `/` nor an
+# extension (`withSentryConfig`, `legal.*`). Braces expand; a glob must match one existing or created path.
 lint=$(awk -v q="'" '
   function bt(s,   o) { o = ""; while (match(s, /`[^`]*`/)) { o = o substr(s, RSTART + 1, RLENGTH - 2) "\n"; s = substr(s, RSTART + RLENGTH) } return o }
   function expand(t, arr,   pre, mid, post, k, i, p) {
@@ -52,6 +56,19 @@ lint=$(awk -v q="'" '
   function addfiles(s,   k, i, tok, a, j) { k = split(bt(s), tok, "\n")
     for (i = 1; i <= k; i++) { sub(/ .*/, "", tok[i]); gsub(/<[^>]*>/, "*", tok[i]); if (tok[i] == "") continue
       delete a; a[0] = 0; expand(tok[i], a); for (j = 1; j <= a[0]; j++) fre[++nf] = g2re(a[j]) } }
+  function addcreated(s,   k, i, tok, a, j) { k = split(bt(s), tok, "\n")
+    for (i = 1; i <= k; i++) { sub(/ .*/, "", tok[i]); gsub(/<[^>]*>/, "*", tok[i]); if (tok[i] == "") continue
+      delete a; a[0] = 0; expand(tok[i], a); for (j = 1; j <= a[0]; j++) { cl[++nc] = a[j]; cre[nc] = g2re(a[j]) } } }
+  function modify(f,   m, rest, k, i, tok, a, j, x, e, ok) { m = ""; rest = ""
+    while (match(f, /Modify/)) { rest = rest substr(f, 1, RSTART - 1); f = substr(f, RSTART + RLENGTH)
+      if (match(f, /Create|;/)) { m = m substr(f, 1, RSTART - 1) " "; f = substr(f, RSTART) } else { m = m f; f = "" } }
+    addcreated(rest f); k = split(bt(m), tok, "\n")
+    for (i = 1; i <= k; i++) { sub(/ .*/, "", tok[i]); gsub(/<[^>]*>/, "*", tok[i]); x = tok[i]; gsub(/[A-Za-z0-9._\/@+*?{},-]/, "", x); gsub(/\[|\]/, "", x)
+      if (tok[i] == "" || x != "" || tok[i] !~ /\/|\.[A-Za-z0-9]+$/) continue
+      delete a; a[0] = 0; expand(tok[i], a)
+      for (j = 1; j <= a[0]; j++) { ok = 0; e = g2re(a[j])
+        for (x = 1; x <= nc; x++) if (a[j] ~ cre[x] || (a[j] ~ /[*?]/ && cl[x] ~ e)) { ok = 1; break }
+        if (!ok) print "MODIFY\t" t "\t" a[j] } } }
   function flush(   i, j, ok) { for (i = 1; i <= ni; i++) { ok = 0
       for (j = 1; j <= nf; j++) if (ip[i] ~ fre[j]) { ok = 1; break }
       if (!ok) print "FAIL: Task " t " Interfaces names `" ip[i] "`, absent from the Files of Tasks 1-" t }
@@ -62,7 +79,7 @@ lint=$(awk -v q="'" '
       for (j = 1; j <= a[0]; j++) if (a[j] ~ /\/[^\/]*\.[A-Za-z0-9]+$/) ip[++ni] = a[j] } }
   /^### Task / { flush(); t = $3; sub(/:$/, "", t) }
   /^## / { flush() }
-  /^\*\*Files:\*\*/ { f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f) }
+  /^\*\*Files:\*\*/ { f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f); modify(f) }
   /^\*\*Interfaces:\*\*/ { addiface($0) }
   /^\*\*Verifier:\*\*/ { s = bt($0); if (s == "") s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
     c = s; gsub(/wc -l *\| *tr -d/, "", c)
@@ -75,7 +92,13 @@ lint=$(awk -v q="'" '
       if (gsub(/`/, "", c) % 2) { r = r "; a Verifier command cannot contain a backtick (the parser cuts there)"; break } }
     if (r != "") print "FAIL: Task " t " Verifier: " substr(r, 3) }
   END { flush() }' "$draft")
+mods=$(printf '%s\n' "$lint" | sed -n 's/^MODIFY	//p'); lint=$(printf '%s\n' "$lint" | grep -v '^MODIFY	')
 [ -z "$lint" ] || { printf '%s\n' "$lint"; fail=1; }
+root=$(dirname "$d")
+mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || continue
+  case $p in (*[*?]*) [ -n "$(find "$root" \( -name node_modules -o -name .git \) -prune -o -path "$root/$p" -print | head -n 1)" ] ;; (*) [ -e "$root/$p" ] ;; esac ||
+    echo "FAIL: Task $t Files: Modify \`$p\` is neither in the repo nor in a Create of Tasks 1-$t"; done)
+[ -z "$mf" ] || { printf '%s\n' "$mf"; fail=1; }
 [ "$fail" -eq 0 ] || { echo "FAIL: $out not written"; exit 1; }
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
