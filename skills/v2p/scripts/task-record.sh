@@ -74,7 +74,10 @@ verify)
   while IFS= read -r m; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     [ -n "$res" ] && sep='; ' || sep=' · '
-    case $c in *'<'*) res="$res$sep\`$c\` → skipped: placeholder"; continue ;; esac
+    # placeholder = an unquoted `<word>` (`https://<domain>`); a quoted one is data (`grep -c '<loc>'`) and `< file` is
+    # a redirect — both run. Erring toward running is the safe side: a wrong run fails, a wrong skip passes unseen.
+    if printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>'; then
+      res="$res$sep\`$c\` → skipped: placeholder"; continue; fi
     # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh above) — by design,
     # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)

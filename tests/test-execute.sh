@@ -216,6 +216,16 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   has "21 injection token ignored" "$out" 'note: ignored non-path Files token $(touch'; is "21 no PWNED" "$(test -f PWNED && echo yes)" ""
   echo x > other.ts; DC 2; is "21 still scoped exit" $rc 1; has "21 other.ts drift" "$out" "DRIFT file other.ts"
   cd "$base"
+  # 22. placeholder = an UNQUOTED `<word>` only (live PLAN Task 15: `grep -c '<loc>'` was skipped and sealed a pass
+  # without running). Quoted `<loc>` and a `< file` redirect run; unquoted `https://<domain>` is still skipped.
+  f22=$base/f22-$SH; sh "$here/tests/fixture-execute.sh" "$f22" >/dev/null 2>&1; cd "$f22"
+  sed "s|^\*\*Verifier:\*\* mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1|**Verifier:** mechanical: \`grep -c '<loc>' src/greet.sh\` → 1, \`wc -l < src/greet.sh \| tr -d ' '\` → 1, \`curl -m 1 https://<domain>/\` → 200|" .v2p/PLAN.md > "$base/p22" && mv "$base/p22" .v2p/PLAN.md
+  grep -q "'<loc>'" .v2p/PLAN.md; is "22 fixture edited" $? 0
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: placeholder forms'
+  TR start 2; TR verify 2; v22=$(grep '^verifier:' .v2p/work/execute-task-2.md)
+  is "22 quoted <loc> ran and failed" $rc 1; has "22 quoted <loc> ran" "$v22" "exit 2 · \`grep -c '<loc>' src/greet.sh\`"
+  has "22 redirect ran" "$v22" "exit 0 · \`wc -l < src/greet.sh"; has "22 domain skipped" "$v22" "\`curl -m 1 https://<domain>/\` → skipped: placeholder"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

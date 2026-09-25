@@ -76,7 +76,8 @@ while IFS= read -r n; do
   awk -v n="$n" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Verifier:\*\*/ {print; exit}' "$plan" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"
   while IFS= read -r m; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
-    case $c in *'<'*) continue ;; esac
+    # same rule as task-record.sh: only an unquoted `<word>` is a placeholder; `'<loc>'` and `< file` run
+    printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>' && continue
     vt=$((vt + 1)); echo "run: task $n: $c"
     # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh) — by design,
     # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
