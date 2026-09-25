@@ -94,6 +94,18 @@ for SH in sh zsh; do
   cp "$base/p14-$SH" "$P"; printf 'ruling: task 2 · plan defect · grep target moved; property checked by hand\n' >> "$P"
   FR; is "14 ruled exit" $rc 0; has "14 ruled not re-run" "$out" "ruling: task 2 verifier not re-run (plan defect)"
   has "14 PASS counts it" "$out" "rulings 1 ->"; has "14 checked counts it" "$(grep '^checked:' .v2p/REVIEW.md)" "· rulings 1 ·"
+  # 15. brand: a PLAN whose Spec line names .v2p/DESIGN.md (mapped after /v2p brand) needs DESIGN.md to match its
+  # receipt and the ux-laws run cell to name DESIGN.md; a pre-brand PLAN (no mention) skips both
+  rm .v2p/REVIEW.md .v2p/.review-pass; cp "$base/p14-$SH" "$P"; printf 'ruling: task 2 · plan defect · grep target moved; property checked by hand\n' >> "$P"; cp "$P" "$base/p15-$SH"
+  mv .v2p/.brand-pass "$base/bp"; FR; is "15 pre-brand plan skips the brand checks" $rc 0
+  rm .v2p/REVIEW.md .v2p/.review-pass; cp "$base/p15-$SH" "$P"
+  awk '{print} /^# Fixture Implementation Plan$/ {print "**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md · .v2p/DESIGN.md"}' .v2p/PLAN.md > "$base/pl15" && cat "$base/pl15" > .v2p/PLAN.md
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  FR; is "15 no brand receipt exit" $rc 1; has "15 no brand receipt" "$out" "FAIL: DESIGN.md does not match its receipt"
+  mv "$base/bp" .v2p/.brand-pass; FR; hasnt "15 receipt back" "$out" "DESIGN.md does not match"; has "15 ux-laws cell" "$out" "FAIL: §1 ux-laws run cell does not name DESIGN.md"
+  sub '| ux-laws | references/ux-laws.md + /design-review |' '| ux-laws | references/ux-laws.md + /design-review http://localhost:3101 against DESIGN.md |'
+  cp .v2p/DESIGN.md "$base/dm"; echo x >> .v2p/DESIGN.md; FR; has "15 DESIGN.md edited after brand" "$out" "FAIL: DESIGN.md does not match its receipt"; cp "$base/dm" .v2p/DESIGN.md
+  FR; is "15 brand checks pass" $rc 0
   cd "$base"
 done
 SH=all; is "12 source untouched" "$(shasum -a 256 < "$src")" "$sum0"

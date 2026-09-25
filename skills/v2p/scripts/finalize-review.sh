@@ -1,8 +1,9 @@
 #!/bin/sh
 # Promote .v2p/REVIEW.draft.md to .v2p/REVIEW.md only if EXECUTE.md matches its receipt, §1 has every required run,
 # §2 accounts for every finding (fix commits exist), §3 completes PLAN §4 (pending only as deferred to deploy),
-# the draft covers the current HEAD, the tree is clean on the execute branch, and every mechanical PLAN verifier
-# still passes when re-run here (expect minutes). Usage: sh finalize-review.sh [.v2p dir]
+# the draft covers the current HEAD, the tree is clean on the execute branch, every mechanical PLAN verifier
+# still passes when re-run here (expect minutes), and (post-brand plans) DESIGN.md matches its receipt.
+# Usage: sh finalize-review.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; fail=0
 [ -d "$d" ] || { echo "FAIL: $d not found"; exit 1; }
 d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 1
@@ -27,6 +28,13 @@ while IFS= read -r c; do nreq=$((nreq + 1))
   elif [ "$c" = codex ] && printf '%s\n' "$fc" | grep -qE '^unavailable: .+'; then runs=$((runs + 1))
   else echo "FAIL: §1 $c findings cell '$fc' (want '<n> findings'$( [ "$c" = codex ] && echo " or 'unavailable: <reason>'"))"; fail=1; fi
 done < "$tmp.c"
+# 3b. brand: a PLAN whose Spec line names .v2p/DESIGN.md (mapped after /v2p brand; hash-locked, so the mention cannot be
+# dropped to dodge this) needs DESIGN.md to match its receipt and the ux-laws run cell to name DESIGN.md. Pre-brand plans skip.
+if grep -q '\.v2p/DESIGN\.md' "$plan"; then
+  sh "$skill/scripts/check-pass.sh" "$d/DESIGN.md" "$d/.brand-pass" >/dev/null || { echo "FAIL: DESIGN.md does not match its receipt (run /v2p brand again or restore it)"; fail=1; }
+  ux=$(awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); if (s=="ux-laws") {r=""; for (i=3;i<NF-1;i++) r=r $i; print r; exit}}' "$tmp.r")
+  case $ux in *DESIGN.md*) ;; *) echo "FAIL: §1 ux-laws run cell does not name DESIGN.md"; fail=1 ;; esac
+fi
 # 4. §2 findings: one row per finding; status fixed <sha> | accepted: … | open: <deploy or BRIEF §>
 rows '## 2.' "$draft" > "$tmp.f"; nf=$(grep -c . "$tmp.f")
 [ "$nf" -eq "$fsum" ] || { echo "FAIL: §2 rows $nf, §1 findings sum $fsum"; fail=1; }
