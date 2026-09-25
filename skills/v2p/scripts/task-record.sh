@@ -2,7 +2,8 @@
 # The only writer of execute's per-task records (.v2p/work/execute-task-<n>.md + receipt .execute-task-<n>-pass)
 # and of .v2p/PLAN-AMENDMENTS.md. PLAN.md is never edited: scope granted mid-execute is appended here.
 # Usage: sh task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p]   (exit 0 ok · 1 fail · 2 usage)
-#   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt
+#   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt;
+#                              a task touching UI files is refused while .v2p/DESIGN.md does not match .v2p/.brand-pass
 #   start <n> --base <sha> "<why>"  re-start: replaces any record for <n> (verifier/manual/ponytail reset) with base
 #                              <sha> (an ancestor of HEAD); appends `base := <sha> (was <old>)` to PLAN-AMENDMENTS.md
 #   verify <n>                 drift-check.sh <n>, then every mechanical Verifier command of the task; writes the result
@@ -46,9 +47,15 @@ sealed() { [ -f "$rec" ] && [ -f "$pass" ] && [ "$(shasum -a 256 "$rec" | cut -d
 put() { K=$1 awk 'skip && /^  /{next} {skip=0} index($0, ENVIRON["K"] ": ")==1 || $0==ENVIRON["K"] ":" {skip=1; next} {print}' "$rec" > "$tmp"
   printf '%s: %s\n' "$1" "$2" | sed 's/: $/:/' >> "$tmp"; [ -n "$3" ] && sed 's/^/  /' "$3" >> "$tmp"; mv "$tmp" "$rec"; }
 tline() { awk -v n="$n" -v k="$1" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && index($0, "**" k ":**")==1 {print; exit}' "$plan"; }
+ftoks() { tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g'; }
+# UI gate: a task whose Files name a UI file starts only while .v2p/DESIGN.md matches its receipt (brand before UI work)
+# ponytail: extension heuristic; a .ts styling file (vanilla-extract) passes — extend the list when it bites.
+uigate() { ui=$(ftoks | grep -E '\.(tsx|jsx|vue|svelte|css|scss|html|swift|kt|dart)$|(^|/)tailwind\.config\.' | head -n 1)
+  [ -z "$ui" ] || sh "$S/check-pass.sh" "$d/DESIGN.md" "$d/.brand-pass" >/dev/null ||
+    { echo "ERROR: task $n touches UI files ($ui) and .v2p/DESIGN.md has no valid receipt: run /v2p brand" >&2; exit 2; }; }
 write_start() { b=${1:-$(git rev-parse HEAD)}
   title=$(sed -n "s/^### Task $n: //p" "$plan" | head -n 1)
-  files=$(tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g' | tr '\n' ' ' | sed 's/ $//')
+  files=$(ftoks | tr '\n' ' ' | sed 's/ $//')
   tidy=$(sh "$S/tidy-check.sh" --tsv "$root" | grep -c .)
   printf 'written: %s · phase: execute · part: task-%s · plan: %s\ntask: %s · title: %s\nbranch: %s · base: %s · tidy: %s\nfiles: %s\nverifier: pending · attempts: 0\n' \
     "$(now)" "$n" "$planpass" "$n" "$title" "$(git rev-parse --abbrev-ref HEAD)" "$b" "$tidy" "$files" > "$rec"; seal; }
@@ -63,10 +70,10 @@ start)
     b=$(git rev-parse -q --verify "$nb^{commit}") || { echo "ERROR: --base $nb does not resolve to a commit" >&2; exit 2; }
     git merge-base --is-ancestor "$b" HEAD || { echo "ERROR: --base $nb is not an ancestor of HEAD" >&2; exit 2; }
     old=; [ -f "$rec" ] && old=$(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec" | head -n 1)
-    amend_line "base := $b (was ${old:-none}) · $why"; write_start "$b"; echo "restarted: task $n (base $b, was ${old:-none})"; exit 0; fi
+    uigate; amend_line "base := $b (was ${old:-none}) · $why"; write_start "$b"; echo "restarted: task $n (base $b, was ${old:-none})"; exit 0; fi
   if fresh; then sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }
     echo "resume: task $n (base $(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec"))"; exit 0; fi
-  write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
+  uigate; write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
 verify)
   need; k=$(sed -n 's/^verifier: .*attempts: \([0-9]*\).*/\1/p' "$rec"); k=$(( ${k:-0} + 1 ))
   dc=$(sh "$S/drift-check.sh" "$n" "$d" 2>&1); rc=$?

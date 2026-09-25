@@ -263,6 +263,17 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   is "26 no record" "$(test -f .v2p/work/execute-task-3.md && echo yes)" ""
   TR skip 3 "handed to /v2p review"; is "26 plain skip still works" $rc 0
   cd "$base"
+  # 27. UI gate: a task whose Files name a UI file (Task 2: app/[locale]/page.tsx) starts only while .v2p/DESIGN.md
+  # matches its receipt (brand before UI work); Task 1 (.sh files only) is not gated
+  f27=$base/f27-$SH; sh "$here/tests/fixture-execute.sh" "$f27" >/dev/null 2>&1; cd "$f27"
+  mv .v2p/.brand-pass "$base/bp27"
+  TR start 2; is "27 no receipt exit" $rc 2; has "27 no receipt msg" "$out" "ERROR: task 2 touches UI files (app/[locale]/page.tsx) and .v2p/DESIGN.md has no valid receipt: run /v2p brand"
+  is "27 no record" "$(test -f .v2p/work/execute-task-2.md && echo yes)" ""
+  TR start 2 --base "$(git rev-parse HEAD)" "start ran late"; is "27 --base also gated" $rc 2
+  TR start 1; is "27 non-UI task not gated" $rc 0
+  mv "$base/bp27" .v2p/.brand-pass; echo x >> .v2p/DESIGN.md; TR start 2; is "27 edited DESIGN.md exit" $rc 2
+  git checkout -q -- .v2p/DESIGN.md; TR start 2; is "27 receipt matches → start" $rc 0
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
