@@ -74,6 +74,13 @@ for SH in sh zsh; do
   FR; is "11 exit" $rc 0; has "11 PASS" "$out" "PASS: runs 7/7"
   has "11 checked" "$(grep '^checked: ' .v2p/REVIEW.md)" "checked: runs 7/7 · findings 3 (fixed 1 · accepted 1 · open 1) · standards done 192 · N/A 0 · deferred 1 · verifiers 2/2 pass"
   is "11 receipt" "$(cat .v2p/.review-pass)" "$(shasum -a 256 .v2p/REVIEW.md | cut -d' ' -f1)"; is "11 draft gone" "$(test -f "$P" && echo yes)" ""
+  # 13. a deferred task's verifier is not re-run (live: it needs a credential that does not exist until deploy).
+  # EXECUTE §1 row 1 re-written as deferred and re-sealed; a committed change breaks task 1's verifier only.
+  rm .v2p/REVIEW.md .v2p/.review-pass; cp "$base/good-$SH" "$P"
+  awk -F'|' -v OFS='|' '/^\| 1 \|/ { $5 = " deferred — VERCEL_TOKEN " } { print }' .v2p/EXECUTE.md > "$base/ex13" && cat "$base/ex13" > .v2p/EXECUTE.md
+  shasum -a 256 .v2p/EXECUTE.md | cut -d' ' -f1 > .v2p/.execute-pass
+  printf 'echo hi there\n' > src/greet.sh; git commit -qam 'change greeting'; sub "..$H" "..$(git rev-parse HEAD)"
+  FR; is "13 deferred exit" $rc 0; hasnt "13 deferred not re-run" "$out" "run: task 1"; has "13 others still run" "$out" "run: task 2:"
   cd "$base"
 done
 SH=all; is "12 source untouched" "$(shasum -a 256 < "$src")" "$sum0"

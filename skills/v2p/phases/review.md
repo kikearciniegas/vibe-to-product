@@ -65,7 +65,7 @@ Claude Code: `planner` audits the table read-only and returns the rows whose evi
 ## Step 5 — Finalize
 Portable: write `.v2p/REVIEW.md` from the draft; there is no receipt without the scripts; say so.
 <!-- claude-only -->
-Claude Code: `sh <this skill's dir>/scripts/finalize-review.sh .v2p` until it prints `PASS`. It checks every required run row, one §2 row per finding (fix commits exist), §3 against PLAN §4, the draft's head = HEAD, the branch and a clean tree, and it re-runs every mechanical PLAN verifier of the tasks EXECUTE did not skip (expect minutes). It writes `REVIEW.md`, the receipt `.v2p/.review-pass`, and clears `.v2p/work/review-*`. Never write `REVIEW.md` by hand.
+Claude Code: `sh <this skill's dir>/scripts/finalize-review.sh .v2p` until it prints `PASS`. It checks every required run row, one §2 row per finding (fix commits exist), §3 against PLAN §4, the draft's head = HEAD, the branch and a clean tree, and it re-runs every mechanical PLAN verifier of the tasks EXECUTE did not skip or defer (expect minutes). It writes `REVIEW.md`, the receipt `.v2p/.review-pass`, and clears `.v2p/work/review-*`. Never write `REVIEW.md` by hand.
 <!-- /claude-only -->
 
 ## Step 6 — Hand off

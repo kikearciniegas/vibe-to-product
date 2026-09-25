@@ -67,8 +67,9 @@ dh=$(sed -n 's/^written: .*diff: [^ ]*\.\.\([0-9a-f]*\).*/\1/p' "$draft" | head 
 pre=$(git rev-parse --show-prefix)
 dirty=$(git status --porcelain --untracked-files=all -- . | grep -v "^.. ${pre}\.v2p/" | cut -c4- | tr '\n' ' ')
 [ -z "$dirty" ] || { echo "FAIL: uncommitted: ${dirty% }"; fail=1; }
-# 9. re-run every mechanical verifier of the tasks EXECUTE §1 did not skip (same strict parser as task-record.sh)
-skipped=$(rows '## 1.' "$ex" | awk -F'|' '{t=$2; v=$5; gsub(/ /,"",t); gsub(/^ +/,"",v); if (v ~ /^skipped/) print t}')
+# 9. re-run every mechanical verifier of the tasks EXECUTE §1 did not skip or defer (same strict parser as task-record.sh);
+# a deferred one needs a credential that does not exist until deploy (live incident), and deploy re-checks it
+skipped=$(rows '## 1.' "$ex" | awk -F'|' '{t=$2; v=$5; gsub(/ /,"",t); gsub(/^ +/,"",v); if (v ~ /^(skipped|deferred)/) print t}')
 vt=0; vp=0
 grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}' > "$tmp.r"
 while IFS= read -r n; do
