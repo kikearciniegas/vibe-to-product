@@ -90,7 +90,7 @@ for SH in sh zsh; do
   cp "$base/p14-$SH" "$P"; printf 'ruling: task 2 plan defect\n' >> "$P"
   FR; is "14 malformed exit" $rc 1; has "14 malformed msg" "$out" "FAIL: malformed ruling line"
   cp "$base/p14-$SH" "$P"; printf 'ruling: task 9 · plan defect · x\n' >> "$P"
-  FR; is "14 unknown task exit" $rc 1; has "14 unknown task msg" "$out" "FAIL: ruling names task 9"
+  FR; is "14 unknown task exit" $rc 1; has "14 unknown task msg" "$out" "FAIL: ruling names task(s) not in PLAN: 9"
   cp "$base/p14-$SH" "$P"; printf 'ruling: task 2 · plan defect · grep target moved; property checked by hand\n' >> "$P"
   FR; is "14 ruled exit" $rc 0; has "14 ruled not re-run" "$out" "ruling: task 2 verifier not re-run (plan defect)"
   has "14 PASS counts it" "$out" "rulings 1 ->"; has "14 checked counts it" "$(grep '^checked:' .v2p/REVIEW.md)" "· rulings 1 ·"
