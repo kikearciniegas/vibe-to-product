@@ -1,6 +1,6 @@
 ---
 name: v2p
-description: Turn an idea or AI prototype into a production product. Use when the user says "v2p", "vibe to product", wants to start/plan/harden/ship an app, landing page, SaaS, internal tool or mobile app, or asks "what are we building". Runs a short interview (handshake) that writes .v2p/BRIEF.md, or adopts an existing/half-built codebase (scans it, derives the BRIEF, audits and tidies), then routes to later phases, then executes the plan with per-task drift checks and reviews the branch.
+description: Turn an idea or AI prototype into a production product. Use when the user says "v2p", "vibe to product", wants to start/plan/harden/ship an app, landing page, SaaS, internal tool or mobile app, or asks "what are we building". Runs a short interview (handshake) that writes .v2p/BRIEF.md, or adopts an existing/half-built codebase (scans it, derives the BRIEF, audits and tidies), then routes to later phases, writes the brand's DESIGN.md before planning, then executes the plan with per-task drift checks and reviews the branch.
 ---
 
 # v2p — vibe to product (router)
@@ -13,9 +13,9 @@ Receipts, every phase: when a v2p script or gate refuses or blocks, stop and sho
 Blocks between `<!-- claude-only -->` markers apply to Claude Code only; other runtimes skip them.
 
 ## 2. Entry
-Optional argument: `handshake | adopt | scavenge | mapping | execute | review | deploy`.
+Optional argument: `handshake | adopt | scavenge | brand | mapping | execute | review | deploy`.
 
-**Model guard:** before `adopt`, `scavenge`, `mapping`, `execute` or `review`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
+**Model guard:** before `adopt`, `scavenge`, `brand`, `mapping`, `execute` or `review`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
 
 **Before asking the first question of any phase — including `adopt` — read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
 
@@ -24,7 +24,7 @@ No argument: probe the directory first. Portable: ask the user whether this fold
 Claude Code: run `sh <this skill's dir>/scripts/tidy-check.sh --probe` and print its one line (`root:… code:yes|no git:… branch:… brief:yes|none audit:yes|no`); decide from it, not by judgement.
 <!-- /claude-only -->
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
-  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
+  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/DESIGN.md` → offer `brand`; DESIGN exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
 - No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
 - No BRIEF and no code → ask "What are we building? One paragraph." and start the handshake. A docs-only folder (README and notes, no code) also goes here; add one line: "`/v2p adopt` merges existing notes into docs/."
 - `/v2p adopt` always runs adopt; with an existing BRIEF it keeps it and runs audit + tidy only.
@@ -57,6 +57,7 @@ AI features, payments, webhooks, i18n, special-category data, GraphQL and file u
 | `handshake` | `phases/handshake.md` | `.v2p/BRIEF.md` | available |
 | `adopt` | `phases/adopt.md` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
 | `scavenge` | `phases/scavenge.md` | `.v2p/SCAVENGE.md` | available |
+| `brand` | `phases/brand.md` | `.v2p/DESIGN.md` (+ root `DESIGN.md` symlink) | available |
 | `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
 | `execute` | `phases/execute.md` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
 | `review` | `phases/review.md` | `.v2p/REVIEW.md` | available |
@@ -78,15 +79,16 @@ For a phase marked "not available in this version", reply exactly that and stop.
 - `references/ux-laws.md`: at any UI review, and at review.
 - BRIEF layout: `references/brief-template.md`.
 - SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
+- DESIGN layout: `references/design-template.md` (brand).
 - EXECUTE and REVIEW layouts: `references/execute-template.md` (execute), `references/review-template.md` (review).
 - Adopt: `references/tidy-rules.md` (what should exist, what is debris, what is never touched) and `references/audit-template.md` (layout of `.v2p/AUDIT.md`).
 - Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/alternatives.md` only when a BRIEF constraint or a growth trigger needs a non-default provider or the country-eligibility lists; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
 <!-- claude-only -->
 - `references/model-routing.md`: before delegating any phase work.
 - `references/skills-catalog.md`: at mapping step 2.
-- `scripts/`: `tidy-check.sh` (probe + tidy; reusable as the tidy drift check), `quarantine.sh`, `finalize-scavenge.sh`, `finalize-audit.sh`, `finalize-plan.sh`, `check-pass.sh`, `drift-check.sh` (read-only scope gate), `task-record.sh` (sole writer of execute records and `.v2p/PLAN-AMENDMENTS.md`), `finalize-execute.sh`, `finalize-review.sh`.
+- `scripts/`: `tidy-check.sh` (probe + tidy; reusable as the tidy drift check), `quarantine.sh`, `finalize-scavenge.sh`, `finalize-audit.sh`, `finalize-brand.sh`, `archive-cycle.sh` (re-theme: archives a reviewed cycle), `finalize-plan.sh`, `check-pass.sh`, `drift-check.sh` (read-only scope gate), `task-record.sh` (sole writer of execute records and `.v2p/PLAN-AMENDMENTS.md`), `finalize-execute.sh`, `finalize-review.sh`.
 <!-- /claude-only -->
-- Source rule for every v2p file: no `---` horizontal rules (use `***`).
+- Source rule for every v2p file: no `---` horizontal rules (use `***`); the DESIGN.md frontmatter fence is the one exception.
 
 <!-- claude-only -->
 ## 7. Delegation (Claude Code)
