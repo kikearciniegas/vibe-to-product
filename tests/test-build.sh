@@ -27,4 +27,5 @@ for f in $(grep -rl 'claude-only' "$here/skills/v2p"); do
 done
 
 echo "$fails failed"
+[ "$fails" = 0 ] && rm -rf "$base"
 [ "$fails" = 0 ]

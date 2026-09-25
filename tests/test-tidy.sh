@@ -64,4 +64,6 @@ SH=zsh; is "10 zsh split" "$(zsh -c 'u="a b c"; n=0; for x in $u; do n=$((n+1));
 SH=sh; is "10 sh split" "$(sh -c 'u="a b c"; n=0; for x in $u; do n=$((n+1)); done; echo $n')" 3
 SH=all; is "10 for-in-unquoted" "$(cd "$S" && grep -nE 'for [a-z]+ in \$[a-z]' *.sh | cut -d: -f1 | tr '\n' ' ')" "finalize-scavenge.sh "
 echo "test-tidy: $fails failures (scratch: $base)"
+# a passing run leaves nothing behind (180 stale scratch dirs had piled up in $TMPDIR); a failing one keeps it to inspect
+[ "$fails" -eq 0 ] && rm -rf "$base"
 [ "$fails" -eq 0 ]

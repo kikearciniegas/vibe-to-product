@@ -126,4 +126,6 @@ done
 # 9. the source was read only
 SH=all; is "9 source untouched" "$(cat "$src/BRIEF.md" "$src/PLAN.md" | shasum -a 256)" "$sum0"
 echo "test-finalize-plan: $fails failures (scratch: $base)"
+# a passing run leaves nothing behind (180 stale scratch dirs had piled up in $TMPDIR); a failing one keeps it to inspect
+[ "$fails" -eq 0 ] && rm -rf "$base"
 [ "$fails" -eq 0 ]

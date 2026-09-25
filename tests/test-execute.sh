@@ -279,4 +279,6 @@ done
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
 norm "$base/E-sh" > "$base/n-sh"; norm "$base/E-zsh" > "$base/n-zsh"; is "12 sh = zsh" "$(cmp -s "$base/n-sh" "$base/n-zsh" && echo same)" same
 echo "test-execute: $fails failures (scratch: $base)"
+# a passing run leaves nothing behind (180 stale scratch dirs had piled up in $TMPDIR); a failing one keeps it to inspect
+[ "$fails" -eq 0 ] && rm -rf "$base"
 [ "$fails" -eq 0 ]

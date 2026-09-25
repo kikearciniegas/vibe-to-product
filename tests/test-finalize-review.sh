@@ -110,4 +110,6 @@ for SH in sh zsh; do
 done
 SH=all; is "12 source untouched" "$(shasum -a 256 < "$src")" "$sum0"
 echo "test-finalize-review: $fails failures (scratch: $base)"
+# a passing run leaves nothing behind (180 stale scratch dirs had piled up in $TMPDIR); a failing one keeps it to inspect
+[ "$fails" -eq 0 ] && rm -rf "$base"
 [ "$fails" -eq 0 ]
