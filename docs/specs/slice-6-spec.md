@@ -416,3 +416,12 @@ Then `/v2p execute` (new branch `v2p/execute-<date>` from the reviewed head; UI 
 
 ***
 Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.
+## 10. User decisions (2026-09-25)
+
+- Q1 order: **scavenge → brand → mapping** (a).
+- Q2 pending guide: **placeholder DESIGN.md allowed**, re-theme later (a).
+- Q3 root symlink: **yes** (a).
+- Q4 `/impeccable init` at brand time: **yes** (a), defaulted as recommended, not asked.
+- Q5 linter unavailable: **FAIL** (a), defaulted as recommended, not asked.
+- Q6 re-theme: **archive cycle + short cycle-2 plan** (a).
+- Design skills to route (user, 2026-09-25): /ui-ux-pro-max (+extras), /impeccable, /superpowers:brainstorming (+brainstorming-extras), /make-interfaces-feel-better, /apple-design; plus gstack /design-consultation, /design-shotgun, /design-review.
