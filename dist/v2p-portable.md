@@ -12,15 +12,15 @@ Receipts, every phase: when a v2p script or gate refuses or blocks, stop and sho
 Blocks between `<!-- claude-only -->` markers apply to Claude Code only; other runtimes skip them.
 
 ## 2. Entry
-Optional argument: `handshake | adopt | scavenge | mapping | execute | review | deploy`.
+Optional argument: `handshake | adopt | scavenge | brand | mapping | execute | review | deploy`.
 
-**Model guard:** before `adopt`, `scavenge`, `mapping`, `execute` or `review`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
+**Model guard:** before `adopt`, `scavenge`, `brand`, `mapping`, `execute` or `review`, if you are a small/fast model tier (Haiku-class, or any runtime's mini/flash/lite tier), stop before reading the phase file and reply only: "This phase needs a larger model. Switch model (Claude Code: `/model` → Sonnet or Opus) and run it again."
 
 **Before asking the first question of any phase — including `adopt` — read that phase's file (table in §5) in full and follow it step by step.** This router only says which phase to run. Every question, template and gate lives in the phase file; never improvise them from the table.
 
 No argument: probe the directory first. Portable: ask the user whether this folder has code and whether `.v2p/BRIEF.md` exists.
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
-  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
+  - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/DESIGN.md` → offer `brand`; DESIGN exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
 - No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
 - No BRIEF and no code → ask "What are we building? One paragraph." and start the handshake. A docs-only folder (README and notes, no code) also goes here; add one line: "`/v2p adopt` merges existing notes into docs/."
 - `/v2p adopt` always runs adopt; with an existing BRIEF it keeps it and runs audit + tidy only.
@@ -53,6 +53,7 @@ AI features, payments, webhooks, i18n, special-category data, GraphQL and file u
 | `handshake` | `phases/handshake.md` | `.v2p/BRIEF.md` | available |
 | `adopt` | `phases/adopt.md` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
 | `scavenge` | `phases/scavenge.md` | `.v2p/SCAVENGE.md` | available |
+| `brand` | `phases/brand.md` | `.v2p/DESIGN.md` (+ root `DESIGN.md` symlink) | available |
 | `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
 | `execute` | `phases/execute.md` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
 | `review` | `phases/review.md` | `.v2p/REVIEW.md` | available |
@@ -74,10 +75,11 @@ For a phase marked "not available in this version", reply exactly that and stop.
 - `references/ux-laws.md`: at any UI review, and at review.
 - BRIEF layout: `references/brief-template.md`.
 - SCAVENGE and PLAN layouts: `references/scavenge-template.md` (scavenge), `references/plan-template.md` (mapping).
+- DESIGN layout: `references/design-template.md` (brand).
 - EXECUTE and REVIEW layouts: `references/execute-template.md` (execute), `references/review-template.md` (review).
 - Adopt: `references/tidy-rules.md` (what should exist, what is debris, what is never touched) and `references/audit-template.md` (layout of `.v2p/AUDIT.md`).
 - Startup stack: `references/stack/overview.md` at mapping step 1; `references/stack/alternatives.md` only when a BRIEF constraint or a growth trigger needs a non-default provider or the country-eligibility lists; `references/stack/wiring.md` and `references/stack/security.md` by execute/review (mapping reads them only to cite row ids).
-- Source rule for every v2p file: no `---` horizontal rules (use `***`).
+- Source rule for every v2p file: no `---` horizontal rules (use `***`); the DESIGN.md frontmatter fence is the one exception.
 
 
 ***
@@ -181,7 +183,7 @@ written: <YYYY-MM-DD> by v2p handshake · language: <xx>
 
 ## 6. Brand
 - Status: <existing (source: <path/url>) | to-create | none>
-- Palette / type / voice / logo: <… | pending brand phase>
+- Palette / type / voice / logo: <… | pending brand phase (brand writes .v2p/DESIGN.md; "existing (source: pending …)" yields a placeholder DESIGN.md until the guide arrives)>
 - Adjectives: <…> · References: <…> · Must-avoid: <…>
 - Locales: <one | list; translated | per-market>
 
@@ -258,8 +260,183 @@ Every URL in the draft is opened once more; any that does not load (4xx/5xx, tim
 - Use whatever web-reading tool your runtime has; if none, ask the user to paste the pages.
 
 ## Execution
-Portable: do steps 1–4 yourself in one pass. List the applicable questions, answer them within the budget, fill `references/scavenge-template.md`, write `.v2p/SCAVENGE.md` (or print it in one code block if you cannot write files), then print `Next: /v2p mapping`.
+Portable: do steps 1–4 yourself in one pass. List the applicable questions, answer them within the budget, fill `references/scavenge-template.md`, write `.v2p/SCAVENGE.md` (or print it in one code block if you cannot write files), then print `Next: /v2p brand`.
 
+
+***
+
+<!-- source: phases/brand.md -->
+# v2p phase: brand
+
+## Purpose
+Turn BRIEF §6 into `.v2p/DESIGN.md`: normative tokens plus the rules later phases check against. It runs after scavenge and before mapping, so the plan's tokens task can name files, fonts and hex values.
+Nothing is built here. The design skills do the design work; v2p adds the checks and the receipt.
+
+## Preconditions
+- `.v2p/BRIEF.md` required, with §11 = `none`. Otherwise print `Run /v2p handshake first.` and stop.
+- `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or brand without it?"; branding without it → `scavenge: skipped` on the DESIGN.md Overview `Status:` line.
+- BRIEF §1 `Code: existing …` → `.v2p/AUDIT.md` must have passed adopt's finalize step (its "Brand signals" row feeds the existing path). Otherwise print `Run /v2p adopt first.` and stop.
+- Existing `.v2p/DESIGN.md` → offer resume (keep) or re-run.
+- Existing `.v2p/REVIEW.md` that passed review → **re-theme mode**: say so. The finished cycle is archived only after the new DESIGN.md passes (Step 4), so a failed brand run leaves it intact.
+- Checkpoints: `.v2p/work/brand-guide.md` (the ingested guide, line 1 `sha256: <hex>`), `.v2p/work/brand-candidates.md` (line 1 `written: <YYYY-MM-DDTHH:MM> · phase: brand · part: candidates · brief: <BRIEF written date>`), `.v2p/work/brand-direction.md` (approved direction + rationale), `.v2p/work/brand-incumbent.md` (re-theme: the tokens in use now). A checkpoint is reusable when its `brief:` equals the BRIEF's `written:` date and, for candidates, it was written today; otherwise overwrite it, never read it. The finalize step clears `.v2p/work/brand-*`.
+- Model guard (router §2).
+- Read `references/design-template.md` in full before the first question.
+
+## Step 0 — Classify
+Print the case and the BRIEF §1 profile. The case comes from BRIEF §6 `Status:`:
+
+| BRIEF §6 Status | Case | Direction source |
+|---|---|---|
+| `existing (source: <path/url>)`, readable | **existing** (transcribe) | the guide; a logo-only guide → **to-create** with the logo as a fixed constraint |
+| `existing (source: pending …)`, or unreadable | **placeholder** | none: neutral tokens; say "placeholder: re-run `/v2p brand` when <guide> exists; it re-themes." |
+| `to-create` | **to-create** (propose) | the three adjectives, reference sites and must-avoid of BRIEF §6 |
+| `none` (internal tool, org UI kit) | **none** (document the kit) | the organisation's kit, or the stack default |
+| any, in re-theme mode | **re-theme** | first record the tokens in use now, then the row above that matches |
+
+Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed first (`rm DESIGN.md`, the link only), so no skill writes through it.
+
+## Step 1 — Draft per case
+Portable: follow the case below by hand; the user pastes what a tool would have produced (the guide's palette, type, voice and logo rules; candidate palettes). Take BRIEF answers as given and say "taking X from the BRIEF".
+- **existing**: transcribe the guide into the template: colors (hex; convert Pantone/CMYK only when the guide gives no hex and mark it `derived` in the Colors prose), type roles, voice, logo rules, imagery, must-avoid. A transcription is not re-opinionated: no taste or reference-site skill runs. Gaps the guide leaves (rounded, spacing, elevation, components) are filled and marked `derived`. Sources: `guide:` (a local file with its sha256) and one `font:` line per face.
+- **placeholder**: a neutral palette and a system font stack; `description: PLACEHOLDER — neutral tokens until <guide> arrives`; Overview `Status: placeholder`; Sources `- placeholder: brand guide pending (<name>)`; Voice, Logo Rules and Imagery one line each `pending <guide>`. Must-Avoid from BRIEF §6. Motion: the defaults in the template only.
+- **to-create**: confirm the adjectives, reference sites and must-avoid from BRIEF §6; ask only what changes DESIGN.md content. Present up to three candidate directions (token table + a font sample line each), the user picks one, then write the full draft. Reference sites give mood and structure only: no token, font or mark is copied. Logo Rules: `pending: no logo yet — mapping plans a wordmark task` when none exists.
+- **none**: transcribe the kit's tokens (source `- kit: <name>`), or, with no kit, a dense scale and a system font stack; Overview `Mode per surface: Operate`.
+- **re-theme**: write the incumbent tokens (the ones the code uses now) to `.v2p/work/brand-incumbent.md`, then run the matching case; ask which incumbent tokens are kept.
+
+Every case: Must-Avoid first bullet `- BRIEF §6: <verbatim>`; Motion from the template's defaults (springs only for `native-app` or gesture UI); no skill draws a vector logo, so Logo Rules transcribe the guide or record a decision.
+
+## Step 2 — Questions
+One question per decision point; independent ones together:
+1. Direction (to-create, re-theme): up to three candidates, each shown as its token table and a font sample line.
+2. Extras (to-create), one multi-select: competitive research? mockups of the first screen? generated imagery?
+3. Re-theme: which incumbent tokens are kept.
+
+## Step 3 — Show and approve
+Write the draft to `.v2p/DESIGN.draft.md`. Print it (or its path), the preview page or mockup paths, and a six-line summary: primary / on-primary / surface / on-surface, display and body faces, motion approach. Ask "Approve DESIGN.md (Recommended) / Change tokens / Change direction". A change → back to the step named, then show again. Nothing is final before approval.
+
+## Step 4 — Finalize
+Portable: rename the draft to `.v2p/DESIGN.md`, create the root link (`ln -sfn .v2p/DESIGN.md DESIGN.md`) and say there is no receipt.
+
+## Step 5 — Hand off
+Print the path, the counts from the PASS line (or the token counts), `Status: final|placeholder`, then `Next: /v2p mapping`.
+
+
+***
+
+<!-- source: references/design-template.md -->
+# DESIGN template
+
+Copy the block below into `.v2p/DESIGN.draft.md` (brand Step 3) and replace every `<…>`. The format is Google's DESIGN.md (`google-labs-code/design.md`): YAML frontmatter with the normative tokens, then prose sections. Later phases check against it: mapping plans the tokens task from the frontmatter, execute takes tokens from it (never invents them), review compares the running page with it.
+
+Rules:
+- Frontmatter is normative; the prose explains it. Two-space indentation, one key per line, no flow style (`{…}` maps, `[…]` lists).
+- Required tokens: `name`, `description`; `colors.primary`, `colors.on-primary`, `colors.surface`, `colors.on-surface`; `typography.display.fontFamily`, `typography.body.fontFamily`; `rounded.md`; `spacing.md`; `components.button-primary` with `backgroundColor: "{colors.primary}"` and `textColor: "{colors.on-primary}"`; `components.page` with `backgroundColor: "{colors.surface}"` and `textColor: "{colors.on-surface}"` (those two pairs are what the linter measures for 4.5:1 contrast).
+- Every `colors.*` value is a quoted 6-digit hex (`"#RRGGBB"`; unquoted, `#` starts a YAML comment). Dimensions are plain values (`3rem`, `16px`): the linter rejects `clamp()` as a dimension (measured 2026-09-25); put the fluid scale in the Typography prose.
+- The eight canonical sections, in this order, each exactly once: Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts. Then the v2p sections, in this order, each exactly once: Motion (optional), Voice, Logo Rules, Imagery, Must-Avoid, Sources.
+- `## Must-Avoid` first bullet is literally `- BRIEF §6: <the BRIEF's Must-avoid text, verbatim>` (`none` when the BRIEF has none).
+- `## Sources` bullets use only the kinds shown in the block; one `font:` line per face with its licence. A local guide carries its sha256.
+- `## Do's and Don'ts` keeps the line "No token or mark copied from a reference site." Reference sites give mood and structure only.
+- No routed skill draws a vector logo: Logo Rules transcribe the guide or record a decision (`pending: …` plans a wordmark task).
+- The frontmatter fence is the only `---` allowed (the one exception to v2p's `***` rule). Last line: `Next: /v2p mapping`.
+
+````
+---
+name: <project name>
+description: <one line: mood, material, energy — or "PLACEHOLDER — neutral tokens until <guide> arrives">
+colors:
+  primary: "#RRGGBB"
+  on-primary: "#RRGGBB"
+  surface: "#RRGGBB"
+  on-surface: "#RRGGBB"
+  <more descriptive slugs; every value a quoted 6-digit hex>
+typography:
+  display:
+    fontFamily: "<face>, <fallback>"
+    fontWeight: 700
+    fontSize: 3rem
+    letterSpacing: -0.02em
+  body:
+    fontFamily: "<face>, <fallback>"
+    fontSize: 1rem
+    lineHeight: 1.5
+rounded:
+  sm: 4px
+  md: 8px
+  lg: 12px
+spacing:
+  sm: 8px
+  md: 16px
+  lg: 24px
+components:
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.md}"
+  page:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.on-surface}"
+---
+
+# <project name>
+
+## Overview
+Status: <final | placeholder> · brand case: <existing | to-create | none> · profile: <BRIEF §1> <· scavenge: skipped>
+Creative north star: <one sentence>. Mode per surface: <Persuade/Operate/Read/Experience per BRIEF §1 profile>.
+
+## Colors
+<strategy and roles; light/dark decision; which token signals action; `derived` where a value was converted (Pantone/CMYK) or filled in>
+
+## Typography
+<faces, roles, loading (next/font/google unless a Sources licence line says otherwise; self-hosted), fluid scale, rationale>
+
+## Layout
+<max width, grid, breakpoints, density>
+
+## Elevation & Depth
+<shadow or tonal layering; "flat" is a valid answer>
+
+## Shapes
+<radius hierarchy; nested inner radius = outer − gap>
+
+## Components
+<button/input/card/nav states: hover, focus-visible, active, disabled>
+
+## Do's and Don'ts
+- Do: <3–5 checkable rules>
+- Don't: <3–5 anti-patterns; include the BRIEF §6 must-avoid items again in plain words>
+- No token or mark copied from a reference site.
+
+## Motion
+- Approach: <minimal-functional | intentional | expressive>; easing enter ease-out / exit ease-in / move ease-in-out; durations micro 50–100ms, short 150–250ms, medium 250–400ms
+- Press: scale(0.96); never `transition: all`; `prefers-reduced-motion` → cross-fade only
+- Springs (native-app or gesture UI): damping 1.0 / response 0.3–0.4 by default; bounce only after a flick
+
+## Voice
+- Adjectives: <BRIEF §6 adjectives> · register: <tú/usted, formal/informal> · locales: <BRIEF §6>
+- Do say / don't say: <3 each>
+
+## Logo Rules
+- Files: <public/logo.svg …> · clear space: <n × mark height> · min size: <px> · on dark: <variant> · never: <stretch, recolor, effects>
+
+## Imagery
+- Style: <real photos of …; no stock clichés> · treatment: <…> · alt-text rule: <…>
+
+## Must-Avoid
+- BRIEF §6: <verbatim from BRIEF §6 Must-avoid, or "none">
+- <brand-specific additions>
+
+## Sources
+- guide: <relative path> · sha256: <64 hex>
+- guide: <url>
+- reference: <url> · <what was taken: mood/structure only>
+- generated: ui-ux-pro-max 2.13.0 --design-system "<query>" · candidate <A|B|C> chosen
+- kit: <org UI kit name/url>
+- font: <face> · licence: <OFL | Fontshare | commercial>
+- placeholder: brand guide pending (<name>)
+- schema: google-labs-code/design.md spec, linted with @google/design.md 0.4.0
+
+Next: /v2p mapping
+````
 
 ***
 
@@ -267,7 +444,7 @@ Portable: do steps 1–4 yourself in one pass. List the applicable questions, an
 # v2p phase: mapping
 
 ## Purpose
-Turn BRIEF + SCAVENGE into `.v2p/PLAN.md`: an executable plan with providers, skills, pre-filled standards rows, and tasks that each carry a verifier.
+Turn BRIEF + SCAVENGE + DESIGN into `.v2p/PLAN.md`: an executable plan with providers, skills, pre-filled standards rows, and tasks that each carry a verifier.
 Plan-writing itself follows a plan-writing method (superpowers in Claude Code); v2p adds the sections below.
 
 ## Preconditions
@@ -275,6 +452,7 @@ Plan-writing itself follows a plan-writing method (superpowers in Claude Code); 
 - `.v2p/SCAVENGE.md` optional: if absent, ask once "Run scavenge first (recommended) or plan without it?"; if planning without it, record `scavenge: skipped` in the PLAN.md header.
 - If `.v2p/SCAVENGE.md` exists, its §7 must read `links: n/n ok` (the two numbers equal) and its §6 must not contain "not searched". Otherwise print `SCAVENGE.md failed its checks: re-run /v2p scavenge.` and stop.
 - BRIEF §1 `Code: existing …` → `.v2p/AUDIT.md` must exist and have passed adopt's finalize step. Otherwise print `Run /v2p adopt first.` and stop.
+- `.v2p/DESIGN.md` must have passed brand's finalize step. Portable: it ends with `Next: /v2p mapping`. Otherwise print `Run /v2p brand first.` and stop. Its Overview `Status: placeholder` → print "DESIGN.md is a placeholder: the tokens task must keep a single swap point; re-theme later via /v2p brand".
 - Existing `.v2p/PLAN.md` → offer resume (keep) or re-run.
 - Checkpoint: `.v2p/work/mapping-plan.md` is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date; print "resuming from .v2p/work/mapping-plan.md" and do not re-plan. Otherwise it is stale: overwrite it, never read it.
 
@@ -310,7 +488,16 @@ Portable: write the plan yourself from `references/plan-template.md`, using BRIE
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `mechanical: <command> → <expected>` or `manual: <who checks what>`. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap). A review task or a launch task does not belong in §5: review and deploy are phases.
 - Verifier convention: prefer self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains) — execute treats exit 0 as pass and only compares bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '`; never compare raw `wc -l` (macOS left-pads it, so `test "$(… | wc -l)" = 0` never passes). No bare `&` in a Verifier (it backgrounds the whole `&&` chain and races the next command): a server is started by the test runner (e.g. Playwright `webServer`) or by a script with an explicit wait-for-port, on a private port (e.g. `-p 31<nn>`), never a shared default such as 3000. Every `curl` carries `-m <seconds>`. A Verifier command cannot contain a backtick: the parser ends the command there and runs a fragment (match a literal backtick with `.` instead). A verifier that requires several terms checks each one separately (`for w in a b c; do grep -qi "$w" f || exit 1; done`), never one combined count (`grep -c 'a|b|c'` ≥ N passes with one term missing).
 - Files completeness: a scaffold or generator task (create-next-app and the like) lists the generator's output files, or a glob such as `src/app/*`. Every file path named in a task's **Interfaces:** line appears in that task's **Files:** or an earlier task's; name the file, not only the symbol (`publicEnv` in `src/lib/public-env.ts`). A `Modify` path is the full repo path of a file that exists now or that this or an earlier task creates (`src/app/globals.css`, never bare `globals.css`). A task that adds or changes user-facing text lists every locale file in Files (e.g. both `src/i18n/es.json` and `src/i18n/en.json`; 4 of 19 live tasks needed an amendment for this).
+- Design tokens and UI (from `.v2p/DESIGN.md`; its frontmatter is normative, never re-invented): one **tokens task** early in the order. Files = the stylesheet or theme file the stack owns (Next.js + Tailwind v4: `src/app/globals.css`; native: the theme file) plus the font wiring file (fonts via `next/font/google` unless a DESIGN.md Sources `font:` line names another licence). Verifier (mechanical, self-checking): `sed -n '/^colors:/,/^[a-z]/p' .v2p/DESIGN.md | grep -oE '#[0-9a-fA-F]{6}' | sort -u | while read -r c; do grep -qi "$c" src/app/globals.css || exit 1; done` → exit 0, plus `for w in "<display face first word>" "<body face first word>"; do grep -q "$w" <font wiring file> || exit 1; done` → exit 0. A **logo task** when Logo Rules names files that do not exist, or says `pending` (a wordmark from `typography.display`; no skill draws a vector logo). An **imagery task** when Imagery names assets. Every UI task's steps name the design skill it loads (execute's dispatch lists them). The Must-Avoid bullets become the verifier terms of the landing `Anti-"made-by-AI"` row (`references/standards/landing.md`).
 - §6 Review focus: the plan method's "five uncovered inputs" list, unchanged.
+
+## Cycle 2+ (after a finished cycle was archived)
+When `.v2p/cycles/*/REVIEW.md` exists and `.v2p/PLAN.md` does not (brand's re-theme archived the cycle):
+- Header adds `cycle: <n> · previous: .v2p/cycles/<dir>`.
+- §2 Providers is copied from the archived PLAN unless BRIEF §7 or §8 changed since (no re-asking); `## Architecture`, `## Threat Model` and §4b are copied.
+- §4 Standards = the archived REVIEW §3 verbatim; the rows the new tasks touch go back to `pending` with the evidence cell emptied (the row count is unchanged).
+- §5 holds only the tasks for the delta (re-theme: tokens, fonts, logo, imagery, copy/voice). Planner instruction: "scope: the DESIGN.md delta against `.v2p/work/brand-incumbent.md`; do not re-plan finished work."
+- Execute and review then run unchanged on a new branch.
 
 ## Step 5 — Write and hand off
 Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute`.
@@ -364,7 +551,7 @@ fetches: Q1–Q5 <n>/20 · Q7 <n>/5 · links: <ok>/<total> ok · time: <min> · 
 ## 8. Open
 - [OPEN: <question> — answer needed by <mapping task>]   (or: none)
 
-Next: /v2p mapping
+Next: /v2p brand
 ````
 
 ***
@@ -382,7 +569,7 @@ Copy the block below into `.v2p/PLAN.md` and replace every `<…>`. §2–§6 ar
 **Goal:** <one sentence = BRIEF §3 + §4 90-day metric>
 **Architecture:** <2–3 sentences>
 **Tech Stack:** <from §2 below>
-**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md (<or: scavenge: skipped>)
+**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md (<or: scavenge: skipped>) · .v2p/DESIGN.md
 
 ## Global Constraints
 <one line each, verbatim from BRIEF §5 non-goals, §7 constraints, standards hard rules: no `any`, no secrets in client code>
@@ -424,7 +611,7 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 **Files:** …  **Interfaces:** …
 <Files rule: a scaffold/generator task lists the generator's output files (or a glob such as `src/app/*`); every file path named in **Interfaces:** appears in this task's **Files:** or an earlier task's>
 **Verifier:** mechanical: `<command>` → `<expected output/exit code>`   |   manual: <who checks what, where>
-<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '` — never compare raw `wc -l` (macOS pads it). No bare `&`: a server is started by the test runner (e.g. Playwright `webServer`) or by a script that waits for the port. Every `curl` carries `-m <s>`>
+<Verifier convention: self-checking commands (`test "$(cmd)" = 4`, `grep -q`, `set -e` chains); execute treats exit 0 as pass and compares only bare-number expecteds. Absence: `! grep -rqE '<re>' <path>`. Counts: `grep -c`, or `wc -l | tr -d ' '` — never compare raw `wc -l` (macOS pads it). No bare `&`: a server is started by the test runner (e.g. Playwright `webServer`) or by a script that waits for the port. Every `curl` carries `-m <s>`. Tokens task: `sed -n '/^colors:/,/^[a-z]/p' .v2p/DESIGN.md | grep -oE '#[0-9a-fA-F]{6}' | sort -u | while read -r c; do grep -qi "$c" src/app/globals.css || exit 1; done` → exit 0>
 - [ ] Step 1 … (writing-plans step style)
 
 ## 6. Handoff
@@ -652,6 +839,7 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 
 ## Preconditions
 - `.v2p/PLAN.md` must have passed mapping's finalize step. Portable: it contains the line `Next: /v2p execute`. Otherwise print `PLAN.md failed its check: re-run /v2p mapping.` and stop.
+- UI gate: a task whose Files include a UI file (`*.tsx *.jsx *.vue *.svelte *.css *.scss *.html *.swift *.kt *.dart tailwind.config.*`) starts only while `.v2p/DESIGN.md` is the one brand finalized. Portable: no `.v2p/DESIGN.md` → stop before the first UI task and print `Run /v2p brand first.`
 - Existing `.v2p/EXECUTE.md` with its receipt → offer: resume (go to `/v2p review`) or re-run.
 - `.v2p/PLAN-AMENDMENTS.md`, if present: read it. Every line in it is scope already granted. PLAN.md itself is never edited during execute.
 - Model guard (router §2).
@@ -667,7 +855,8 @@ The scan executes; it is not skipped because the plan looks fine.
 1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses and N/A reasons kept, evidence empty).
 2. Run the plan's empirical claims: every mechanical Verifier command that can run on the current tree is expected to FAIL now (red before green). A verifier that passes before its task exists is a plan defect: record a ruling in the execution ledger and tell the user.
 3. Scope sanity: a task whose steps `cd` into a new directory (for example a scaffold command that creates a subfolder), or whose Files are outside the project root, is a plan defect. Ruling: scaffold into `.` (adapt the command) or stop and ask.
-4. Task triage: a task whose title starts with `Review`, or whose Verifier needs production URLs or DNS (`<domain>`-style placeholders in every command), is not executed here. List them in one question and, only on the user's yes, mark each skipped with the reason `handed to /v2p review` or `handed to /v2p deploy`.
+4. UI gate once now: if any task is a UI task, run the Preconditions' UI gate check before Task 1, so a stale or missing DESIGN.md stops the run here, not mid-plan.
+5. Task triage: a task whose title starts with `Review`, or whose Verifier needs production URLs or DNS (`<domain>`-style placeholders in every command), is not executed here. List them in one question and, only on the user's yes, mark each skipped with the reason `handed to /v2p review` or `handed to /v2p deploy`.
 
 ## Step 2 — Task loop
 Order: PLAN §6 `Order:` line. Independent tasks run in parallel only through the execution method's own fan-out rules. Per task `<n>`:
@@ -720,7 +909,7 @@ Each check writes a checkpoint first (line 1: `head: <sha> · check: <name> · r
 | simplify | an over-engineering review of the diff, then of the whole repo | diff, then repo | always |
 | security | a security review of the diff | the diff | always |
 | verification | re-run the command cited by every `done` row of EXECUTE §2; output that no longer matches is a finding | evidence table | always |
-| ux-laws | `references/ux-laws.md` checks plus a visual design review of the running preview | UI | always (every profile has UI) |
+| ux-laws | `references/ux-laws.md` checks plus a visual design review of the running preview against `.v2p/DESIGN.md` (frontmatter tokens are normative: a value in the token map is never a finding; a departure names the token) | UI | always (every profile has UI) |
 | i18n | a translation-quality pass on the locale files named in PLAN | locale files | only when BRIEF §9 `Conditional blocks ON` contains `i18n` |
 | codex | an independent second-opinion review of the diff (read-only; it never edits) | the diff | always; may be `unavailable: <reason>` |
 | qa | a QA pass on the preview URL; re-checks after fixes | running app | web profiles; native-app: `manual: <who ran what on which device>` |
@@ -778,7 +967,7 @@ Next: /v2p review
 
 Copy the block below into `.v2p/REVIEW.draft.md` at review Step 1 and replace every `<…>`. §3 starts as a copy of EXECUTE §2 and must end complete.
 
-Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit.
+Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit. The ux-laws run cell names `DESIGN.md` (the visual review ran against it).
 
 ````
 # REVIEW — <project name>

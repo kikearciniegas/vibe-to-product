@@ -425,3 +425,23 @@ Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.
 - Q5 linter unavailable: **FAIL** (a), defaulted as recommended, not asked.
 - Q6 re-theme: **archive cycle + short cycle-2 plan** (a).
 - Design skills to route (user, 2026-09-25): /ui-ux-pro-max (+extras), /impeccable, /superpowers:brainstorming (+brainstorming-extras), /make-interfaces-feel-better, /apple-design; plus gstack /design-consultation, /design-shotgun, /design-review.
+
+## 11. Skill routing (analysis 2026-09-25)
+
+Supersedes §2.2's "Skills" column, §3.2 Step 2's skill calls and §3.8's catalog text where they differ. Key facts verified by the controller.
+
+**Brand, in order per case**
+- existing guide, readable → markitdown → write DESIGN.md from design-template.md → ui-ux-pro-max `--domain google-fonts` (faces and fallbacks only) → Motion: make-interfaces-feel-better defaults; apple-design only if the BRIEF platform is native/gesture → /impeccable init. No taste / stitch / awesome-design-md: a transcription must not be re-opinionated. Logo-only guide → Propose path, with the logo as a fixed constraint.
+- pending guide or unreadable → ui-ux-pro-max `--design-system --variance 2` (neutral) → /impeccable init. `description: PLACEHOLDER — …`.
+- to-create → superpowers:brainstorming + brainstorming-extras → ui-ux-pro-max `--design-system` ×3 candidates (`.v2p/work/brand-candidates.md`) → /design-consultation (mv its root DESIGN.md into `.v2p`, revert its CLAUDE.md section) → optional, gated: /design-shotgun only when gstack reports DESIGN_READY (OpenAI key); banana-claude for `## Imagery` only when the plugin is enabled and has a key (its own per-call approval) → Motion as above → /impeccable init. §2.6 question 2 becomes a multiSelect: research? mockups? imagery?
+- none (org kit) → kit tokens, else ui-ux-pro-max `--design-system --density 8` → /impeccable document when kit code exists (copy its output into the template; never write through the symlink) → /impeccable init.
+- re-theme → /impeccable document → `.v2p/work/brand-incumbent.md` → the matching row above → archive cycle.
+- impeccable runs with the env prefix `IMPECCABLE_NO_UPDATE_CHECK=1 IMPECCABLE_NO_TELEMETRY=1` (it contacts impeccable.style otherwise).
+
+**Execute entry points.** UI task → impeccable context (through the root symlink) before writing components; make-interfaces-feel-better `quick` before finishing. Animation or transition task → emil `animate` (writes the motion), then mifb quick. Native/gesture → add apple-design. 3D object from a photo → img2threejs (only then). Imagery → banana-claude if enabled, else user-supplied assets. Landing does not get design-taste-frontend (a second style authority).
+
+**Review.** `/design-review <url>` against DESIGN.md + gstack-extras (ux-laws row); mifb `full` on the UI diff; emil `review-animations` only when the diff matches `transition|animate|framer|motion|@keyframes`. Not /impeccable audit or critique (duplicates).
+
+**Template.** Do's and Don'ts gets the fixed line "No token or mark copied from a reference site." Sources gets per-font lines `font: <name> · licence: <OFL|Fontshare|commercial>`; mapping's tokens task pins next/font/google unless a licence line says otherwise. brand.md states that no routed skill produces vector logos (Logo Rules are transcription or decision only). Consequence in the builder: the Sources kinds are `guide reference generated kit font placeholder schema` (`inspired` dropped with awesome-design-md).
+
+**skills-catalog.md.** taste-skill IS installed (design-taste-frontend, -v1, gpt-taste, brandkit, stitch-design-taste, all Leonxlnx): skip, it would override a client's guide. stitch-design-taste is Leonxlnx's; google-labs stitch-skills is not installed and needs the Stitch MCP: skip. awesome-design-md: skip (real brands' trade dress). banana-claude: optional, gated on the user's Gemini key. emil `animate` and `review-animations`: routed. The "drop one DESIGN.md" line is removed.

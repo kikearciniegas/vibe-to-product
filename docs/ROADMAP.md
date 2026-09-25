@@ -47,7 +47,7 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
   To keep this possible, the source stays compatible with that layout: relative paths, POSIX sh scripts, and Claude-only behaviour confined to claude-only blocks and hooks.
 
 ## Open items
-- Brand-creation phase (the brand guide is still pending in the test project).
+- Slice 6: brand (built 2026-09-25): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`); the test project's guide is still pending, so it re-themes when `brand.pdf` arrives. Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
 - The duplicate `agent-reach` in `~/.agents/skills` (managed by `npx skills`), not cleaned up.
 

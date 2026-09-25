@@ -8,7 +8,7 @@ copyright='Copyright © 2026 Rafael Arciniegas. Licensed under the MIT License.'
 {
   printf '# v2p portable pack (generated %s; do not edit)\n\n' "$(date +%Y-%m-%d)"
   for p in SKILL.md phases/handshake.md references/brief-template.md \
-    phases/scavenge.md phases/mapping.md references/scavenge-template.md references/plan-template.md \
+    phases/scavenge.md phases/brand.md references/design-template.md phases/mapping.md references/scavenge-template.md references/plan-template.md \
     phases/adopt.md references/audit-template.md references/tidy-rules.md \
     phases/execute.md phases/review.md references/execute-template.md references/review-template.md \
     references/standards/core.md references/standards/web.md references/standards/landing.md \
