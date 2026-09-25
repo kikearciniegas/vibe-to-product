@@ -87,6 +87,11 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   vf "curl -s http://localhost:3000 | grep -q ok"; has "10 curl no -m" "$out" "FAIL: Task 2 Verifier: curl without -m/--max-time"
   vf "curl -m 5 -s http://a/ && curl -s http://b/"; has "10 second curl no -m" "$out" "curl without -m"
   vf "curl -sm 5 http://a/ | grep -q ok && curl --max-time 5 -s http://b/"; is "10 -sm and --max-time pass" $rc 0
+  # 10c. a backtick inside a Verifier command (live Task 19 `grep -c '^| \`src/'`: the parser cut it and ran a fragment)
+  vf "grep -c '^| \`src/' docs/x.md"; is "10c inner backtick exit" $rc 1; has "10c inner backtick" "$out" "FAIL: Task 2 Verifier: a Verifier command cannot contain a backtick"
+  rep "$V2" '**Verifier:** mechanical: `grep -c a f` → 1, `echo ok` → `ok`, `test -f "x"` → exit 0   |   manual: open `/` → see it'; is "10c several commands pass" $rc 0
+  rep "$V2" '**Verifier:** mechanical: `grep -c a f` → 1, `grep -c '"'"'`b'"'"' f` → 2'; has "10c second command backtick" "$out" "cannot contain a backtick"
+  rep "$V2" '**Verifier:** manual: read `@x/y` usage, open `/es/gracias`. Sub-check: `npm run e2e` → exit 0'; is "10c prose pairs before the command pass (live Task 7)" $rc 0
   rep "$V2" "$V2
 **Files:** Create \`src/booking.ts\`  **Interfaces:** Produces \`book()\` in \`src/booking/api.ts\`"
   is "10 files exit" $rc 1; has "10 iface path missing" "$out" "FAIL: Task 2 Interfaces names \`src/booking/api.ts\`, absent from the Files of Tasks 1-2"

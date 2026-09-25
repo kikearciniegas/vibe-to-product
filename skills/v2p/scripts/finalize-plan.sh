@@ -33,7 +33,11 @@ if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
 fi
 # Verifier lint (backticked text, single-quoted strings removed): raw `wc -l` in a comparison (macOS pads it),
-# a bare `&` in a mechanical verifier (backgrounds the whole && chain), `curl` without -m/--max-time.
+# a bare `&` in a mechanical verifier (backgrounds the whole && chain), `curl` without -m/--max-time; and, on the raw
+# line, a backtick inside a command (live Task 19 `grep -c '^| \`src/'` was cut there and ran a fragment): each text
+# before a `→`, minus a backticked expected of the previous command, holds an even number of backticks (prose pairs
+# in a manual part are fine; an odd count makes the parser open the command at the inner backtick). Two inner
+# backticks keep the count even and pass: the rule catches the live shape, not every one.
 # Files completeness: a backticked Interfaces path (has `/` and an extension; not a URL or a route) must appear
 # in the Files of this task or an earlier one (`{a,b}` and `*` in Files are expanded / matched).
 lint=$(awk -v q="'" '
@@ -67,6 +71,8 @@ lint=$(awk -v q="'" '
       if (c ~ /&/) r = r "; bare & backgrounds the chain (start servers from the test runner or a wait-for-port script)" }
     c = s; while (match(c, /(^|[^A-Za-z0-9_-])curl( |$)/)) { c = substr(c, RSTART + RLENGTH); a1 = c; sub(/[|;&)\n].*/, "", a1)
       if (a1 !~ /(^| )-[A-Za-z]*m( |[0-9]|$)|--max-time/) { r = r "; curl without -m/--max-time"; break } }
+    k = split($0, sg, "→"); for (i = 1; i < k; i++) { c = sg[i]; if (i > 1) sub(/^ *`[^`]*`/, "", c)
+      if (gsub(/`/, "", c) % 2) { r = r "; a Verifier command cannot contain a backtick (the parser cuts there)"; break } }
     if (r != "") print "FAIL: Task " t " Verifier: " substr(r, 3) }
   END { flush() }' "$draft")
 [ -z "$lint" ] || { printf '%s\n' "$lint"; fail=1; }
