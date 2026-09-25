@@ -142,6 +142,23 @@ for SH in sh zsh; do
   TR start 1; echo x > stray.txt; git add stray.txt; git commit -qm 'stray'
   TR verify 1; is "17 committed stray exit" $rc 1; has "17 committed stray" "$(cat .v2p/work/execute-task-1.md)" "DRIFT file stray.txt"
   cd "$base"
+  # 18. brace shorthand in Files (live PLAN Tasks 4/5 wrote `src/components/{Hero,Proof,...}.tsx`) expands to one
+  # pattern per alternative, one or more groups per token; nested/unclosed braces and unsafe alternatives fail closed.
+  f18=$base/f18-$SH; sh "$here/tests/fixture-execute.sh" "$f18" >/dev/null 2>&1; cd "$f18"
+  sed 's|^\*\*Files:\*\* Modify: `src/\*\.sh`, `app/\[locale\]/page\.tsx`$|**Files:** Create `src/components/{Hero,Proof}.tsx`, `{a,b}/{x,y}.ts`|' .v2p/PLAN.md > "$base/p18" && mv "$base/p18" .v2p/PLAN.md
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: brace Files'
+  TR start 2; mkdir -p src/components a b; for p in src/components/Hero.tsx src/components/Proof.tsx a/x.ts b/y.ts; do echo x > $p; done
+  DC 2; is "18 braces in scope exit" $rc 0; has "18 braces in scope" "$out" "OK: 4 changed paths within Task 2 scope"
+  echo x > src/components/Other.tsx; DC 2; is "18 Other.tsx exit" $rc 1; has "18 Other.tsx drift" "$out" "DRIFT file src/components/Other.tsx"
+  hasnt "18 Hero.tsx still in scope" "$out" "DRIFT file src/components/Hero.tsx"; rm src/components/Other.tsx
+  echo x > a/z.ts; DC 2; is "18 two groups a/z.ts exit" $rc 1; has "18 two groups a/z.ts drift" "$out" "DRIFT file a/z.ts"; rm a/z.ts
+  printf -- '- 2026-09-24T00:00:00 · task 2 · files += `src/{a,{b,c}}.ts` · nested\n' > .v2p/PLAN-AMENDMENTS.md
+  DC 2; is "18 nested exit" $rc 1; has "18 nested msg" "$out" "DRIFT pattern src/{a,{b,c}}.ts (nested braces)"
+  printf -- '- 2026-09-24T00:00:00 · task 2 · files += `src/{a,b.ts` · unclosed\n' > .v2p/PLAN-AMENDMENTS.md
+  DC 2; is "18 unclosed exit" $rc 1; has "18 unclosed msg" "$out" "DRIFT pattern src/{a,b.ts (unclosed brace)"
+  rm -f PWNED; printf -- '- 2026-09-24T00:00:00 · task 2 · files += `{x,$(touch PWNED)}` · malicious\n' > .v2p/PLAN-AMENDMENTS.md
+  DC 2; is "18 brace injection exit" $rc 1; has "18 brace injection msg" "$out" "(unsafe characters)"; is "18 no PWNED" "$(test -f PWNED && echo yes)" ""
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

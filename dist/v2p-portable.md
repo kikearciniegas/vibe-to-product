@@ -8,6 +8,7 @@
 v2p is a thin orchestrator: each phase reads the previous handoff file and writes one of its own in `<project>/.v2p/`.
 It never reimplements what superpowers or gstack already do; later phases call them.
 Portable pack: if this arrives as one pasted document, the files named below follow it as sections. Run the handshake first and use only the standards sections for the chosen profile.
+Receipts, every phase: when a v2p script or gate refuses or blocks, stop and show the user its output; never write, edit or seal a `.v2p/` handoff file, `.v2p/work/` record or `.*-pass` receipt by hand.
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
   - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists → `deploy` (status in §5).
 - No BRIEF and code present (a manifest such as package.json, pyproject.toml, go.mod, Cargo.toml, or source files) → ask: "Existing code found: Adopt it (scan, derive BRIEF, audit, tidy) (Recommended) / Fresh handshake (ignores the code)". Adopt → `phases/adopt.md`.
@@ -673,6 +674,7 @@ Portable: you run the loop yourself. After each task print one row (`task | file
 
 ## Step 3 — Failing verifier
 Inside a task the implementer iterates test-first; the execution method's fix rounds apply (at most 5). The verifier may be re-run any number of times; the last run wins and the attempt count is kept. After 3 failed runs on one task: stop and debug systematically. If the verifier itself is wrong, that is a plan defect: record a ruling in the execution ledger and mark the task skipped with the reason only on the user's yes; never "fix" the verifier (PLAN.md is hash-locked). A skip is never silent: it needs the user's yes and the reason is printed in EXECUTE.md §1.
+A gate that refuses or blocks is a stop-and-ask, including when the gate itself looks wrong: show the user its output and wait. Never hand-write a record or receipt, and never alter a verifier command, to get past it.
 
 ## Step 4 — Finalize
 Before finalizing, check each `done` row in the draft: a green result is evidence about the check's reach, not about the item. Portable: write `.v2p/EXECUTE.md` from the draft as the template says (fill §1 yourself; say there is no receipt).

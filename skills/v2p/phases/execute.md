@@ -63,7 +63,9 @@ Claude Code, per task `<n>` (the numbers match the steps above):
 
 ## Step 3 — Failing verifier
 Inside a task the implementer iterates test-first; the execution method's fix rounds apply (at most 5). The verifier may be re-run any number of times; the last run wins and the attempt count is kept. After 3 failed runs on one task: stop and debug systematically. If the verifier itself is wrong, that is a plan defect: record a ruling in the execution ledger and mark the task skipped with the reason only on the user's yes; never "fix" the verifier (PLAN.md is hash-locked). A skip is never silent: it needs the user's yes and the reason is printed in EXECUTE.md §1.
+A gate that refuses or blocks is a stop-and-ask, including when the gate itself looks wrong: show the user its output and wait. Never hand-write a record or receipt, and never alter a verifier command, to get past it.
 <!-- claude-only -->
+Claude Code: when any v2p script refuses or blocks (`drift-check.sh`, `task-record.sh`, `finalize-*.sh`), stop and report to the user with the script's output verbatim. Never write, edit or seal `.v2p/work/` records or any `.v2p/.*-pass` / `.v2p/work/.*-pass` file by hand (Write/Edit, `>`, `shasum … >`): a tool defect is fixed in the tool, not worked around in the records.
 Claude Code: load `superpowers:systematic-debugging` + `systematic-debugging-extras`. A task listed in PLAN §6 as `/ralph-loop` eligible may run as `/ralph-loop "sh <this skill's dir>/scripts/task-record.sh verify <n>" --max-iterations 5`; the verify script is the loop's verifier. Never without `--max-iterations`.
 <!-- /claude-only -->
 
@@ -83,7 +85,7 @@ Print the path of `.v2p/EXECUTE.md`, tasks done/skipped, standards done/N-A/pend
 - Agents: implementer `builder` (code) or `quick` (docs-only Files); task reviewer `planner`. Invoke by name; never pass a model (`references/model-routing.md`).
 - `superpowers:test-driven-development` in every implementer dispatch.
 - context7 for any API contract a task relies on (core.md "API Contract Verification" evidence). `claude-mem:learn-codebase` is optional and never a source of findings.
-- Hooks: `hooks/guard-finals.sh` (proposal, not installed) also blocks direct writes to `EXECUTE.md`, `REVIEW.md` and `PLAN-AMENDMENTS.md`.
+- Hooks: `hooks/guard-finals.sh` (proposal, not installed) also blocks direct writes to `EXECUTE.md`, `REVIEW.md`, `PLAN-AMENDMENTS.md`, the `.v2p/work/execute-task-*.md` records and every `.*-pass` seal.
 <!-- /claude-only -->
 
 ***

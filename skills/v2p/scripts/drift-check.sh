@@ -24,7 +24,7 @@ else
   tasks=$(grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}')
 fi
 [ -n "$base" ] && [ -n "$branch" ] || { echo "ERROR: no base/branch recorded" >&2; exit 2; }
-tmp=${TMPDIR:-/tmp}/dc.$$; trap 'rm -f "$tmp" "$tmp.a"' EXIT; drift=0
+tmp=${TMPDIR:-/tmp}/dc.$$; trap 'rm -f "$tmp" "$tmp.a" "$tmp.b"' EXIT; drift=0
 now=$(git rev-parse --abbrev-ref HEAD)
 [ "$now" = "$branch" ] || { echo "DRIFT branch $now (recorded $branch)"; drift=1; }
 git merge-base --is-ancestor "$base" HEAD 2>/dev/null || { echo "DRIFT base $base not an ancestor of HEAD (rebased?)"; drift=1; }
@@ -36,6 +36,20 @@ while IFS= read -r t; do
   if [ -f "$amend" ]; then k=$(grep -c "· task $t · files += " "$amend"); a=$((a + k))
     grep "· task $t · files += " "$amend" | sed 's/.*files += `\([^`]*\)`.*/\1/' >> "$tmp.a"; fi
 done < "$tmp"
+# brace shorthand `src/{A,B}.tsx` → one pattern per alternative, any number of non-nested groups per token.
+# Pure string splitting in awk (no eval); the results still go through the allowlist below. Nested or unclosed → fail closed.
+: > "$tmp.b"
+awk -v out="$tmp.b" '
+function ex(s,   i, j, pre, rest, body, post, n, k, alt) {
+  i = index(s, "{"); if (!i) { print s > out; return }
+  pre = substr(s, 1, i - 1); rest = substr(s, i + 1); j = index(rest, "}")
+  if (!j) { print "DRIFT pattern " $0 " (unclosed brace)"; exit 1 }
+  body = substr(rest, 1, j - 1); post = substr(rest, j + 1)
+  if (index(body, "{")) { print "DRIFT pattern " $0 " (nested braces)"; exit 1 }
+  n = split(body, alt, ","); for (k = 1; k <= n; k++) ex(pre alt[k] post)
+}
+{ ex($0) }' "$tmp.a" || exit 1
+mv "$tmp.b" "$tmp.a"
 # fail closed: a pattern is later held in a variable and eval'd as a case arm (match, below) — refuse
 # anything outside this allowlist before that eval ever sees it, rather than risk shell injection.
 while IFS= read -r p; do
