@@ -109,6 +109,7 @@ for SH in sh zsh; do
   rm "$P"; no "10 no draft" "DEPLOY.draft.md missing"
   sub "$P" 'checked: pending' 'chkd: pending'; no "10 no checked line" "no 'checked:' line"
   # written: line and CLAUDE.md
+  sub "$P" 'target: https://fixture.test' 'target: fixture.test'; no "10 target without scheme" "target host 'fixture.test' is not a plain hostname"
   sub "$P" ' · pr: #1' ''; no "10 pr missing" "written: line needs 'pr: #<n> · base: <branch>'"
   sub "$P" 'base: main' 'base: -x'; no "10 base not a branch name" "written: line needs 'pr: #<n> · base: <branch>'"
   sub "$P" 'base: main' 'base: nope'; no "10 base not fetchable" "cannot fetch origin/nope"
@@ -135,9 +136,13 @@ for SH in sh zsh; do
   sub .gstack/deploy-reports/2026-09-25-pr1-deploy.md 'VERDICT: DEPLOYED AND VERIFIED' 'VERDICT: DEPLOYED (UNVERIFIED)'; no "10 unverified" "verdict is not DEPLOYED AND VERIFIED"; reports
   sub "$P" '2026-09-25-pr1-deploy.md' '2026-09-24-pr1-deploy.md'; no "10 no deploy report" "§1 land-and-deploy result '.gstack/deploy-reports/2026-09-24-pr1-deploy.md' is not an existing"
   sub .gstack/canary-reports/2026-09-25-canary.json '"status":"HEALTHY","pages"' '"status":"DEGRADED","pages"'; no "10 canary degraded (a page still HEALTHY)" "canary report .gstack/canary-reports/2026-09-25-canary.json status is not HEALTHY"; reports
-  sub "$P" '2026-09-25-canary.json' '2026-09-25-canary.md'; no "10 canary path" "§1 canary result '.gstack/canary-reports/2026-09-25-canary.md' is not an existing"
+  sub "$P" '| .gstack/deploy-reports/2026-09-25-pr1-deploy.md |' '| README.md |'; no "10 deploy report outside .gstack" "§1 land-and-deploy result 'README.md' is not an existing"
+  sub "$P" '.gstack/canary-reports/2026-09-25-canary.json' '.gstack/deploy-reports/2026-09-25-pr1-deploy.md'; no "10 canary path" "§1 canary result '.gstack/deploy-reports/2026-09-25-pr1-deploy.md' is not an existing"
+  sub "$P" '2026-09-25-canary.json' '2026-09-24-canary.json'; no "10 no canary report" "§1 canary result '.gstack/canary-reports/2026-09-24-canary.json' is not an existing"
+  printf '%s\n' '{"url":"https://fixture.test","pages":[]}' > .gstack/canary-reports/2026-09-25-canary.json; no "10 canary without status" "status is not HEALTHY"; reports
   # the scan stamp
   sub "$P" " · scan: $SC" ''; no "10 no scan" "written: line 'scan: ' is not a CLAUDE-SECURITY-<ts> directory"
+  sub "$P" "scan: $SC" 'scan: CLAUDE-SECURITY-20260101-000000'; no "10 scan dir missing" "'scan: CLAUDE-SECURITY-20260101-000000' is not a CLAUDE-SECURITY-<ts> directory here"
   mv "$SC/CLAUDE-SECURITY-REVISION-$S12.json" "$SC/CLAUDE-SECURITY-REVISION-$S12-dirty.json"; no "10 dirty stamp" "scan ran on a dirty/unversioned tree"; stamp "$SCANC"
   cp "$SC/CLAUDE-SECURITY-REVISION-$S12.json" "$SC/CLAUDE-SECURITY-REVISION-000000000000.json"; no "10 two stamps" "needs exactly one CLAUDE-SECURITY-REVISION"; stamp "$SCANC"
   J=$SC/CLAUDE-SECURITY-REVISION-$S12.json
@@ -148,12 +153,15 @@ for SH in sh zsh; do
   sub "$J" '"effort": "high"' '"effort": "max"'; ok "10 effort max"; stamp "$SCANC"
   sub "$J" '"status": "verified"' '"status": "unverified"'; no "10 verification" "scan verification 'unverified'"; stamp "$SCANC"
   stamp 1234567890abcdef1234567890abcdef12345678; no "10 scanned commit not in history" "scanned commit '1234567890abcdef1234567890abcdef12345678' is not an ancestor of HEAD"; stamp "$SCANC"
+  stamp HEAD; no "10 scanned commit not a sha" "scanned commit 'HEAD' is not an ancestor of HEAD"; stamp "$SCANC"
+  rm "$SC/CLAUDE-SECURITY-RESULTS.jsonl"; no "10 no jsonl" "CLAUDE-SECURITY-RESULTS.jsonl lines ≠ stamp total 1"; reports
   sub "$J" '"total": 1' '"total": 2'; no "10 total" "§1 security-full says 1, stamp says 2"; stamp "$SCANC"
   echo '{"id":"F2"}' >> "$SC/CLAUDE-SECURITY-RESULTS.jsonl"; no "10 jsonl" "CLAUDE-SECURITY-RESULTS.jsonl lines ≠ stamp total 1"; reports
   # §2 and commit accounting (good state: scan at the fix's parent, the fix listed)
   echo more >> README.md; git commit -qam 'chore: unrelated'; git push -q origin HEAD:main
   no "10 unaccounted commit" "FAIL: commit $(git rev-parse HEAD) after the scan is not a §2 fix"; git reset -q --hard HEAD~1; git push -qf origin HEAD:main
   sub "$P" "fixed $FIX" 'fixed deadbeef'; no "10 fix sha" "§2 fix commit 'deadbeef' not found"
+  sub "$P" "fixed $FIX" 'fixed HEAD'; no "10 fix not a sha" "§2 fix commit 'HEAD' not found"
   sub "$P" "fixed $FIX" 'accepted: constant input, not reachable'; no "10 accepted leaves the fix unaccounted" "after the scan is not a §2 fix"
   stamp "$(git rev-parse HEAD)"; sub "$P" "fixed $FIX" 'accepted: constant input, not reachable'; FD; is "10 accepted exit" "$rc" 0; has "10 accepted counted" "$out" "(fixed 0 · accepted 1)"
   rm -f .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"; stamp "$SCANC"
@@ -165,6 +173,7 @@ for SH in sh zsh; do
   sub "$P" "$second" "$(printf '%s\n' "$second" | sed 's/| done | src\/greet.sh |$/| done | none |/')"; no "10 done without evidence" "done without evidence"
   sub "$P" "$second" "$(printf '%s\n' "$second" | sed 's/| done | src\/greet.sh |$/| N\/A | not needed |/')"; no "10 N/A without BRIEF" "N/A without BRIEF §"
   sub "$P" "$second" "$(printf '%s\n' "$second" | sed 's/| done | src\/greet.sh |$/| maybe | x |/')"; no "10 status" "status not done/pending/N/A"
+  sub "$P" "$second" "| Not A Review Item |$(printf '%s\n' "$second" | cut -d'|' -f3-)"; no "10 §3 items" "§3 items differ from REVIEW §3"
   grep -vxF "$second" "$P" > "$P.new" && mv "$P.new" "$P"; no "10 §3 rows" "§3 rows $SD/$((SD + 1)) (must equal REVIEW §3)"
   # secrets
   cp docs/secrets.md "$base/sec"; grep -v RESEND "$base/sec" > docs/secrets.md; no "10 register misses a name" "docs/secrets.md does not list RESEND_API_KEY"; git checkout -q docs/secrets.md

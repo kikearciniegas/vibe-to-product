@@ -79,7 +79,7 @@ else
     S=$(sv revision commit)
     printf '%s\n' "$S" | grep -qE '^[0-9a-f]{7,64}$' && git merge-base --is-ancestor "$S" HEAD 2>/dev/null || { echo "FAIL: scanned commit '$S' is not an ancestor of HEAD"; fail=1; S=; }
     n=$(sv findings total); [ "$n" = "$fs" ] || { echo "FAIL: §1 security-full says $fs, stamp says $n"; fail=1; }
-    [ -f "$scand/CLAUDE-SECURITY-RESULTS.jsonl" ] && [ "$(grep -c . "$scand/CLAUDE-SECURITY-RESULTS.jsonl")" = "$n" ] || { echo "FAIL: $scand/CLAUDE-SECURITY-RESULTS.jsonl lines ≠ stamp total $n"; fail=1; }
+    [ "$(grep -c . "$scand/CLAUDE-SECURITY-RESULTS.jsonl" 2>/dev/null)" = "$n" ] || { echo "FAIL: $scand/CLAUDE-SECURITY-RESULTS.jsonl lines ≠ stamp total $n"; fail=1; }
   fi
 fi
 # 6. §2: one row per finding, fixed <sha> | accepted: <reason> (no open at deploy); every commit after the scan is a fix
