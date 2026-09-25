@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds a tiny git project with a landing BRIEF and a 3-task PLAN.md + receipt, ready for /v2p execute.
+# Builds a tiny git project with a landing BRIEF, a 3-task PLAN.md + receipt and a passed DESIGN.md + receipt, ready for /v2p execute.
 # §4 rows come from the live standards files (one per '- [ ]' item of BRIEF §9; '|' in an item becomes '/').
 # Usage: sh tests/fixture-execute.sh <dir>
 set -eu; here=$(cd "$(dirname "$0")/.." && pwd -P); d=$1; rm -rf "$d"; mkdir -p "$d/.v2p" "$d/docs" "$d/src"; cd "$d"
@@ -20,4 +20,6 @@ done)
   '### Task 3: Review phase' '**Files:** none' '**Verifier:** manual: the reviewer reads the branch diff' '' \
   '## 6. Handoff' 'Tasks: 3 (mechanical 2, manual 1). Order: 1 → 2 → 3' 'Next: /v2p execute'; } > .v2p/PLAN.md
 shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+# a passed brand (the bytes finalize-brand.sh writes), so Task 2 (a .tsx file) clears task-record's UI gate
+cp "$here/tests/fixtures/finalize-brand/DESIGN.good.md" .v2p/DESIGN.md; shasum -a 256 .v2p/DESIGN.md | cut -d' ' -f1 > .v2p/.brand-pass
 git add -A; git -c user.email=t@t -c user.name=t commit -qm 'fixture: plan'
