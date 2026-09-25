@@ -245,6 +245,14 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   is "24 record unchanged" "$(sha $rec1)" "$s0"
   mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh; git add -A; git commit -qm 'feat: greet'
   TR verify 1; is "24 verify" $rc 0; TR ponytail 1 none; is "24 after verify exit" $rc 0
+  # 25. defer: a verifier that needs a credential is recorded `deferred — <credential>`, counted apart from skips,
+  # and listed in §1 so deploy re-checks it
+  TR defer 2 ""; is "25 empty credential exit" $rc 2
+  TR defer 2 "VERCEL_TOKEN (deploy preview URL)"; is "25 defer exit" $rc 0
+  has "25 record" "$(cat .v2p/work/execute-task-2.md)" "verifier: deferred — VERCEL_TOKEN (deploy preview URL)"
+  TR skip 3 "handed to /v2p review"; cp "$base/draft" .v2p/EXECUTE.draft.md
+  FE; is "25 finalize exit" $rc 0; has "25 PASS counts deferred" "$out" "PASS: 1/3 tasks (1 skipped, 1 deferred)"
+  has "25 §1 lists credential" "$(grep '^| 2 |' .v2p/EXECUTE.md)" "deferred — VERCEL_TOKEN (deploy preview URL)"
   cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)

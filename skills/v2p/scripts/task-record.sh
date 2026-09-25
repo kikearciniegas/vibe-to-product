@@ -1,7 +1,7 @@
 #!/bin/sh
 # The only writer of execute's per-task records (.v2p/work/execute-task-<n>.md + receipt .execute-task-<n>-pass)
 # and of .v2p/PLAN-AMENDMENTS.md. PLAN.md is never edited: scope granted mid-execute is appended here.
-# Usage: sh task-record.sh start|verify|manual|note|ponytail|allow|skip <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p]   (exit 0 ok · 1 fail · 2 usage)
+# Usage: sh task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p]   (exit 0 ok · 1 fail · 2 usage)
 #   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt
 #   start <n> --base <sha> "<why>"  re-start: replaces any record for <n> (verifier/manual/ponytail reset) with base
 #                              <sha> (an ancestor of HEAD); appends `base := <sha> (was <old>)` to PLAN-AMENDMENTS.md
@@ -15,16 +15,17 @@
 #                              Only this writer enforces the format; readers (finalize-execute) accept older lines too.
 #   allow <n> <path> "<why>"   scope amendment: appends to .v2p/PLAN-AMENDMENTS.md and the record's files: line
 #   skip <n> "<reason>"        task not executed here (only on the user's yes)
+#   defer <n> "<credential>"   verifier needs a credential this session lacks (only on the user's yes); deploy re-checks it
 # ponytail: expected-output check covers exit code and bare numbers only; `→ passed`/`→ all passed` rely on the
 # command's exit code — mapping's Verifier convention asks for self-checking commands.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); S=$skill/scripts
-usage() { echo "usage: task-record.sh start|verify|manual|note|ponytail|allow|skip <n> [args] [.v2p]; start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; }
+usage() { echo "usage: task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; }
 # a reason lands in PLAN-AMENDMENTS.md, which drift-check parses: one line, and none of the grant syntax
 reason() { case $1 in *"
 "*) echo "ERROR: the reason must be one line" >&2; exit 2 ;;
   *'files +='*|*'base :='*|*'`'*|*' · task '*) echo "ERROR: the reason must not contain 'files +=', 'base :=', a backtick or ' · task '" >&2; exit 2 ;; esac; }
 cmd=$1; n=$2; nb=
-case $cmd in start|verify) dd=$3 ;; manual|note|ponytail|skip) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
+case $cmd in start|verify) dd=$3 ;; manual|note|ponytail|skip|defer) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
 case $n in ''|*[!0-9]*) usage ;; esac
 if [ "$cmd" = start ] && [ "$3" = --base ]; then nb=$4; why=$5; dd=$6
   [ -n "$nb" ] && [ -n "$why" ] || { echo "ERROR: start <n> --base <sha> \"<reason>\" (the reason is required)" >&2; exit 2; }
@@ -121,4 +122,8 @@ skip)
   t=$3; [ -n "$t" ] || { echo "ERROR: skip needs a reason" >&2; exit 2; }
   fresh || write_start; need
   put verifier "skipped — $t"; put head "$(git rev-parse HEAD)"; seal; echo "skipped: task $n — $t" ;;
+defer)
+  t=$3; [ -n "$t" ] || { echo "ERROR: defer needs the missing credential" >&2; exit 2; }
+  fresh || write_start; need
+  put verifier "deferred — $t"; put head "$(git rev-parse HEAD)"; seal; echo "deferred: task $n — $t" ;;
 esac

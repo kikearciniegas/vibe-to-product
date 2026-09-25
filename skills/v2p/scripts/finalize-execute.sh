@@ -1,6 +1,7 @@
 #!/bin/sh
 # Promote .v2p/EXECUTE.draft.md to .v2p/EXECUTE.md only if PLAN still matches its receipt, every PLAN task has a
-# sealed record from task-record.sh (pass, or skipped with a reason; manual and ponytail-review lines where due),
+# sealed record from task-record.sh (pass, skipped with a reason, or deferred with the missing credential; manual and
+# ponytail-review lines where due),
 # all records share the current branch, the tree is clean outside .v2p/, and §2 has the same items as PLAN §4 with
 # valid statuses. §1 is generated here from the records, never typed. Usage: sh finalize-execute.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; fail=0
@@ -13,7 +14,7 @@ else echo "FAIL: $draft missing"; fail=1; fi
 planpass=$(cat "$d/.plan-pass"); now=$(git rev-parse --abbrev-ref HEAD)
 tline() { awk -v n="$1" -v k="$2" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && index($0, "**" k ":**")==1 {print; exit}' "$plan"; }
 # 3. one sealed, current record per PLAN task
-grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}' > "$tmp.t"; total=$(grep -c . "$tmp.t"); done_n=0; skipped=0
+grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}' > "$tmp.t"; total=$(grep -c . "$tmp.t"); done_n=0; skipped=0; deferred=0
 while IFS= read -r n; do
   r=$d/work/execute-task-$n.md; p=$d/work/.execute-task-$n-pass
   [ -f "$r" ] || { echo "FAIL: task $n: no record"; fail=1; continue; }
@@ -28,7 +29,8 @@ while IFS= read -r n; do
         grep -q '^manual: ' "$r" || { echo "FAIL: task $n: Verifier has a manual part and the record has no 'manual:' line"; fail=1; }; fi
       grep -q '^ponytail-review: ' "$r" || { echo "FAIL: task $n: no 'ponytail-review:' line"; fail=1; } ;;
     'verifier: skipped — '?*) skipped=$((skipped + 1)) ;;
-    *) echo "FAIL: task $n: ${v:-no verifier line} (needs pass, or skipped with a reason)"; fail=1 ;;
+    'verifier: deferred — '?*) deferred=$((deferred + 1)) ;;
+    *) echo "FAIL: task $n: ${v:-no verifier line} (needs pass, skipped with a reason, or deferred with a credential)"; fail=1 ;;
   esac
 done < "$tmp.t"
 # 5. clean tree outside .v2p/ (porcelain paths are repo-relative; strip this project's prefix)
@@ -73,4 +75,5 @@ awk -v t="$tmp.s1" -v c="$c" '
 # Receipt: review accepts EXECUTE.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.execute-pass"
 find "$d/work" \( -name 'execute-task-*' -o -name '.execute-task-*' \) -exec rm -f {} +
-echo "PASS: $done_n/$total tasks ($skipped skipped), $sd done rows -> $out"
+dfr=; [ "$deferred" -eq 0 ] || dfr=", $deferred deferred"
+echo "PASS: $done_n/$total tasks ($skipped skipped$dfr), $sd done rows -> $out"
