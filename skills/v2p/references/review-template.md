@@ -35,7 +35,7 @@ Rows: <n> = PLAN §4
 ## 4. Pre-deploy
 pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)
 
-Next: /v2p deploy (not available in this version)
+Next: /v2p deploy
 ````
 
 ***

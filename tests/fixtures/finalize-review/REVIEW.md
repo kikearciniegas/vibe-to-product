@@ -34,4 +34,4 @@ written: 2026-09-24 by v2p review · reads: .v2p/EXECUTE.md · diff: {{BASE}}..{
 
 ## 4. Pre-deploy
 
-Next: /v2p deploy (not available in this version)
+Next: /v2p deploy

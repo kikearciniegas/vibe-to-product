@@ -69,13 +69,13 @@ Claude Code: `sh <this skill's dir>/scripts/finalize-review.sh .v2p` until it pr
 <!-- /claude-only -->
 
 ## Step 6 — Hand off
-Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)`, then `Next: /v2p deploy (not available in this version)`.
+Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)`, then `Next: /v2p deploy`.
 
 <!-- claude-only -->
 ## Claude Code note
 - Main thread runs the gstack skills (they need `AskUserQuestion`); `planner` audits evidence; `/codex` runs through its skill only.
 - `AskUserQuestion` for: accepting an `open` finding, `/codex` unavailable → continue without, deferred rows.
-- Strix is deploy's (slice 5): not installed here; mention only.
+- Strix is deploy's: optional, needs Docker + an LLM key; never installed here.
 <!-- /claude-only -->
 
 ***
