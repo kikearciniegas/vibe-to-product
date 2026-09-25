@@ -1,7 +1,7 @@
 #!/bin/sh
 # The only writer of execute's per-task records (.v2p/work/execute-task-<n>.md + receipt .execute-task-<n>-pass)
 # and of .v2p/PLAN-AMENDMENTS.md. PLAN.md is never edited: scope granted mid-execute is appended here.
-# Usage: sh task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]   (exit 0 ok · 1 fail · 2 usage)
+# Usage: sh task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p]   (exit 0 ok · 1 fail · 2 usage)
 #   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt
 #   start <n> --base <sha> "<why>"  re-start: replaces any record for <n> (verifier/manual/ponytail reset) with base
 #                              <sha> (an ancestor of HEAD); appends `base := <sha> (was <old>)` to PLAN-AMENDMENTS.md
@@ -15,14 +15,18 @@
 # ponytail: expected-output check covers exit code and bare numbers only; `→ passed`/`→ all passed` rely on the
 # command's exit code — mapping's Verifier convention asks for self-checking commands.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); S=$skill/scripts
-usage() { echo "usage: task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]" >&2; exit 2; }
+usage() { echo "usage: task-record.sh start|verify|manual|ponytail|allow|skip <n> [args] [.v2p]; start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; }
+# a reason lands in PLAN-AMENDMENTS.md, which drift-check parses: one line, and none of the grant syntax
+reason() { case $1 in *"
+"*) echo "ERROR: the reason must be one line" >&2; exit 2 ;;
+  *'files +='*|*'base :='*|*'`'*|*' · task '*) echo "ERROR: the reason must not contain 'files +=', 'base :=', a backtick or ' · task '" >&2; exit 2 ;; esac; }
 cmd=$1; n=$2; nb=
 case $cmd in start|verify) dd=$3 ;; manual|ponytail|skip) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
 case $n in ''|*[!0-9]*) usage ;; esac
 if [ "$cmd" = start ] && [ "$3" = --base ]; then nb=$4; why=$5; dd=$6
   [ -n "$nb" ] && [ -n "$why" ] || { echo "ERROR: start <n> --base <sha> \"<reason>\" (the reason is required)" >&2; exit 2; }
-  case $why in *"
-"*) echo "ERROR: the reason must be one line" >&2; exit 2 ;; esac
+  reason "$why"
+  case $why in .v2p|*/.v2p) [ -d "$why" ] && { echo "ERROR: '$why' is the .v2p directory, not a reason: start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; } ;; esac
 fi
 d=${dd:-.v2p}; [ -d "$d" ] || { echo "ERROR: $d not found" >&2; exit 2; }
 d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 2
@@ -96,6 +100,7 @@ ponytail)
   put ponytail-review "$t"; put head "$(git rev-parse HEAD)"; seal; echo "ponytail-review: recorded for task $n" ;;
 allow)
   need; p=$3; why=$4; [ -n "$p" ] && [ -n "$why" ] || { echo "ERROR: allow needs <path> and a reason" >&2; exit 2; }
+  reason "$why"
   # this path is later matched as a drift-check pattern (eval'd as a case arm) — keep it relative, traversal-free,
   # and inside the same safe character set drift-check enforces, before it is written anywhere
   case $p in *[!]A-Za-z0-9._/@+*?[-]*) echo "ERROR: unsafe path $p (unsafe characters)" >&2; exit 2 ;; esac

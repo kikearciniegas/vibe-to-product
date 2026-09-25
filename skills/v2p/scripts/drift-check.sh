@@ -33,8 +33,9 @@ git merge-base --is-ancestor "$base" HEAD 2>/dev/null || { echo "DRIFT base $bas
 while IFS= read -r t; do
   awk -v n="$t" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Files:\*\*/ {sub(/\*\*Interfaces:\*\*.*/,""); print; exit}' "$plan" |
     grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g' >> "$tmp.a"
-  if [ -f "$amend" ]; then k=$(grep -c "· task $t · files += " "$amend"); a=$((a + k))
-    grep "· task $t · files += " "$amend" | sed 's/.*files += `\([^`]*\)`.*/\1/' >> "$tmp.a"; fi
+  # a grant is only the structured prefix `- <ISO> · task <t> · files += `<path>`` — never text later in the line
+  if [ -f "$amend" ]; then g="^- [^ ]* · task $t · files += \`"; k=$(grep -c "$g" "$amend"); a=$((a + k))
+    grep "$g" "$amend" | sed 's/^- [^ ]* · task [0-9]* · files += `\([^`]*\)`.*/\1/' >> "$tmp.a"; fi
 done < "$tmp"
 # brace shorthand `src/{A,B}.tsx` → one pattern per alternative, any number of non-nested groups per token.
 # Pure string splitting in awk (no eval); the results still go through the allowlist below. Nested or unclosed → fail closed.

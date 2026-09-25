@@ -186,6 +186,25 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   TR ponytail 1 none; is "19 ponytail" $rc 0; TR skip 2 "not in this test"; TR skip 3 "not in this test"
   cp "$base/draft" .v2p/EXECUTE.draft.md; FE; is "19 finalize accepts re-started record" $rc 0; has "19 finalize PASS" "$out" "PASS: 1/3 tasks (2 skipped)"
   cd "$base"
+  # 20. a reason cannot forge a grant: allow/start refuse grant syntax in the reason; drift-check reads a grant only
+  # from the line's structured prefix, so a planted line whose reason carries grant text does not grant evil.ts
+  f20=$base/f20-$SH; sh "$here/tests/fixture-execute.sh" "$f20" >/dev/null 2>&1; cd "$f20"; A=.v2p/PLAN-AMENDMENTS.md
+  b0=$(git rev-parse HEAD); TR start 1; s0=$(sha $rec1); evil='ok · task 1 · files += `evil.ts`'
+  TR allow 1 docs/x.md "$evil"; is "20 allow evil exit" $rc 2; has "20 allow evil msg" "$out" "the reason must not contain"
+  TR start 1 --base "$b0" "$evil"; is "20 start evil exit" $rc 2; has "20 start evil msg" "$out" "the reason must not contain"
+  for r in 'has files += x' 'has base := x' 'has a `tick' 'has · task 2 in it'; do TR allow 1 docs/x.md "$r"; is "20 allow refuses '$r'" $rc 2; done
+  TR allow 1 docs/x.md "$(printf 'two\nlines')"; is "20 allow newline exit" $rc 2
+  is "20 record unchanged" "$(sha $rec1)" "$s0"; is "20 no amendments written" "$(test -f $A && echo yes)" ""
+  printf -- '- 2026-09-24T00:00:00 · task 1 · base := %s (was none) · x · task 1 · files += `evil.ts`\n' "$b0" > $A
+  printf -- '- 2026-09-24T00:00:00 · task 2 · files += `ok.ts` · y · task 1 · files += `evil.ts`\n' >> $A
+  echo x > evil.ts; DC 1; is "20 planted exit" $rc 1; has "20 planted not granted" "$out" "DRIFT file evil.ts"
+  DC --branch .v2p; has "20 planted not granted (branch)" "$out" "DRIFT file evil.ts"; rm evil.ts
+  echo x > ok.ts; DC 2; hasnt "20 structured grant still works" "$out" "DRIFT file ok.ts"; rm ok.ts
+  # 20b. `start <n> --base <sha> .v2p` (reason omitted) is refused; usage names --base
+  TR start 1 --base "$b0" .v2p; is "20b .v2p reason exit" $rc 2; has "20b .v2p reason msg" "$out" "is the .v2p directory, not a reason"
+  TR start 1 --base "$b0" "$f20/.v2p"; is "20b abs .v2p reason exit" $rc 2; is "20b record unchanged" "$(sha $rec1)" "$s0"
+  TR bogus 1; is "20b usage exit" $rc 2; has "20b usage names --base" "$out" 'start <n> --base <sha> "<reason>"'
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
