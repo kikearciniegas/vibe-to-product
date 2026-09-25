@@ -61,6 +61,7 @@ Button: hover darkens primary 8%, focus-visible 2px navy ring, active scale 0.96
 ## Do's and Don'ts
 - Do: one orange action per screen; real photos of the studio; 4.5:1 text contrast.
 - Don't: gradient text, fake testimonials, three-icon-card rows.
+- No token or mark copied from a reference site.
 
 ## Motion
 - Approach: minimal-functional; easing enter ease-out / exit ease-in / move ease-in-out; durations micro 50–100ms, short 150–250ms
@@ -82,6 +83,7 @@ Button: hover darkens primary 8%, focus-visible 2px navy ring, active scale 0.96
 
 ## Sources
 - generated: ui-ux-pro-max 2.13.0 --design-system "warm precise local dog grooming landing" · candidate B chosen
+- font: Plus Jakarta Sans · licence: OFL
 - schema: google-labs-code/design.md spec, linted with @google/design.md 0.4.0
 
 Next: /v2p mapping
