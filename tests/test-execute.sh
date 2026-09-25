@@ -205,6 +205,17 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   TR start 1 --base "$b0" "$f20/.v2p"; is "20b abs .v2p reason exit" $rc 2; is "20b record unchanged" "$(sha $rec1)" "$s0"
   TR bogus 1; is "20b usage exit" $rc 2; has "20b usage names --base" "$out" 'start <n> --base <sha> "<reason>"'
   cd "$base"
+  # 21. Files lines quote code too (live PLAN Task 14: `tunnelRoute: '/sentry-tunnel'`): a non-path token is ignored
+  # with a note, not fatal, and grants nothing; the real path on the same line still scopes the task.
+  f21=$base/f21-$SH; sh "$here/tests/fixture-execute.sh" "$f21" >/dev/null 2>&1; cd "$f21"
+  sed "s|^\*\*Files:\*\* Modify: \`src/\*\.sh\`, \`app/\[locale\]/page\.tsx\`\$|**Files:** Modify \`next.config.ts\` (\`withSentryConfig\`, \`tunnelRoute: '/x'\`), \`\$(touch PWNED)\`|" .v2p/PLAN.md > "$base/p21" && mv "$base/p21" .v2p/PLAN.md
+  grep -q 'tunnelRoute' .v2p/PLAN.md; is "21 fixture edited" $? 0
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: code in Files'
+  TR start 2; rm -f PWNED; echo x > next.config.ts
+  DC 2; is "21 code token exit" $rc 0; has "21 note" "$out" "note: ignored non-path Files token tunnelRoute:"
+  has "21 injection token ignored" "$out" 'note: ignored non-path Files token $(touch'; is "21 no PWNED" "$(test -f PWNED && echo yes)" ""
+  echo x > other.ts; DC 2; is "21 still scoped exit" $rc 1; has "21 other.ts drift" "$out" "DRIFT file other.ts"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

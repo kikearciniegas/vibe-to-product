@@ -32,7 +32,10 @@ git merge-base --is-ancestor "$base" HEAD 2>/dev/null || { echo "DRIFT base $bas
 : > "$tmp.a"; a=0; printf '%s\n' "$tasks" > "$tmp"
 while IFS= read -r t; do
   awk -v n="$t" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Files:\*\*/ {sub(/\*\*Interfaces:\*\*.*/,""); print; exit}' "$plan" |
-    grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g' >> "$tmp.a"
+    grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g' |
+    # Files lines also quote code (`tunnelRoute: '/x'`); a token no path could contain is dropped, never matched
+    # or eval'd. Dropping only narrows scope. Amendment grants below still fail closed on the same characters.
+    while IFS= read -r p; do case $p in *[!]A-Za-z0-9._/@+*?[{},-]*) echo "note: ignored non-path Files token $p" ;; *) printf '%s\n' "$p" >> "$tmp.a" ;; esac; done
   # a grant is only the structured prefix `- <ISO> · task <t> · files += `<path>`` — never text later in the line
   if [ -f "$amend" ]; then g="^- [^ ]* · task $t · files += \`"; k=$(grep -c "$g" "$amend"); a=$((a + k))
     grep "$g" "$amend" | sed 's/^- [^ ]* · task [0-9]* · files += `\([^`]*\)`.*/\1/' >> "$tmp.a"; fi
