@@ -26,7 +26,7 @@ Print the case and the BRIEF §1 profile. The case comes from BRIEF §6 `Status:
 | BRIEF §6 Status | Case | Direction source |
 |---|---|---|
 | `existing (source: <path/url>)`, readable | **existing** (transcribe) | the guide; a logo-only guide → **to-create** with the logo as a fixed constraint |
-| `existing (source: pending …)`, or unreadable | **placeholder** | none: neutral tokens; say "placeholder: re-run `/v2p brand` when <guide> exists; it re-themes." |
+| `existing (source: pending …)`, or unreadable | **placeholder** | none: neutral tokens; say "placeholder: re-run `/v2p brand` when <guide> exists; it re-themes." In re-theme mode the placeholder is the incumbent tokens as shipped (no candidates, no direction question): it records them and the reviewed cycle stays current. |
 | `to-create` | **to-create** (propose) | the three adjectives, reference sites and must-avoid of BRIEF §6 |
 | `none` (internal tool, org UI kit) | **none** (document the kit) | the organisation's kit, or the stack default |
 | any, in re-theme mode | **re-theme** | first record the tokens in use now, then the row above that matches |
@@ -50,7 +50,7 @@ Every Bash command an impeccable script runs gets the prefix `IMPECCABLE_NO_UPDA
 | Case | Skills, in order | Never |
 |---|---|---|
 | existing (readable) | `markitdown <guide> > .v2p/work/brand-guide.md` (line 1 `sha256: $(shasum -a 256 <guide> \| cut -d' ' -f1)`; a URL: fetch and save the text) → write the draft from `references/design-template.md` → `search.py "<face>" --domain google-fonts` (faces and fallbacks only) → Motion: `make-interfaces-feel-better` defaults; `apple-design` only when the BRIEF profile is `native-app` or names gestures → `/impeccable init` | taste skills, stitch, awesome-design-md (a transcription is not re-opinionated) |
-| placeholder | `search.py "<profile> neutral minimal" --design-system --variance 2 -f markdown > .v2p/work/brand-candidates.md` → `/impeccable init` | everything else (deferred to the re-theme) |
+| placeholder | re-theme mode: none (the incumbent tokens are the placeholder) → `/impeccable init`; otherwise `search.py "<profile> neutral minimal" --design-system --variance 2 -f markdown > .v2p/work/brand-candidates.md` → `/impeccable init` | everything else (deferred to the re-theme) |
 | to-create | `superpowers:brainstorming` + `brainstorming-extras` (bounded: one artefact, `.v2p/DESIGN.md`; approval in chat before writing; no spec file, no writing-plans) → three `search.py "<adjectives> <profile> <industry>" --design-system --variance <3\|6\|9> -f markdown` runs into `.v2p/work/brand-candidates.md` → gstack `/design-consultation` + `gstack-extras` (give it the BRIEF, the candidates, the must-avoid list and "the design must serve BRIEF §3"; at Q-final choose Approve; then `mv DESIGN.md .v2p/DESIGN.draft.md` and remove the `## Design System` section it appended to `CLAUDE.md`, nothing else) → optional, only on the user's yes: `/design-shotgun` for the first screen when gstack reports `DESIGN_READY` (needs its OpenAI key); `banana-claude` for `## Imagery` only when the plugin is enabled and has its key (it asks its own approval per call) → Motion as in existing → `/impeccable init` | `npx getdesign`; copying a reference site's tokens or fonts |
 | none (org kit) | kit tokens, else `search.py "internal <domain> dashboard" --design-system --density 8 -f markdown` and `--domain ux "keyboard focus table"` → `/impeccable document` when kit code exists (copy its output into the template; decline its sidecar refresh) → `/impeccable init` | writing through the root symlink |
 | re-theme | `/impeccable document` (scan mode) → move its root `DESIGN.md` to `.v2p/work/brand-incumbent.md` → the matching row above → Step 4 archives the cycle | editing the archived PLAN/EXECUTE/REVIEW |
@@ -74,11 +74,11 @@ Write the draft to `.v2p/DESIGN.draft.md`. Print it (or its path), the preview p
 Portable: rename the draft to `.v2p/DESIGN.md`, create the root link (`ln -sfn .v2p/DESIGN.md DESIGN.md`) and say there is no receipt.
 <!-- claude-only -->
 Claude Code: `sh <this skill's dir>/scripts/finalize-brand.sh .v2p` until it prints `PASS`. It checks the frontmatter (name, description, the required tokens and the component pairs), quoted 6-digit hex colors, the pinned linter `@google/design.md@0.4.0` run offline from the npx cache (any error, or a `contrast-ratio`, `section-order`, `missing-primary`, `missing-typography` or `unknown-key` warning, fails; a missing linter fails too), each section once and the v2p ones after Do's and Don'ts, Must-Avoid = BRIEF §6 byte for byte, the Sources kinds (a local guide's sha256), no `---` rule outside the fence, the `Next:` line, and no regular root `DESIGN.md`. It renames the draft, writes the receipt `.v2p/.brand-pass`, links root `DESIGN.md -> .v2p/DESIGN.md` (every design skill reads the root file) and clears `.v2p/work/brand-*`. A refusal is a stop-and-ask with the output verbatim; never hand-write `.v2p/DESIGN.md` or `.v2p/.brand-pass`.
-Re-theme: on PASS, `sh <this skill's dir>/scripts/archive-cycle.sh .v2p` moves PLAN, EXECUTE, REVIEW, PLAN-AMENDMENTS and their receipts into `.v2p/cycles/<date>/`; mapping then writes the cycle-2 plan.
+Re-theme: on PASS, `sh <this skill's dir>/scripts/archive-cycle.sh .v2p` moves PLAN, EXECUTE, REVIEW, PLAN-AMENDMENTS and their receipts into `.v2p/cycles/<date>/`; mapping then writes the cycle-2 plan. A placeholder DESIGN.md is not archived over: the script prints `kept: …` and the reviewed cycle stays current (`Next: /v2p deploy`).
 <!-- /claude-only -->
 
 ## Step 5 — Hand off
-Print the path, the counts from the PASS line (or the token counts), `Status: final|placeholder`, then `Next: /v2p mapping`.
+Print the path, the counts from the PASS line (or the token counts), `Status: final|placeholder`, then `Next: /v2p mapping` (a placeholder over a reviewed cycle: `Next: /v2p deploy`, and the draft's Next line says so).
 
 <!-- claude-only -->
 ## Claude Code note

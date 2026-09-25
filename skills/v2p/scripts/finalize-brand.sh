@@ -113,7 +113,7 @@ done < "$tmp.s"
 # 9–11. no `---` rule outside the fence; Next line; root DESIGN.md is not a regular file
 hr=$(awk -v c="$close" '$0 == "---" && NR != 1 && NR != c { print NR }' "$draft" | tr '\n' ' ')
 [ -z "$hr" ] || { echo "FAIL: '---' rule on lines ${hr% } (use ***)"; fail=1; }
-grep -qx 'Next: /v2p mapping' "$draft" || { echo "FAIL: no 'Next: /v2p mapping' line"; fail=1; }
+grep -qxE 'Next: /v2p (mapping|deploy)' "$draft" || { echo "FAIL: no 'Next: /v2p mapping' (or, placeholder over a reviewed cycle, 'Next: /v2p deploy') line"; fail=1; }
 [ -f "$root/DESIGN.md" ] && [ ! -L "$root/DESIGN.md" ] && { echo "FAIL: root DESIGN.md is a regular file; move it aside (it will be a symlink to .v2p/DESIGN.md)"; fail=1; }
 [ "$fail" -eq 0 ] || { echo "FAIL: DESIGN.md not written"; exit 1; }
 nc=$(grep -c '^colors\.' "$tmp.t"); nt=$(grep -cE '^typography\.[^.]+	' "$tmp.t"); ncp=$(grep -cE '^components\.[^.]+	' "$tmp.t")

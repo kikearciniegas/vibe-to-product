@@ -83,6 +83,12 @@ for SH in sh zsh; do
   rm -r "$C"; mv "$v/.brand-pass" "$base/bp-$SH"
   A=$(cd "$w" && $SH "$S/archive-cycle.sh" .v2p 2>&1); is "13 no brand receipt exit" $? 1; has "13 no brand receipt" "$A" "DESIGN.md does not match its receipt"
   is "13 nothing moved" "$(test -f "$v/REVIEW.md" && test ! -e "$C" && echo yes)" yes
+  # 13b. a placeholder DESIGN.md over a reviewed cycle is kept, not archived (live: it re-recorded the shipped tokens
+  # and opened an empty cycle 2)
+  sed 's/^description: .*/description: PLACEHOLDER — neutral tokens until brand.pdf arrives/' "$base/d-$SH" > "$v/DESIGN.md"; sha "$v/DESIGN.md" > "$v/.brand-pass"
+  A=$(cd "$w" && $SH "$S/archive-cycle.sh" .v2p 2>&1); is "13b placeholder exit" $? 0; has "13b kept" "$A" "kept: DESIGN.md is a placeholder"
+  has "13b next deploy" "$A" "Next: /v2p deploy"; is "13b nothing moved" "$(test -f "$v/REVIEW.md" && test ! -e "$C" && echo yes)" yes
+  cp "$base/d-$SH" "$v/DESIGN.md"; mv "$base/bp-$SH" "$v/.brand-pass"
   # 11. falsifiers on the good file: each changes one thing and expects the named FAIL (exit 1, nothing written)
   good; run; is "11 good exit" $rc 0; has "11 good PASS" "$out" "PASS: 4 colors, 2 typography roles, 2 components, lint 0 errors"
   nw() { is "11 $1 exit" $rc 1; has "11 $1" "$out" "$2"; is "11 $1 nothing written" "$(test -f "$w/.v2p/DESIGN.md" && echo yes)" ""; }
@@ -113,7 +119,7 @@ for SH in sh zsh; do
   good; awk '$0 == "## Motion" { skip = 1; next } skip && /^## / { skip = 0 } !skip' "$P" > "$P.new" && mv "$P.new" "$P"; run; is "11 no Motion section passes (optional)" $rc 0
   good; echo x > "$w/DESIGN.md"; run; nw "regular root DESIGN.md" "root DESIGN.md is a regular file"
   good; run PATH=/usr/bin:/bin; nw "no npx" "designmd linter unavailable"
-  good; rep 'Next: /v2p mapping' 'Next: later'; run PATH=/usr/bin:/bin; has "11 no npx: own checks still run" "$out" "no 'Next: /v2p mapping' line"
+  good; rep 'Next: /v2p mapping' 'Next: later'; run PATH=/usr/bin:/bin; has "11 no npx: own checks still run" "$out" "no 'Next: /v2p mapping' (or"
   good; rep 'description: Warm, precise, local — sunlit orange on cream, deep navy text, calm energy' 'description: PLACEHOLDER — neutral tokens until brand.pdf arrives'
   run; is "11 placeholder exit" $rc 0; has "11 placeholder status" "$out" "status placeholder"
   # 14. lint parser against a fake npx (captured real JSON): the rule and severity fields decide, not the exit code alone

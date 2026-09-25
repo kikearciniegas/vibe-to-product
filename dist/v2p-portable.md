@@ -288,7 +288,7 @@ Print the case and the BRIEF §1 profile. The case comes from BRIEF §6 `Status:
 | BRIEF §6 Status | Case | Direction source |
 |---|---|---|
 | `existing (source: <path/url>)`, readable | **existing** (transcribe) | the guide; a logo-only guide → **to-create** with the logo as a fixed constraint |
-| `existing (source: pending …)`, or unreadable | **placeholder** | none: neutral tokens; say "placeholder: re-run `/v2p brand` when <guide> exists; it re-themes." |
+| `existing (source: pending …)`, or unreadable | **placeholder** | none: neutral tokens; say "placeholder: re-run `/v2p brand` when <guide> exists; it re-themes." In re-theme mode the placeholder is the incumbent tokens as shipped (no candidates, no direction question): it records them and the reviewed cycle stays current. |
 | `to-create` | **to-create** (propose) | the three adjectives, reference sites and must-avoid of BRIEF §6 |
 | `none` (internal tool, org UI kit) | **none** (document the kit) | the organisation's kit, or the stack default |
 | any, in re-theme mode | **re-theme** | first record the tokens in use now, then the row above that matches |
@@ -318,7 +318,7 @@ Write the draft to `.v2p/DESIGN.draft.md`. Print it (or its path), the preview p
 Portable: rename the draft to `.v2p/DESIGN.md`, create the root link (`ln -sfn .v2p/DESIGN.md DESIGN.md`) and say there is no receipt.
 
 ## Step 5 — Hand off
-Print the path, the counts from the PASS line (or the token counts), `Status: final|placeholder`, then `Next: /v2p mapping`.
+Print the path, the counts from the PASS line (or the token counts), `Status: final|placeholder`, then `Next: /v2p mapping` (a placeholder over a reviewed cycle: `Next: /v2p deploy`, and the draft's Next line says so).
 
 
 ***
