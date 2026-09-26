@@ -19,7 +19,11 @@ Copy the block below into `.v2p/PLAN.md` and replace every `<…>`. §2–§6 ar
 <the five uncovered inputs — writing-plans rule; each gets a test in the owning task>
 
 ## Architecture
-<data flow, one line per hop: client → host → each §2 provider it calls (core.md "Architecture Map")>
+```mermaid
+flowchart LR
+  <one node per client, host and §2 provider; node ids from references/stack/overview.md §4; each edge labelled with what crosses it (key, token, webhook)>
+```
+<one line per hop: client → host → each §2 provider it calls (core.md "Architecture Map")>
 
 ## Threat Model
 <assets; entry points (one per §2 provider that receives traffic or webhooks); top 5 abuse cases, each with the task that mitigates it; the task that writes docs/threat-model.md (core.md threat-model item)>

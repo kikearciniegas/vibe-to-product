@@ -22,7 +22,7 @@ hasnt() { case $2 in *"$3"*) echo "FAIL [$SH] $1: still has '$3'"; fails=$((fail
 ins() { RE=$1 T=$2 awk '!done && $0 ~ ENVIRON["RE"] { print ENVIRON["T"]; done = 1 } { print }' "$P" > "$P.new" && mv "$P.new" "$P"; }
 run() { out=$($SH "$F" "$v" 2>&1); rc=$?; nfail=$(printf '%s\n' "$out" | grep -c '^FAIL: [^$]' ); }
 M_TOT="§2 has no 'Total monthly at launch"; M_BUD="FAIL: budget:"; M_HR="FAIL: '---' rule"
-M_4B="no '## 4b' section"; M_AR="no '## Architecture' section"; M_TM="no '## Threat Model' section"
+M_4B="no '## 4b' section"; M_AR="no '## Architecture' section"; M_TM="no '## Threat Model' section"; M_MM="'## Architecture' has no"
 for SH in sh zsh; do
   w=$base/$SH; v=$w/.v2p; P=$v/PLAN.draft.md; mkdir -p "$v"
   cp "$src/BRIEF.md" "$v/BRIEF.md"
@@ -65,7 +65,13 @@ for SH in sh zsh; do
   # 7. Architecture
   ins '^## 2\.' '## Architecture
 Browser → static site → booking form handler → email provider.'
-  run; hasnt "7 architecture" "$out" "$M_AR"; is "7 one FAIL left" $nfail 2
+  run; hasnt "7 architecture" "$out" "$M_AR"; has "7 prose only → no diagram" "$out" "$M_MM"
+  # 7b. a Mermaid block inside the section satisfies the gate
+  ins '^Browser → static site' '```mermaid
+flowchart LR
+  U[Browser] --> S[static site]
+```'
+  run; hasnt "7b mermaid" "$out" "$M_MM"; is "7b one FAIL left" $nfail 2
   # 8. Threat Model → PASS
   ins '^## 2\.' '## Threat Model
 Assets: contact data. Entry points: booking form. Abuse cases: spam, …'

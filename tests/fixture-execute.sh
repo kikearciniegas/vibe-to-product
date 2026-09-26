@@ -9,7 +9,7 @@ printf 'printf ok\n' > src/hello.sh; cp "$here/tests/fixtures/finalize-plan/BRIE
 rows=$(awk '/^## 9/{f=1;next} /^## /{f=0} f' .v2p/BRIEF.md | grep -oE '[a-z-]+\.md' | sort -u | while IFS= read -r n; do
   sf=$here/skills/v2p/references/standards/$n; [ -f "$sf" ] && sed -n 's/^- \[ \] //p' "$sf" | tr '|' '/' | sed "s/^/| /; s/\$/ | $n | pending | |/"
 done)
-{ printf '%s\n' '# Fixture Implementation Plan' '' '## Architecture' 'Browser → static page.' '' '## Threat Model' 'Assets: none. Entry points: none.' '' \
+{ printf '%s\n' '# Fixture Implementation Plan' '' '## Architecture' '```mermaid' 'flowchart LR' '  U[Browser] --> V[static page]' '```' '' '## Threat Model' 'Assets: none. Entry points: none.' '' \
   '## 2. Providers' 'Total monthly at launch: $0' '' '## 4. Standards (pre-filled; execute fills evidence)' '| item | file | status | evidence |' '|---|---|---|---|'
   printf '%s\n' "$rows"
   printf '%s\n' '' '## 4b. Landing sections' '| section | kept / omitted | task |' '|---|---|---|' '| 1. Hero | kept | Task 2 |' '' '## 5. Tasks' \

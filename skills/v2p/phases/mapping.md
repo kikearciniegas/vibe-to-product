@@ -52,7 +52,10 @@ Planning runs in the `planner` agent: spawn it with the Agent tool and `subagent
 <!-- /claude-only -->
 
 ## Step 4 — v2p sections (the template enforces them)
-- Architecture: `## Architecture`, the data flow from client to host to each §2 provider (core.md "Architecture Map").
+- Architecture: `## Architecture`, a Mermaid `flowchart LR` block of the data flow from client to host to each §2 provider (node ids from `references/stack/overview.md` §4, edges labelled with what crosses them), then one line per hop (core.md "Architecture Map"). The gate refuses the section without the Mermaid block.
+<!-- claude-only -->
+  After the PLAN is sealed, offer once to render the block with gstack `/diagram` into `docs/architecture.svg` + `docs/architecture.excalidraw`; on a no, the Mermaid block is the diagram.
+<!-- /claude-only -->
 - Threat Model: `## Threat Model`, assets, entry points (one per §2 provider that receives traffic or webhooks), top 5 abuse cases with the task that mitigates each.
 - §2 Providers: one row per provider with plan, monthly cost at launch (from the overview table), and the wiring rows it needs (row ids from `references/stack/wiring.md`). The hosting row states the commercial answer from rule 3. A row on a free tier with a limit names its growth trigger and the next rung: the middle rungs in overview §"Growth rungs" (e.g. Prisma Postgres $10, Trigger.dev $10, ImageKit $9, Kinde $25) come before any $99 tier. §2 ends with `Total monthly at launch: $<n>` (arithmetic shown). If it exceeds BRIEF §7 `Budget/month`, pick cheaper rows or ask the user; only on the user's approval add `Over budget approved by user: <reason>`.
 - §4b (landing only): one row per section of `references/landing-10-sections.md`: kept or omitted (reason in BRIEF §10), and the task that meets its Check.

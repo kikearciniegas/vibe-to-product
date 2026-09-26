@@ -27,7 +27,10 @@ elif awk -v t="$total" -v b="$budget" 'BEGIN { exit !(t > b) }' &&
 fi
 hr=$(grep -n '^---$' "$draft" | cut -d: -f1 | tr '\n' ' ')
 [ -z "$hr" ] || { echo "FAIL: '---' rule on lines ${hr% } (use ***)"; fail=1; }
-grep -q '^## Architecture' "$draft" || { echo "FAIL: no '## Architecture' section"; fail=1; }
+if ! grep -q '^## Architecture' "$draft"; then echo "FAIL: no '## Architecture' section"; fail=1
+# the diagram is Mermaid source in the section itself: it renders on GitHub and survives the portable pack
+elif ! awk '/^## Architecture/ { a = 1; next } /^## / { a = 0 } a && /^```mermaid/ { m = 1 } END { exit !m }' "$draft"; then
+  echo "FAIL: '## Architecture' has no \`\`\`mermaid block"; fail=1; fi
 grep -q '^## Threat Model' "$draft" || { echo "FAIL: no '## Threat Model' section"; fail=1; }
 if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b' "$draft"; then
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
