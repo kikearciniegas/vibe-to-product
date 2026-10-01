@@ -85,7 +85,7 @@ AI features, payments, webhooks, i18n, special-category data, GraphQL and file u
 <!-- claude-only -->
 - `references/model-routing.md`: before delegating any phase work.
 - `references/skills-catalog.md`: at mapping step 2.
-- `scripts/`: `tidy-check.sh` (probe + tidy; reusable as the tidy drift check), `quarantine.sh`, `finalize-scavenge.sh`, `finalize-audit.sh`, `finalize-brand.sh`, `archive-cycle.sh` (re-theme: archives a reviewed cycle), `finalize-plan.sh`, `check-pass.sh`, `drift-check.sh` (read-only scope gate), `task-record.sh` (sole writer of execute records and `.v2p/PLAN-AMENDMENTS.md`), `finalize-execute.sh`, `finalize-review.sh`, `finalize-deploy.sh`.
+- `scripts/`: `tidy-check.sh` (probe + tidy; reusable as the tidy drift check), `backup.sh` (adopt: full project archive before any write), `quarantine.sh`, `finalize-scavenge.sh`, `finalize-audit.sh`, `finalize-brand.sh`, `archive-cycle.sh` (re-theme: archives a reviewed cycle), `finalize-plan.sh`, `check-pass.sh`, `drift-check.sh` (read-only scope gate), `task-record.sh` (sole writer of execute records and `.v2p/PLAN-AMENDMENTS.md`), `finalize-execute.sh`, `finalize-review.sh`, `finalize-deploy.sh`.
 <!-- /claude-only -->
 - Source rule for every v2p file: no `---` horizontal rules (use `***`); the DESIGN.md frontmatter fence is the one exception.
 

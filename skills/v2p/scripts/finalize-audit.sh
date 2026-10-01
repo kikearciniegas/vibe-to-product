@@ -64,7 +64,14 @@ r3=$(rows '## 3.'); rows3=$(printf '%s\n' "$r3" | grep -c .)
 [ "$rows3" -eq "$modexp" ] || { echo "FAIL: §3 rows $rows3/$modexp"; fail=1; }
 bad=$(check "$r3" 3); [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }
 
-# §4: quarantine line + tidy output produced here, never typed
+# §4: backup line, quarantine line + tidy output produced here, never typed
+bline=$(grep -E '^backup: ' "$draft")
+if [ "$(grep -c '^backup: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$bline" | grep -qE '^backup: (declined|none|~?/.*-original\.tar\.gz)$'; then
+  echo "FAIL: §4 needs exactly one 'backup: declined|none|<path>-original.tar.gz' line"; fail=1
+else
+  bp=${bline#backup: }; case $bp in "~/"*) bp="$HOME/${bp#??}" ;; esac
+  case $bp in declined|none) ;; *) [ -f "$bp" ] || { echo "FAIL: backup $bp not found"; fail=1; } ;; esac
+fi
 qline=$(grep -E '^quarantine: ' "$draft")
 if [ "$(grep -c '^quarantine: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$qline" | grep -qE '^quarantine: (declined|~?/.*/MANIFEST\.tsv)$'; then
   echo "FAIL: §4 needs exactly one 'quarantine: declined|<path>/MANIFEST.tsv' line"; fail=1

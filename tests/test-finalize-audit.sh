@@ -19,7 +19,7 @@ for SH in sh zsh; do
     grep '^- \[ \]' "$core" | awk '{print "| std" NR " | core.md | pending | |"}'
     printf '%s\n' '' '## 3. Modularity' '| item | status | evidence |' '|---|---|---|'
     awk '/^## Modularity/{f=1;next} /^## /{f=0} f' "$core" | grep '^- \[ \]' | awk '{print "| mod" NR " | pending | |"}'
-    printf '%s\n' '' '## 4. Tidy' 'quarantine: declined' '' '## 5. Merges' '| source | destination |' '|---|---|' '| none | |'; } > "$G"
+    printf '%s\n' '' '## 4. Tidy' 'backup: declined' 'quarantine: declined' '' '## 5. Merges' '| source | destination |' '|---|---|' '| none | |'; } > "$G"
   # 1. the good draft passes (the fixture is valid)
   plant '| std1 | core.md | pending | |'; FA; is "1 good exit" $rc 0; has "1 PASS" "$out" "PASS: "
   # 2. not adopted: an owner decision cited by an existing path passes (status cell or evidence cell)
@@ -67,6 +67,17 @@ for SH in sh zsh; do
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git init -q; git add -f .v2p/AUDIT.draft.md; FA; rm -rf .git
   is "8d tracked draft exit" $rc 1; has "8d tracked draft" "$out" "tracked by git"; is "8d nothing ran" "$(test -f pwned && echo yes)" ""
   cd "$base"
+  # B. §4 backup line: exactly one, declined|none|existing archive
+  cd "$fx" || exit 2
+  bk() { sed "s#^backup: .*#$1#" "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; }
+  bk 'backup: none'; FA; is "B none exit" $rc 0
+  mkdir -p "$HOME/.v2p-backups/p"; : > "$HOME/.v2p-backups/p/2026-10-01-000000-original.tar.gz"
+  bk "backup: $HOME/.v2p-backups/p/2026-10-01-000000-original.tar.gz"; FA; is "B archive exit" $rc 0
+  bk 'backup: ~/.v2p-backups/p/2026-10-01-000000-original.tar.gz'; FA; is "B ~ archive exit" $rc 0
+  bk 'backup: ~/.v2p-backups/p/missing-original.tar.gz'; FA; is "B missing archive exit" $rc 1; has "B missing archive" "$out" "not found"
+  bk 'backup: yes'; FA; is "B bad value exit" $rc 1; has "B bad value" "$out" "backup:"
+  sed 's#^backup: declined#backup: declined\nbackup: none#' "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; FA; is "B two lines exit" $rc 1
+  grep -v '^backup: ' "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; FA; is "B no line exit" $rc 1
 done
 SH=all; echo "test-finalize-audit: $fails failures (scratch: $base)"
 [ "$fails" -eq 0 ] && rm -rf "$base"

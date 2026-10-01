@@ -31,6 +31,7 @@ Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against
 
 ## 4. Tidy
 <tidy check output — inserted by the finalize step; do not write by hand>
+backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none>
 quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined>
 
 ## 5. Merges (originals quarantined after the destination gained "## From <path>")

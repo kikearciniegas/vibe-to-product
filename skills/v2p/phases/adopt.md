@@ -16,7 +16,12 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 <!-- /claude-only -->
 - Checkpoints: list `.v2p/work/adopt-*`. A file is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date (or `none` when there is no BRIEF yet); print "resuming from <files>" and skip the step that wrote it. Any other file is stale: overwrite it, never read it. `.v2p/work/` files are the only legitimate resume source; memory and prior-session summaries are leads to re-check, not evidence.
 
-## Step 0 — Git safety
+## Step 0 — Backup and git safety
+- First, before any write: when the probe says `code:yes`, ask "Make a full backup of `<root>` (<size>) first, so you can go back to the original version? (Recommended) / Skip". Full = the whole folder: `.git`, uncommitted, untracked and ignored files included. On yes, print the archive path and its restore command; the restore extracts beside the project (`<root>.restored`) and never overwrites it. Record the outcome in the draft's §4: `backup: <archive path>`, `backup: declined`, or `backup: none` when the probe says `code:no`. With an existing BRIEF (re-tidy), ask again; the user may skip.
+  Portable: ask the user to copy or zip the whole project folder to a place outside it, and wait for their confirmation.
+<!-- claude-only -->
+  Size: `du -sh <root>`. On yes: `sh <skill>/scripts/backup.sh <root>`; it writes `~/.v2p-backups/<project>/<ts>-original.tar.gz` and prints `BACKUP <path> · <n> entries · <size>` and `restore: <command>`. Exit 1 (unreadable file, disk full) leaves no partial archive: show its message and ask again (retry / skip) before continuing.
+<!-- /claude-only -->
 - No git → continue, no branch.
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
 - Clean tree → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c v2p/adopt-<YYYY-MM-DD>`.
@@ -95,7 +100,7 @@ Portable: print each new file in a code block.
 Always dry-run first and show every `MOVE` / `REFUSE` line. Then ask: "Quarantine these <n> items to `~/.v2p-backups/<project>/<ts>/` (restore command provided)? (Recommended) / Skip (record `quarantine: declined`)". Rows the user excludes are removed from the list before applying. Refused rows stay listed in AUDIT §4 as they are: they are the safety net, not failures. Write `quarantine: <manifest path>` or `quarantine: declined` into the draft's §4.
 Portable: move approved items by hand as described in `references/tidy-rules.md` §6; no receipts.
 <!-- claude-only -->
-Commands: `mkdir -p .v2p/work && sh <skill>/scripts/tidy-check.sh --tsv > .v2p/work/adopt-tidy.tsv; sh <skill>/scripts/quarantine.sh < .v2p/work/adopt-tidy.tsv` (dry-run). Excluded rows: `grep -v` them out of `adopt-tidy.tsv`. On yes: `sh <skill>/scripts/quarantine.sh --apply < .v2p/work/adopt-tidy.tsv`, then print its last three lines (manifest, restore, counts). Use `AskUserQuestion` for the branch question (Step 0) and this approval.
+Commands: `mkdir -p .v2p/work && sh <skill>/scripts/tidy-check.sh --tsv > .v2p/work/adopt-tidy.tsv; sh <skill>/scripts/quarantine.sh < .v2p/work/adopt-tidy.tsv` (dry-run). Excluded rows: `grep -v` them out of `adopt-tidy.tsv`. On yes: `sh <skill>/scripts/quarantine.sh --apply < .v2p/work/adopt-tidy.tsv`, then print its last three lines (manifest, restore, counts). Use `AskUserQuestion` for the backup and branch questions (Step 0) and this approval.
 <!-- /claude-only -->
 
 ## Step 7 — Finalize

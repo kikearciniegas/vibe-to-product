@@ -640,7 +640,9 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 - `.v2p/AUDIT.md` exists and passed its check → offer resume (keep) or re-run.
 - Checkpoints: list `.v2p/work/adopt-*`. A file is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date (or `none` when there is no BRIEF yet); print "resuming from <files>" and skip the step that wrote it. Any other file is stale: overwrite it, never read it. `.v2p/work/` files are the only legitimate resume source; memory and prior-session summaries are leads to re-check, not evidence.
 
-## Step 0 — Git safety
+## Step 0 — Backup and git safety
+- First, before any write: when the probe says `code:yes`, ask "Make a full backup of `<root>` (<size>) first, so you can go back to the original version? (Recommended) / Skip". Full = the whole folder: `.git`, uncommitted, untracked and ignored files included. On yes, print the archive path and its restore command; the restore extracts beside the project (`<root>.restored`) and never overwrites it. Record the outcome in the draft's §4: `backup: <archive path>`, `backup: declined`, or `backup: none` when the probe says `code:no`. With an existing BRIEF (re-tidy), ask again; the user may skip.
+  Portable: ask the user to copy or zip the whole project folder to a place outside it, and wait for their confirmation.
 - No git → continue, no branch.
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
 - Clean tree → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c v2p/adopt-<YYYY-MM-DD>`.
@@ -759,6 +761,7 @@ Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against
 
 ## 4. Tidy
 <tidy check output — inserted by the finalize step; do not write by hand>
+backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none>
 quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined>
 
 ## 5. Merges (originals quarantined after the destination gained "## From <path>")
