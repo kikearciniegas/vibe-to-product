@@ -98,6 +98,12 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   rep "$V2" '**Verifier:** mechanical: `grep -c a f` → 1, `echo ok` → `ok`, `test -f "x"` → exit 0   |   manual: open `/` → see it'; is "10c several commands pass" $rc 0
   rep "$V2" '**Verifier:** mechanical: `grep -c a f` → 1, `grep -c '"'"'`b'"'"' f` → 2'; has "10c second command backtick" "$out" "cannot contain a backtick"
   rep "$V2" '**Verifier:** manual: read `@x/y` usage, open `/es/gracias`. Sub-check: `npm run e2e` → exit 0'; is "10c prose pairs before the command pass (live Task 7)" $rc 0
+  # 10e. a mechanical Verifier with no backticked `command` → expected pair (field test V0: 14 of 14 unbackticked, every
+  # record read pass with nothing run) is refused; a manual Verifier without backticks still passes
+  rep "$V2" '**Verifier:** mechanical: grep -qE foo bun.lock; echo $? → 0'; is "10e unbackticked exit" $rc 1
+  has "10e unbackticked" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
+  rep "$V2" '**Verifier:** mechanical: npm test → exit 0   |   manual: open `/es` and look'; has "10e manual backticks do not count" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
+  rep "$V2" '**Verifier:** manual: the reviewer reads the branch diff'; is "10e manual without backticks passes" $rc 0
   # 10d. a Modify path exists now or is Created by this or an earlier task (live Task 17: bare `globals.css`)
   mf() { rep "$V1" "$V1
 **Files:** $1" "$V2" "$V2

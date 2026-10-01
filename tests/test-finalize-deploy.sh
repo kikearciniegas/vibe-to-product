@@ -199,6 +199,11 @@ for SH in sh zsh; do
   printf 'ruling: task 9 · plan defect · x\n' >> "$P"; no "10 unknown ruling" "FAIL: ruling names task(s) not in PLAN: 9"
   printf 'ruling: task 4 · plan defect · DNS not propagated; checked by hand\n' >> "$P"; FD; is "10 draft ruling exit" "$rc" 0; hasnt "10 draft ruling not run" "$out" "run: task 4"
   rm -f .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"
+  # a mechanical Verifier with no backticked command (field test V0) ran nothing and counted as verified: now it fails
+  cp .v2p/PLAN.md "$base/pl"; sub .v2p/PLAN.md "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: grep -c hi src/greet.sh → 1'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "10 unbackticked fixture edited" $? 0
+  no "10 unbackticked mechanical verifier" "FAIL: verifier of task 2: mechanical with no backticked"
+  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
   is "10 curl only ever hit the fixture host" "$(grep -v '://fixture\.test' "$fk/calls" | grep -c .)" 0
   ok "10 good draft still passes"
   cd "$base"

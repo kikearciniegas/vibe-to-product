@@ -98,6 +98,9 @@ verify)
     [ "$good" -eq 1 ] || ok=0
     res="$res${sep}exit $r · \`$c\` → $last"; { echo "\$ $c   (exit $r)"; tail -n 20 "$tmp.run"; } >> "$tmp.o"; rm -f "$tmp.run"
   done < "$tmp"
+  # 0 commands extracted from a mechanical Verifier is "not verified", never a pass (field test: 14 vacuous passes)
+  if [ ! -s "$tmp" ] && tline Verifier | grep -qE '^\*\*Verifier:\*\* *mechanical:'; then ok=0
+    res=" · no backticked \`command\` → expected pair in a mechanical Verifier: nothing ran (fix the PLAN and re-run finalize-plan)"; fi
   [ "$ok" -eq 1 ] && v=pass || v=fail
   put verifier "$v · attempts: $k${res}"; put head "$(git rev-parse HEAD)"; put drift "$drift"; put tidy-delta 0; put output "" "$tmp.o"; seal
   echo "verifier: $v · attempts: $k${res}"; [ "$ok" -eq 1 ] ;;

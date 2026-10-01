@@ -274,6 +274,16 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   mv "$base/bp27" .v2p/.brand-pass; echo x >> .v2p/DESIGN.md; TR start 2; is "27 edited DESIGN.md exit" $rc 2
   git checkout -q -- .v2p/DESIGN.md; TR start 2; is "27 receipt matches → start" $rc 0
   cd "$base"
+  # 28. a mechanical Verifier with no backticked command (field test V0: 14 of 14) extracted nothing, ran nothing and
+  # recorded pass. verify records fail; a manual-only Verifier (Task 3) still records pass with nothing to run.
+  f28=$base/f28-$SH; sh "$here/tests/fixture-execute.sh" "$f28" >/dev/null 2>&1; cd "$f28"
+  sed "s|^\*\*Verifier:\*\* mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1|**Verifier:** mechanical: grep -c hi src/greet.sh → 1|" .v2p/PLAN.md > "$base/p28" && mv "$base/p28" .v2p/PLAN.md
+  grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "28 fixture edited" $? 0
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: unbackticked verifier'
+  TR start 2; TR verify 2; is "28 unbackticked exit" $rc 1; has "28 unbackticked msg" "$out" "no backticked"
+  has "28 unbackticked record" "$(grep '^verifier:' .v2p/work/execute-task-2.md)" "verifier: fail · attempts: 1"
+  TR start 3; TR verify 3; is "28 manual-only exit" $rc 0; has "28 manual-only record" "$(grep '^verifier:' .v2p/work/execute-task-3.md)" "verifier: pass"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

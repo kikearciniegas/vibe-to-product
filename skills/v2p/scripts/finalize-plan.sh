@@ -35,7 +35,8 @@ grep -q '^## Threat Model' "$draft" || { echo "FAIL: no '## Threat Model' sectio
 if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b' "$draft"; then
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
 fi
-# Verifier lint (backticked text, single-quoted strings removed): raw `wc -l` in a comparison (macOS pads it),
+# Verifier lint (backticked text, single-quoted strings removed): a mechanical Verifier with no backticked `cmd` → x
+# pair (field test: 14 of 14 unbackticked, nothing ever ran and every record read pass); raw `wc -l` in a comparison (macOS pads it),
 # a bare `&` in a mechanical verifier (backgrounds the whole && chain), `curl` without -m/--max-time; and, on the raw
 # line, a backtick inside a command (live Task 19 `grep -c '^| \`src/'` was cut there and ran a fragment): each text
 # before a `→`, minus a backticked expected of the previous command, holds an even number of backticks (prose pairs
@@ -84,7 +85,8 @@ lint=$(awk -v q="'" '
   /^## / { flush() }
   /^\*\*Files:\*\*/ { f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f); modify(f) }
   /^\*\*Interfaces:\*\*/ { addiface($0) }
-  /^\*\*Verifier:\*\*/ { s = bt($0); if (s == "") s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
+  /^\*\*Verifier:\*\*/ { mech = ($0 ~ /^\*\*Verifier:\*\* *mechanical:/); s = bt($0); if (s == "" && !mech) s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
+    if (mech && $0 !~ /`[^`]+` *→/) r = r "; mechanical with no backticked `command` → expected pair (execute, review and deploy would run nothing)"
     c = s; gsub(/wc -l *\| *tr -d/, "", c)
     if (c ~ /wc -l/ && c ~ /\$\(|(^|[^A-Za-z])test |\[ /) r = r "; raw wc -l in a comparison (macOS pads it: use grep -c, or pipe to tr -d \" \")"
     if ($0 ~ /^\*\*Verifier:\*\* *mechanical:/) { c = s; gsub(/&&|>&|&>/, "", c)

@@ -159,7 +159,11 @@ vt=0; vp=0; nr=0; left=0
 [ -n "$host" ] && while IFS= read -r n; do
   printf '%s\n' "$skipped" | grep -qx "$n" && continue
   if printf '%s\n' "$ruled" | grep -qx "$n"; then echo "ruling: task $n verifier not re-run (plan defect)"; nr=$((nr + 1)); continue; fi
-  awk -v n="$n" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Verifier:\*\*/ {print; exit}' "$plan" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"
+  vl=$(awk -v n="$n" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Verifier:\*\*/ {print; exit}' "$plan")
+  printf '%s\n' "$vl" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"
+  # 0 commands from a mechanical Verifier is "not verified", never a pass (field test: 14 vacuous passes)
+  [ -s "$tmp.c" ] || ! printf '%s\n' "$vl" | grep -qE '^\*\*Verifier:\*\* *mechanical:' ||
+    { echo "FAIL: verifier of task $n: mechanical with no backticked \`command\` → expected pair; nothing ran (not verified)"; fail=1; }
   while IFS= read -r m; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/' | sed "s|<domain>|$host|g; s|<url>|https://$host|g"); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     # same rule as task-record.sh: only an unquoted `<word>` is a placeholder; `'<loc>'` and `< file` run

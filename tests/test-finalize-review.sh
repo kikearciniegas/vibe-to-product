@@ -106,6 +106,13 @@ for SH in sh zsh; do
   sub '| ux-laws | references/ux-laws.md + /design-review |' '| ux-laws | references/ux-laws.md + /design-review http://localhost:3101 against DESIGN.md |'
   cp .v2p/DESIGN.md "$base/dm"; echo x >> .v2p/DESIGN.md; FR; has "15 DESIGN.md edited after brand" "$out" "FAIL: DESIGN.md does not match its receipt"; cp "$base/dm" .v2p/DESIGN.md
   FR; is "15 brand checks pass" $rc 0
+  # 16. a mechanical Verifier with no backticked command (field test V0) ran nothing and counted as verified: now it fails
+  # Task 2 (still broken since 14) loses its ruling: unbackticked, nothing would run and the break would pass unseen
+  sed 's/^checked: .*/checked: pending/' .v2p/REVIEW.md | grep -v '^ruling:' > "$P"; rm .v2p/REVIEW.md .v2p/.review-pass
+  sub2() { A=$1 B=$2 awk 'index($0, ENVIRON["A"]) { i = index($0, ENVIRON["A"]); $0 = substr($0, 1, i-1) ENVIRON["B"] substr($0, i+length(ENVIRON["A"])) } { print }' .v2p/PLAN.md > "$base/pl16" && cat "$base/pl16" > .v2p/PLAN.md; }
+  sub2 "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: grep -c hi src/greet.sh → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "16 fixture edited" $? 0
+  FR; is "16 unbackticked exit" $rc 1; has "16 unbackticked" "$out" "FAIL: verifier of task 2: mechanical with no backticked"
   cd "$base"
 done
 SH=all; is "12 source untouched" "$(shasum -a 256 < "$src")" "$sum0"
