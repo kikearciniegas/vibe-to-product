@@ -133,6 +133,13 @@ for SH in sh zsh; do
   is "15 apply EMPTIES" "$(printf '%s\n' "$r" | grep '^EMPTIES' | cut -f2 | tr '\n' ' ')" "deep deep/x lone pk "
   is "15 left in place" "$(find lone deep pk | sort | tr '\n' ' ')" "deep deep/x lone pk "
   has "15 next tidy lists it" "$($SH "$S/tidy-check.sh" --tsv "$em")" "empty-dir${T}lone${T}"
+  # 16. no eligible row (only create/keep/gitignore rows, or no input): nothing to quarantine, exit 0, no manifest
+  n1=$(find "$HOME/.v2p-backups" -name MANIFEST.tsv | wc -l)
+  r=$(printf 'missing\tREADME.md\tcreate\nscattered\tBACKLOG.md\tkeep:refs=2\n' | $SH "$S/quarantine.sh" --apply "$em"); is "16 none exit" $? 0
+  is "16 none says so" "$r" "nothing to quarantine (record AUDIT §4 'quarantine: none')"
+  r=$(: | $SH "$S/quarantine.sh" "$em"); is "16 empty input exit" $? 0; has "16 empty input" "$r" "nothing to quarantine"
+  is "16 no manifest written" "$(( $(find "$HOME/.v2p-backups" -name MANIFEST.tsv | wc -l) - n1 ))" 0
+  has "16 control: one eligible row is not nothing" "$(printf 'debris\tkeep/main.ts\tquarantine\n' | $SH "$S/quarantine.sh" "$em")" "moved: 1 "
   # 14. age_days: a tracked file's age is its last commit, not its mtime (a fresh clone sets every mtime to now);
   # an untracked file keeps its mtime
   ag=$base/age-$SH; mkdir -p "$ag"; cd "$ag"; git init -q; now=$(date +%s)

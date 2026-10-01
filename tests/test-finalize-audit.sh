@@ -101,6 +101,10 @@ for SH in sh zsh; do
   qk 'quarantine: by hand to ~/.v2p-backups/p/by-hand'; FA; is "Q by hand exit" $rc 0; has "Q by hand stamped" "$(sed -n 2p .v2p/AUDIT.md)" "quarantine: by hand to ~/.v2p-backups/p/by-hand"
   qk 'quarantine: by hand to ~/.v2p-backups/p/gone'; FA; is "Q by hand missing exit" $rc 1; has "Q by hand missing" "$out" "not found"
   qk 'quarantine: moved'; FA; is "Q bad value exit" $rc 1; has "Q bad value" "$out" "quarantine:"
+  # Q2. none: quarantine.sh found nothing to quarantine
+  qk 'quarantine: none'; FA; is "Q none exit" $rc 0; has "Q none stamped" "$(grep '^checked: ' .v2p/AUDIT.md 2>/dev/null)" "quarantine: none"
+  qk 'quarantine: nothing'; FA; is "Q nothing exit" $rc 1; has "Q nothing" "$out" "'quarantine: declined|none|<path>/MANIFEST.tsv|by hand to <dir>'"
+  qk 'quarantine: ~/.v2p-backups/p/missing/MANIFEST.tsv'; FA; is "Q missing manifest exit" $rc 1
 done
 SH=all; echo "test-finalize-audit: $fails failures (scratch: $base)"
 [ "$fails" -eq 0 ] && rm -rf "$base"

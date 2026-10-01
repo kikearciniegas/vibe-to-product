@@ -729,7 +729,7 @@ A `keep:refs=<n>` row is a notes file that <n> other files mention by name: it s
 Portable: print each new file in a code block.
 
 ## Step 6 — Quarantine
-Always dry-run first and show every `MOVE` / `REFUSE` / `EMPTIES` line. Then ask: "Quarantine these <n> items to `~/.v2p-backups/<project>/<ts>/` (restore command provided)? (Recommended) / Skip (record `quarantine: declined`)". Rows the user excludes are removed from the list before applying. Refused rows stay listed in AUDIT §4 as they are: they are the safety net, not failures. Write `quarantine: <manifest path>` or `quarantine: declined` into the draft's §4.
+Always dry-run first and show every `MOVE` / `REFUSE` / `EMPTIES` line. Then ask: "Quarantine these <n> items to `~/.v2p-backups/<project>/<ts>/` (restore command provided)? (Recommended) / Skip (record `quarantine: declined`)". Rows the user excludes are removed from the list before applying. Refused rows stay listed in AUDIT §4 as they are: they are the safety net, not failures. Write `quarantine: <manifest path>` or `quarantine: declined` into the draft's §4; when the dry-run prints `nothing to quarantine` (no `quarantine` or `merge:` row), skip the question and write `quarantine: none`.
 Portable: move approved items by hand as described in `references/tidy-rules.md` §6; no receipts.
 
 ## Step 7 — Finalize
@@ -773,7 +773,7 @@ Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against
 ## 4. Tidy
 <tidy check output — inserted by the finalize step; do not write by hand>
 backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none | user copy at <abs path of the user's copy or zip>>
-quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined | by hand to <abs dir the user moved the items into>>
+quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined | none | by hand to <abs dir the user moved the items into>>
 
 ## 5. Merges (originals quarantined after the destination gained "## From <path>")
 | source | destination |

@@ -83,12 +83,13 @@ else
     *) [ -f "$bu" ] || { echo "FAIL: backup $bu not found"; fail=1; } ;; esac
 fi
 qline=$(grep -E '^quarantine: ' "$draft")
-if [ "$(grep -c '^quarantine: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$qline" | grep -qE '^quarantine: (declined|~?/.*/MANIFEST\.tsv|by hand to ~?/.+)$'; then
-  echo "FAIL: §4 needs exactly one 'quarantine: declined|<path>/MANIFEST.tsv|by hand to <dir>' line"; fail=1
+if [ "$(grep -c '^quarantine: ' "$draft")" -ne 1 ] || ! printf '%s
+' "$qline" | grep -qE '^quarantine: (declined|none|~?/.*/MANIFEST\.tsv|by hand to ~?/.+)$'; then
+  echo "FAIL: §4 needs exactly one 'quarantine: declined|none|<path>/MANIFEST.tsv|by hand to <dir>' line"; fail=1
 else
-  # `by hand to <dir>`: the portable flow's hand moves (no MANIFEST); the directory must exist
+  # `none`: quarantine.sh found nothing to quarantine. `by hand to <dir>`: the portable flow's hand moves (no MANIFEST); the directory must exist
   qp=${qline#quarantine: }; qp=${qp#by hand to }; case $qp in "~/"*) qp="$HOME/${qp#??}" ;; esac
-  case $qline in *": by hand to "*) [ -d "$qp" ] ;; *) [ "$qp" = declined ] || [ -f "$qp" ] ;; esac || { echo "FAIL: $qp not found"; fail=1; }
+  case $qline in *": by hand to "*) [ -d "$qp" ] ;; *) [ "$qp" = declined ] || [ "$qp" = none ] || [ -f "$qp" ] ;; esac || { echo "FAIL: $qp not found"; fail=1; }
 fi
 tidy=$(sh "$skill/scripts/tidy-check.sh" "$root" 2>&1); v=$(printf '%s\n' "$tidy" | sed -n 's/^tidy: \([0-9]*\) violations/\1/p')
 [ -n "$v" ] || { echo "FAIL: tidy-check.sh gave no count"; fail=1; }

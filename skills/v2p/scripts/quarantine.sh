@@ -23,7 +23,7 @@ EOF
 sha() { shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1 || sha256sum "$1" | cut -d' ' -f1; }
 ts=$(date +%Y-%m-%d-%H%M%S); q="$HOME/.v2p-backups/${root##*/}/$ts"; [ -e "$q" ] && q="$q-$$"   # same-second rerun must not truncate a manifest
 man="$q/MANIFEST.tsv"; res="$q/restore.sh"
-bad=0; moved=0; tmp=${TMPDIR:-/tmp}/q.$$; trap 'rm -f "$tmp" "$tmp.g" "$tmp.c" "$tmp.n" "$tmp.e"' EXIT; : > "$tmp.g"
+bad=0; moved=0; tmp=${TMPDIR:-/tmp}/q.$$; trap 'rm -f "$tmp" "$tmp.g" "$tmp.c" "$tmp.n" "$tmp.e" "$tmp.in"' EXIT; : > "$tmp.g"
 refuse() { echo "REFUSE $1	$2"; bad=$((bad+1)); }
 # one file: returns 0 if allowed
 check() { p=$1
@@ -55,6 +55,10 @@ move() { m=$1; reason=$2   # file or empty dir, already checked
   fi
   echo "MOVE $s1	$m"; echo "$m" >> "$tmp.g"; moved=$((moved+1))
 }
+# no row the loop below would handle: say so before any manifest exists (adopt records `quarantine: none`)
+cat > "$tmp.in"
+awk -F'\t' '($3 == "quarantine" || $3 ~ /^merge:/) && $1 !~ /^#/ && $1 != "kind" && $1 != ""' "$tmp.in" | grep -q . ||
+  { echo "nothing to quarantine (record AUDIT §4 'quarantine: none')"; exit 0; }
 [ $apply = yes ] && { mkdir -p "$q" && printf '# root=%s created=%s restore: sh %s\n# path\tsha256\ttracked\treason\trestore\n' "$root" "$ts" "$res" > "$man" && printf '#!/bin/sh\n# restore everything quarantined on %s from %s\nset -e\n' "$ts" "$root" > "$res"; }
 while IFS='	' read -r kind p action rest; do
   case $action in quarantine|merge:*) ;; *) continue ;; esac
@@ -73,7 +77,7 @@ while IFS='	' read -r kind p action rest; do
     # dry-run: nothing moved yet, but apply empties every one of them (all files under p move)
     while IFS= read -r f; do { [ $apply = no ] || [ -z "$(find "$f" -mindepth 1 -print -quit)" ]; } && move "$f" "$action"; done < "$tmp"
   else move "$p" "$action"; fi
-done
+done < "$tmp.in"
 # EMPTIES: a directory whose every entry was moved above (repeated upward). It stays where it is, in dry-run and
 # apply alike: only approved rows move. The next tidy-check lists it as an empty-dir row.
 sed -n 's|/[^/]*$||p' "$tmp.g" | sort -u > "$tmp.c"; : > "$tmp.e"
