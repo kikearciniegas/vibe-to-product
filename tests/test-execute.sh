@@ -294,6 +294,22 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   has "28 unbackticked record" "$(grep '^verifier:' .v2p/work/execute-task-2.md)" "verifier: fail · attempts: 1"
   TR start 3; TR verify 3; is "28 manual-only exit" $rc 0; has "28 manual-only record" "$(grep '^verifier:' .v2p/work/execute-task-3.md)" "verifier: pass"
   cd "$base"
+  # 29. field test V6/V7: the commit one-liner (run as execute.md writes it) used `git add -A` and swept a pre-existing
+  # untracked file into the task commit. It now runs drift-check first: nothing is committed while one is present;
+  # Step 0's remedy (.git/info/exclude) clears it and the commit holds only the task's files.
+  f29=$base/f29-$SH; sh "$here/tests/fixture-execute.sh" "$f29" >/dev/null 2>&1; cd "$f29"
+  ol=$(grep -m1 'git add -A && git commit -m' "$here/skills/v2p/phases/execute.md" | sed 's/^ *`//; s/`$//' |
+    K="$here/skills/v2p" awk '{ gsub(/<n>/, "1"); gsub(/<type>: <task title>/, "feat: greet"); i = index($0, "<this skill'"'"'s dir>")
+      if (i) $0 = substr($0, 1, i - 1) ENVIRON["K"] substr($0, i + 18); print }')
+  has "29 one-liner extracted" "$ol" "git commit -m \"feat: greet\""
+  has "29 Step 0 names the remedy" "$(awk '/^## Step 0/{f=1} /^## Step 1/{f=0} f' "$here/skills/v2p/phases/execute.md")" ".git/info/exclude"
+  echo mock > mockup.png; TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  h0=$(git rev-parse HEAD); out=$($SH -c "$ol" 2>&1); rc=$?
+  is "29 untracked file blocks the commit" "$([ $rc -ne 0 ] && echo yes)" yes; has "29 drift named" "$out" "DRIFT file mockup.png"
+  is "29 nothing committed" "$(git rev-parse HEAD)" "$h0"; is "29 mockup in no commit" "$(git log --name-only --format= | grep -c mockup.png)" 0
+  echo mockup.png >> .git/info/exclude; out=$($SH -c "$ol" 2>&1); rc=$?
+  is "29 excluded → commit exit" $rc 0; is "29 commit = task files only" "$(git show --name-only --format= HEAD | sort | tr '\n' ' ')" "src/greet.sh tests/greet.test.sh "
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
