@@ -50,7 +50,7 @@ Optional, install first: <suggested rows or none>
 Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 
 ## 4b. Landing sections (landing profile only; omit the heading otherwise)
-| section (references/landing-10-sections.md) | kept / omitted — reason in BRIEF §10 | task that meets its Check |
+| section (references/landing-10-sections.md) | kept / omitted — reason (BRIEF label, `BRIEF §n:line` or `inferred: …`) | task that meets its Check |
 |---|---|---|
 
 ## 5. Tasks

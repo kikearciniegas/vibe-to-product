@@ -487,7 +487,7 @@ Portable: write the plan yourself from `references/plan-template.md`, using BRIE
 - Architecture: `## Architecture`, a Mermaid `flowchart LR` block of the data flow from client to host to each §2 provider (node ids from `references/stack/overview.md` §4, edges labelled with what crosses them), then one line per hop (core.md "Architecture Map"). The gate refuses the section without the Mermaid block.
 - Threat Model: `## Threat Model`, assets, entry points (one per §2 provider that receives traffic or webhooks), top 5 abuse cases with the task that mitigates each.
 - §2 Providers: one row per provider with plan, monthly cost at launch (from the overview table), and the wiring rows it needs (row ids from `references/stack/wiring.md`). The hosting row states the commercial answer from rule 3. A row on a free tier with a limit names its growth trigger and the next rung: the middle rungs in overview §"Growth rungs" (e.g. Prisma Postgres $10, Trigger.dev $10, ImageKit $9, Kinde $25) come before any $99 tier. §2 ends with `Total monthly at launch: $<n>` (arithmetic shown). If it exceeds BRIEF §7 `Budget/month`, pick cheaper rows or ask the user; only on the user's approval add `Over budget approved by user: <reason>`.
-- §4b (landing only): one row per section of `references/landing-10-sections.md`: kept or omitted (reason in BRIEF §10), and the task that meets its Check.
+- §4b (landing only): one row per section of `references/landing-10-sections.md`: kept or omitted, an omission's reason in the row itself (a BRIEF §10 label or `BRIEF §n:line` when the BRIEF decides it, else `inferred: <reason>`; handshake asks nothing about sections), and the task that meets its Check.
 - §3 Skills: installed rows to use, and at which task.
 - §4 Standards: brownfield (BRIEF §1 `Code: existing`): copy `.v2p/AUDIT.md` §2 verbatim, statuses and evidence kept. A copied `gap` row gets no task unless the BRIEF asks for that work. Greenfield: **one row per checklist item** of the loaded files (landing 193, saas-web 190, internal-tool 185, native-app 141 — measured with `grep -c '^- \[ \]'` on 2026-09-23: core 129, web 48, landing 16, saas-web 13, internal-tool 8, native-app 12), status `pending` or `N/A <reason citing BRIEF §>`; conditional blocks OFF in BRIEF §9 → `N/A`. Evidence column empty (execute fills it).
 - §5 Tasks: the plan method's task structure plus a **Verifier** line per task: `` mechanical: `<command>` → `<expected>` `` or `manual: <who checks what>`. The backticks around each command are required: a mechanical Verifier with no backticked `` `<command>` → `` pair runs nothing, and finalize-plan refuses it. Only the mechanical part runs: a pair inside the `manual:` part is never run, and a mechanical Verifier whose every command holds a `<placeholder>` runs nothing and fails execute, review and deploy. Only `mechanical` tasks are eligible for an automated retry loop in execute (always with an iteration cap). A task whose Verifier already passes on today's tree is titled `confirm: <what it confirms>`; any other such task is a plan defect. A review task or a launch task does not belong in §5: review and deploy are phases.
@@ -615,7 +615,7 @@ Optional, install first: <suggested rows or none>
 Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 
 ## 4b. Landing sections (landing profile only; omit the heading otherwise)
-| section (references/landing-10-sections.md) | kept / omitted — reason in BRIEF §10 | task that meets its Check |
+| section (references/landing-10-sections.md) | kept / omitted — reason (BRIEF label, `BRIEF §n:line` or `inferred: …`) | task that meets its Check |
 |---|---|---|
 
 ## 5. Tasks
@@ -1533,7 +1533,7 @@ Loaded after `core.md`. `web.md` does not apply. Dark mode with system preferenc
 Loaded for the `landing` profile only. Each section has a purpose and a **Check**: a pass condition and how it is measured.
 
 ## Global rules
-- Sections may be omitted; record each omission and its reason in BRIEF §10.
+- Sections may be omitted; PLAN §4b records each omission and its reason (a BRIEF label or line when the BRIEF decides it, else `inferred`).
 - Exactly one primary action page-wide, and it is the BRIEF §3 action.
 - One `h2` per section.
 

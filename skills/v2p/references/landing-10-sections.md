@@ -3,7 +3,7 @@
 Loaded for the `landing` profile only. Each section has a purpose and a **Check**: a pass condition and how it is measured.
 
 ## Global rules
-- Sections may be omitted; record each omission and its reason in BRIEF §10.
+- Sections may be omitted; PLAN §4b records each omission and its reason (a BRIEF label or line when the BRIEF decides it, else `inferred`).
 - Exactly one primary action page-wide, and it is the BRIEF §3 action.
 - One `h2` per section.
 
