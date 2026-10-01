@@ -75,8 +75,16 @@ for SH in sh zsh; do
   rm .v2p/REVIEW.md .v2p/.review-pass; rm -f "$base/brief.i18n"; cp "$base/brief" .v2p/BRIEF.md; cp "$base/good-$SH" "$P"
   # 11. final PASS
   FR; is "11 exit" $rc 0; has "11 PASS" "$out" "PASS: runs 7/7"
-  has "11 checked" "$(grep '^checked: ' .v2p/REVIEW.md)" "checked: runs 7/7 · findings 3 (fixed 1 · accepted 1 · open 1) · standards done 192 · N/A 0 · deferred 1 · verifiers 2/2 pass"
+  has "11 checked" "$(grep '^checked: ' .v2p/REVIEW.md)" "checked: runs 7/7 · findings 3 (fixed 1 · accepted 1 · open 1) · standards done 192 · N/A 0 · not adopted 0 · gap 0 · deferred 1 · verifiers 2/2 pass"
   is "11 receipt" "$(cat .v2p/.review-pass)" "$(shasum -a 256 .v2p/REVIEW.md | cut -d' ' -f1)"; is "11 draft gone" "$(test -f "$P" && echo yes)" ""
+  # 17. §3 `not adopted` (owner decision) and `gap` (known, not built) cite an existing repo path; unknown statuses fail
+  second=$(sed -n 2p "$base/rows-$SH")
+  st3() { rm -f .v2p/REVIEW.md .v2p/.review-pass; cp "$base/good-$SH" "$P"; sub "$second" "$(printf '%s\n' "$second" | sed "s#| done | src/greet.sh |\$#$1#")"; FR; }
+  st3 '| not adopted — docs/OWNER-NOTES.md §Auth | |'; is "17 not adopted missing exit" $rc 1; has "17 not adopted missing path" "$out" "not adopted cites no existing path"
+  st3 '| gap — TICKET-42 | |'; is "17 bogus gap exit" $rc 1; has "17 bogus gap" "$out" "gap cites no existing path"
+  st3 '| met-by | README.md |'; is "17 unknown exit" $rc 1; has "17 unknown status" "$out" "status not done/pending/N/A"
+  st3 '| gap — docs/DECISIONS.md:1 | |'; is "17 gap exit" $rc 0; has "17 gap counted" "$(grep '^checked: ' .v2p/REVIEW.md)" "· not adopted 0 · gap 1 ·"
+  st3 '| not adopted — README.md §Auth | |'; is "17 not adopted exit" $rc 0; has "17 not adopted counted" "$(grep '^checked: ' .v2p/REVIEW.md)" "· not adopted 1 · gap 0 ·"
   # 13. a deferred task's verifier is not re-run (live: it needs a credential that does not exist until deploy).
   # EXECUTE §1 row 1 re-written as deferred and re-sealed; a committed change breaks task 1's verifier only.
   rm .v2p/REVIEW.md .v2p/.review-pass; cp "$base/good-$SH" "$P"

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Promote .v2p/REVIEW.draft.md to .v2p/REVIEW.md only if EXECUTE.md and PLAN.md match their receipts, §1 has every
-# required run, §2 accounts for every finding (fix commits exist), §3 completes PLAN §4 (pending only as deferred to deploy),
-# the draft covers the current HEAD, the tree is clean on the execute branch, every mechanical PLAN verifier
+# required run, §2 accounts for every finding (fix commits exist), §3 completes PLAN §4 (pending only as deferred to deploy;
+# not adopted/gap cite a repo path), the draft covers the current HEAD, the tree is clean on the execute branch, every mechanical PLAN verifier
 # still passes when re-run here (expect minutes), and (post-brand plans) DESIGN.md matches its receipt.
 # Usage: sh finalize-review.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; fail=0
@@ -51,7 +51,8 @@ while IFS= read -r s; do
     *) echo "FAIL: §2 status '$s' (want fixed <sha> | accepted: <reason> | open: <reason>)"; fail=1 ;;
   esac
 done < "$tmp.s"
-# 5. §3 standards = PLAN §4 items; done ⇒ evidence, N/A ⇒ BRIEF §, pending ⇒ deferred to deploy: <why>
+# 5. §3 standards = PLAN §4 items; done ⇒ evidence, N/A ⇒ BRIEF §, pending ⇒ deferred to deploy: <why>,
+# not adopted (owner decision) / gap (known, not built) ⇒ an existing repo path
 rows '## 4.' "$plan" > "$tmp.p"; rows '## 3.' "$draft" > "$tmp.t"; np=$(grep -c . "$tmp.p"); n3=$(grep -c . "$tmp.t")
 [ "$n3" -eq "$np" ] || { echo "FAIL: §3 rows $n3/$np (must equal PLAN §4)"; fail=1; }
 awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' "$tmp.p" | sort > "$tmp.pi"; awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' "$tmp.t" | sort > "$tmp.si"
@@ -60,10 +61,12 @@ bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev 
   if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
   else if (st=="pending") { if (index(ev,"deferred to deploy: ")!=1) print "pending without deferred to deploy: " substr($0,1,100) }
-  else print "status not done/pending/N/A: " substr($0,1,100) }' "$tmp.t")
+  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
+  else print "status not done/pending/N/A/not adopted/gap: " substr($0,1,100) }' "$tmp.t" | sh "$skill/scripts/check-refs.sh" "$root")
 [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }
 cnt() { awk -F'|' -v re="$1" '{s=$4; gsub(/^ +| +$/,"",s); if (s ~ re) n++} END {print n+0}' "$tmp.t"; }
-sd=$(cnt '^done$'); sa=$(cnt '^N/A'); sk=$(cnt '^pending$')
+sd=$(cnt '^done$'); sa=$(cnt '^N/A'); sk=$(cnt '^pending$'); sx=$(cnt '^not adopted( |$)'); sg=$(cnt '^gap( |$)')
 # 6–7. threat model doc, pre-deploy hand-off line, no --- rule
 grep -q '^## Threat Model' "$plan" && { [ -f docs/threat-model.md ] || { echo "FAIL: docs/threat-model.md missing (PLAN has ## Threat Model)"; fail=1; }; }
 grep -q '^pre-deploy: pending (claude-security full scan + Strix' "$draft" || { echo "FAIL: no 'pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)' line"; fail=1; }
@@ -109,7 +112,7 @@ while IFS= read -r n; do
   done < "$tmp.c"
 done < "$tmp.r"
 [ "$fail" -eq 0 ] || { echo "FAIL: REVIEW.md not written"; exit 1; }
-c="checked: runs $runs/$nreq · findings $fsum (fixed $fx · accepted $fa · open $fo) · standards done $sd · N/A $sa · deferred $sk · verifiers $vp/$vt pass · rulings $nr · branch $now · head $head"
+c="checked: runs $runs/$nreq · findings $fsum (fixed $fx · accepted $fa · open $fo) · standards done $sd · N/A $sa · not adopted $sx · gap $sg · deferred $sk · verifiers $vp/$vt pass · rulings $nr · branch $now · head $head"
 awk -v c="$c" '/^checked: /{print c; next} {print}' "$draft" > "$out" && rm "$draft"
 # Receipt: deploy accepts REVIEW.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.review-pass"
