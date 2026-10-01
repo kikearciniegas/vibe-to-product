@@ -102,7 +102,8 @@ done < "$tmp.s"
 [ -n "$S" ] && git rev-list "$S..HEAD" > "$tmp.rl" && while IFS= read -r c; do
   grep -qx "$c" "$tmp.fx" || { echo "FAIL: commit $c after the scan is not a §2 fix (re-run the scan or account for it)"; fail=1; }
 done < "$tmp.rl"
-# 7. §3 = REVIEW §3 items; done ⇒ evidence, N/A ⇒ BRIEF §, pending ⇒ post-launch: <trigger and date>
+# 7. §3 = REVIEW §3 items; done ⇒ evidence, N/A ⇒ BRIEF §, pending ⇒ post-launch: <trigger and date>, not adopted /
+# gap ⇒ an existing repo path (a gap ships knowingly: counted in checked:, never blocking)
 rows '## 3.' "$rv" > "$tmp.p"; rows '## 3.' "$draft" > "$tmp.t"; np=$(grep -c . "$tmp.p"); n3=$(grep -c . "$tmp.t")
 [ "$n3" -eq "$np" ] || { echo "FAIL: §3 rows $n3/$np (must equal REVIEW §3)"; fail=1; }
 awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' "$tmp.p" | sort > "$tmp.pi"; awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' "$tmp.t" | sort > "$tmp.si"
@@ -111,10 +112,12 @@ bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev 
   if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
   else if (st=="pending") { if (index(ev,"post-launch: ")!=1) print "pending without post-launch: " substr($0,1,100) }
-  else print "status not done/pending/N/A: " substr($0,1,100) }' "$tmp.t")
+  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
+  else print "status not done/pending/N/A/not adopted/gap: " substr($0,1,100) }' "$tmp.t" | sh "$skill/scripts/check-refs.sh" "$root")
 [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }
 cnt() { awk -F'|' -v re="$1" '{s=$4; gsub(/^ +| +$/,"",s); if (s ~ re) n++} END {print n+0}' "$tmp.t"; }
-sd=$(cnt '^done$'); sa=$(cnt '^N/A'); sp=$(cnt '^pending$')
+sd=$(cnt '^done$'); sa=$(cnt '^N/A'); sp=$(cnt '^pending$'); sx=$(cnt '^not adopted( |$)'); sg=$(cnt '^gap( |$)')
 # 8. rollback rehearsal (user-attributed; shape only)
 rb=$(grep '^rollback: ' "$draft" | head -n 1)
 printf '%s\n' "$rb" | grep -qE '^rollback: rehearsed [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z? · elapsed [0-9]+s · method: [^ ].* · by user$' || { echo "FAIL: rollback line (want 'rollback: rehearsed <ISO> · elapsed <n>s · method: <text> · by user')"; fail=1; }
@@ -183,7 +186,7 @@ fi
 # 14. stamp, promote, seal
 [ "$fail" -eq 0 ] || { echo "FAIL: DEPLOY.md not written"; exit 1; }
 s12=$(printf '%s' "$S" | cut -c1-12)
-c="checked: scan $eff $s12 · findings $want (fixed $ax · accepted $aa) · verifiers $vp/$vt pass · placeholders left $left · rulings $nr · standards done $sd · N/A $sa · post-launch $sp · live 2/2 · canary HEALTHY · rollback ${rs}s · branch $now · head $head"
+c="checked: scan $eff $s12 · findings $want (fixed $ax · accepted $aa) · verifiers $vp/$vt pass · placeholders left $left · rulings $nr · standards done $sd · N/A $sa · not adopted $sx · gap $sg · post-launch $sp · live 2/2 · canary HEALTHY · rollback ${rs}s · branch $now · head $head"
 awk -v c="$c" '/^checked: /{print c; next} {print}' "$draft" > "$out" && rm "$draft"
 # Receipt: /v2p reads DEPLOY.md as live only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.deploy-pass"

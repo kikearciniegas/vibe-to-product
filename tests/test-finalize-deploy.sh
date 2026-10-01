@@ -97,7 +97,7 @@ for SH in sh zsh; do
   has "9 PASS" "$out" "PASS: scan high $S12, findings 1 (fixed 1 · accepted 0), verifiers 3/3, placeholders left 1, rulings 0, standards done $SD, post-launch 1, canary HEALTHY -> .v2p/DEPLOY.md"
   has "9 deferred task re-run" "$out" "run: task 2:"; has "9 deploy task re-run on the target" "$out" "run: task 4: curl -m 10 -sI https://fixture.test | grep -q 'HTTP/2 200'"
   has "9 unfillable placeholder skipped" "$out" "skip: task 5: curl -m 10 -sI https://fixture.test/_next/<chunk>.js.map"; hasnt "9 review-handed task not run" "$out" "run: task 3"
-  is "9 checked" "$(grep '^checked: ' .v2p/DEPLOY.md)" "checked: scan high $S12 · findings 1 (fixed 1 · accepted 0) · verifiers 3/3 pass · placeholders left 1 · rulings 0 · standards done $SD · N/A 0 · post-launch 1 · live 2/2 · canary HEALTHY · rollback 41s · branch $XB · head $(git rev-parse HEAD)"
+  is "9 checked" "$(grep '^checked: ' .v2p/DEPLOY.md)" "checked: scan high $S12 · findings 1 (fixed 1 · accepted 0) · verifiers 3/3 pass · placeholders left 1 · rulings 0 · standards done $SD · N/A 0 · not adopted 0 · gap 0 · post-launch 1 · live 2/2 · canary HEALTHY · rollback 41s · branch $XB · head $(git rev-parse HEAD)"
   is "9 receipt" "$(cat .v2p/.deploy-pass)" "$(shasum -a 256 .v2p/DEPLOY.md | cut -d' ' -f1)"; is "9 draft gone" "$(test -f "$P" && echo yes)" ""
   is "9 checkpoints cleared" "$(test -f .v2p/work/deploy-scan.md && echo yes)" ""
   sed 's/^checked: .*/checked: pending/' .v2p/DEPLOY.md > "$G"; rm .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"
@@ -174,6 +174,14 @@ for SH in sh zsh; do
   sub "$P" "$second" "$(printf '%s\n' "$second" | sed 's/| done | src\/greet.sh |$/| done | none |/')"; no "10 done without evidence" "done without evidence"
   sub "$P" "$second" "$(printf '%s\n' "$second" | sed 's/| done | src\/greet.sh |$/| N\/A | not needed |/')"; no "10 N/A without BRIEF" "N/A without BRIEF §"
   sub "$P" "$second" "$(printf '%s\n' "$second" | sed 's/| done | src\/greet.sh |$/| maybe | x |/')"; no "10 status" "status not done/pending/N/A"
+  # not adopted (owner decision) / gap (known, not built) carried from REVIEW §3: an existing repo path, counted, not blocking
+  st3() { printf '%s\n' "$second" | sed "s#| done | src/greet.sh |\$#$1#"; }
+  sub "$P" "$second" "$(st3 '| not adopted — docs/OWNER-NOTES.md §Auth | |')"; no "10 not adopted missing path" "not adopted cites no existing path"
+  sub "$P" "$second" "$(st3 '| gap — TICKET-42 | |')"; no "10 bogus gap" "gap cites no existing path"
+  sub "$P" "$second" "$(st3 '| met-by | README.md |')"; no "10 unknown status" "status not done/pending/N/A"
+  sub "$P" "$second" "$(st3 '| not adopted — README.md §Auth | |')"; ok "10 not adopted"
+  sub "$P" "$second" "$(st3 '| gap — docs/DECISIONS.md:1 | |')"; FD; is "10 gap exit" "$rc" 0; has "10 gap counted" "$(grep '^checked: ' .v2p/DEPLOY.md)" "· not adopted 0 · gap 1 · post-launch"
+  rm -f .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"
   sub "$P" "$second" "| Not A Review Item |$(printf '%s\n' "$second" | cut -d'|' -f3-)"; no "10 §3 items" "§3 items differ from REVIEW §3"
   grep -vxF "$second" "$P" > "$P.new" && mv "$P.new" "$P"; no "10 §3 rows" "§3 rows $SD/$((SD + 1)) (must equal REVIEW §3)"
   # secrets
