@@ -247,7 +247,7 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 9. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
 
 ## Link check (before writing)
-Every URL in the draft is opened once more; any that does not load (4xx/5xx, timeout) removes its row, or the row is re-sourced within budget. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
+Every URL in the draft is opened once more; any that answers 4xx/5xx or whose host does not resolve removes its row, or the row is re-sourced within budget. A URL that gives no HTTP answer at all (timeout, refused or reset connection, TLS failure) is retried once with a longer timeout; if it still does not answer, its row stays, with its `accessed <date>`, and counts as ok: a slow official site is not a dead one. No marker is added for it. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
 
 ## Budget and stop rule
 - ≤3 sources per question; stop a question when two official sources agree.

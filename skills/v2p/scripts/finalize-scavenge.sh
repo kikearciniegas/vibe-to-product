@@ -10,7 +10,11 @@ total=0; ok=0; fail=0
 # work/ checkpoints are a resume aid, not proof: requiring them made agents write them after the fact.
 for u in $(printf '%s\n' "$urls"); do  # zsh does not split an unquoted $urls
   total=$((total + 1))
-  c=$(curl -s -o /dev/null -L -m 20 -w '%{http_code}' "$u")
+  c=$(curl -s -o /dev/null -L -m 20 -w '%{http_code}' "$u"); e=$?
+  # curl 7/28/35/56 (connect, timeout, TLS, reset) = no HTTP answer, not a dead page: retry once with more time,
+  # then keep the row (it holds its `accessed <date>`). DNS failure (6) and 4xx/5xx stay DEAD.
+  case $e in 7|28|35|56) c=$(curl -s -o /dev/null -L -m 60 -w '%{http_code}' "$u"); e=$? ;; esac
+  case $e in 7|28|35|56) echo "UNREACHABLE $u"; ok=$((ok + 1)); continue ;; esac
   # 401/403/429 = page exists but blocks bots; anything else outside 2xx/3xx is dead.
   case $c in 2*|3*|401|403|429) ok=$((ok + 1)) ;; *) echo "DEAD $c $u"; fail=1 ;; esac
 done

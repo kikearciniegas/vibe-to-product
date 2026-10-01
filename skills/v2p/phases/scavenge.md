@@ -34,9 +34,9 @@ Exactly these, each skipped when its BRIEF source is empty or `none`:
 9. Disagreement between two official sources → record both, mark `[CONFLICT]`, mapping decides.
 
 ## Link check (before writing)
-Every URL in the draft is opened once more; any that does not load (4xx/5xx, timeout) removes its row, or the row is re-sourced within budget. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
+Every URL in the draft is opened once more; any that answers 4xx/5xx or whose host does not resolve removes its row, or the row is re-sourced within budget. A URL that gives no HTTP answer at all (timeout, refused or reset connection, TLS failure) is retried once with a longer timeout; if it still does not answer, its row stays, with its `accessed <date>`, and counts as ok: a slow official site is not a dead one. No marker is added for it. §7 records `links: <ok>/<total> ok`. A file is written only when the two numbers are equal.
 <!-- claude-only -->
-In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/SCAVENGE.draft.md` (never `SCAVENGE.md` directly), then run `sh <this skill's dir>/scripts/finalize-scavenge.sh .v2p`. It link-checks every URL (401/403/429 count as present but bot-blocked), refuses any §6 row that says "not searched", stamps `links: n/n ok`, and only then renames the draft to `SCAVENGE.md`. On `FAIL`, fix what it names and run it again; never write `SCAVENGE.md` by hand.
+In Claude Code the check is a script, not a judgement. Write the draft to `.v2p/SCAVENGE.draft.md` (never `SCAVENGE.md` directly), then run `sh <this skill's dir>/scripts/finalize-scavenge.sh .v2p`. It link-checks every URL (401/403/429 count as present but bot-blocked; a URL with no HTTP answer after one longer retry prints `UNREACHABLE <url>` and counts as ok), refuses any §6 row that says "not searched", stamps `links: n/n ok`, and only then renames the draft to `SCAVENGE.md`. On `FAIL`, fix what it names and run it again; never write `SCAVENGE.md` by hand.
 <!-- /claude-only -->
 
 ## Budget and stop rule

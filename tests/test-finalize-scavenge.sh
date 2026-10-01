@@ -39,6 +39,18 @@ for SH in sh zsh; do
   # 3. a 404 is DEAD and blocks the write
   plant 'gone · https://e.test/404 · accessed 2026-10-01'; FS; is "3 404 exit" $rc 1; has "3 404 DEAD" "$out" "DEAD 404 https://e.test/404"
   is "3 not written" "$(test -f .v2p/SCAVENGE.md && echo yes)" ""; has "3 each URL checked" "$out" "links 1/2 ok"
+  # 4. V18: no response twice → UNREACHABLE, counted ok, the row is kept; the retry has a longer -m than the first try
+  plant 'slow · https://e.test/timeout · accessed 2026-10-01'; FS; is "4 timeout exit" $rc 0
+  has "4 UNREACHABLE" "$out" "UNREACHABLE https://e.test/timeout"; hasnt "4 not DEAD" "$out" "DEAD"
+  has "4 counted ok" "$(cat .v2p/SCAVENGE.md 2>/dev/null)" "links: 2/2 ok"
+  has "4 row kept" "$(cat .v2p/SCAVENGE.md 2>/dev/null)" "slow · https://e.test/timeout · accessed 2026-10-01"
+  m=$(grep 'e.test/timeout' "$CURL_LOG" | sed -E 's/.*-m ([0-9]+).*/\1/' | tr '\n' ' '); is "4 one retry" "$(grep -c 'e.test/timeout' "$CURL_LOG")" 2
+  set -- $m; is "4 retry has a longer -m" "$([ "${2:-0}" -gt "${1:-0}" ] && echo yes)" yes
+  # 5. a reset answered on retry is a plain ok, not UNREACHABLE
+  plant 'reset · https://e.test/flaky · accessed 2026-10-01'; FS; is "5 flaky exit" $rc 0; hasnt "5 not UNREACHABLE" "$out" "UNREACHABLE"
+  # 6. DNS failure (curl exit 6) is DEAD, not UNREACHABLE, and is not retried
+  plant 'typo · https://e.test/dns · accessed 2026-10-01'; FS; is "6 dns exit" $rc 1; has "6 dns DEAD" "$out" "DEAD 000 https://e.test/dns"
+  hasnt "6 not UNREACHABLE" "$out" "UNREACHABLE"; is "6 no retry" "$(grep -c 'e.test/dns' "$CURL_LOG")" 1
   cd "$base"
 done
 SH=all; echo "test-finalize-scavenge: $fails failures (scratch: $base)"
