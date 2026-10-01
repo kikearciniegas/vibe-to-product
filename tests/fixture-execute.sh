@@ -1,5 +1,6 @@
 #!/bin/sh
-# Builds a tiny git project with a landing BRIEF, a 3-task PLAN.md + receipt and a passed DESIGN.md + receipt, ready for /v2p execute.
+# Builds a tiny git project with a landing BRIEF, a 3-task PLAN.md + receipt, a passed DESIGN.md + receipt and the
+# execute draft (Step 1: PLAN §4 copied into .v2p/EXECUTE.draft.md, untracked), ready for /v2p execute.
 # §4 rows come from the live standards files (one per '- [ ]' item of BRIEF §9; '|' in an item becomes '/').
 # Usage: sh tests/fixture-execute.sh <dir>
 set -eu; here=$(cd "$(dirname "$0")/.." && pwd -P); d=$1; rm -rf "$d"; mkdir -p "$d/.v2p" "$d/docs" "$d/src"; cd "$d"
@@ -23,3 +24,5 @@ shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
 # a passed brand (the bytes finalize-brand.sh writes), so Task 2 (a .tsx file) clears task-record's UI gate
 cp "$here/tests/fixtures/finalize-brand/DESIGN.good.md" .v2p/DESIGN.md; shasum -a 256 .v2p/DESIGN.md | cut -d' ' -f1 > .v2p/.brand-pass
 git add -A; git -c user.email=t@t -c user.name=t commit -qm 'fixture: plan'
+{ printf '%s\n' '# EXECUTE — fixture' 'checked: pending' 'written: 2026-09-24 by v2p execute · reads: .v2p/PLAN.md' '' '## 1. Tasks' '' '## 2. Standards' '| item | file | status | evidence |' '|---|---|---|---|'
+  printf '%s\n' "$rows" '' 'Next: /v2p review'; } > .v2p/EXECUTE.draft.md

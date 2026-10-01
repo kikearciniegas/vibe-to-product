@@ -79,7 +79,7 @@ for SH in sh zsh; do
   # 10. finalize-execute
   FE; is "10 no record exit" $rc 1; has "10 no record" "$out" "task 3: no record"
   TR skip 3 "handed to /v2p review"; is "10 skip" $rc 0
-  FE; has "10 no draft" "$out" "EXECUTE.draft.md missing"
+  rm .v2p/EXECUTE.draft.md; FE; has "10 no draft" "$out" "EXECUTE.draft.md missing"
   { printf '%s\n' '# EXECUTE — fixture' 'checked: pending' 'written: 2026-09-24 by v2p execute · reads: .v2p/PLAN.md · mode: subagent-driven · amendments: 1' '' '## 1. Tasks' '<generated>' '' '## 2. Standards' '| item | file | status | evidence |' '|---|---|---|---|'
     awk '/^## 4\./{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/' .v2p/PLAN.md; printf '%s\n' '' 'Next: /v2p review'; } > "$base/draft"
   D=.v2p/EXECUTE.draft.md; row1=$(grep -m1 '| core.md | pending | |' "$base/draft"); it1=$(printf '%s\n' "$row1" | cut -d'|' -f2)
@@ -329,6 +329,17 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   TR verify 1 --head "$c1"; is "30 verify --head exit" $rc 0; has "30 verify --head pass" "$(cat $rec1)" "verifier: pass · attempts: 1"
   has "30 head = c1" "$(cat $rec1)" "head: $c1"; has "30 drift none" "$(cat $rec1)" "drift: none"
   TR verify 1 --head "$c2"; is "30 verify --head c2 blocked" $rc 1
+  cd "$base"
+  # 31. field test V12: Step 1 (copy PLAN §4 into EXECUTE.draft.md) was skipped and only finalize caught it. Every record
+  # writer (start, start --base, skip, defer) now refuses while the draft is missing; the fixture creates it.
+  f31=$base/f31-$SH; sh "$here/tests/fixture-execute.sh" "$f31" >/dev/null 2>&1; cd "$f31"
+  is "31 fixture has the draft" "$(test -f .v2p/EXECUTE.draft.md && echo yes)" yes
+  cp .v2p/EXECUTE.draft.md "$base/d31" 2>/dev/null; rm -f .v2p/EXECUTE.draft.md
+  TR start 1; is "31 start exit" $rc 2; has "31 start msg" "$out" "EXECUTE.draft.md missing"
+  TR start 1 --base "$(git rev-parse HEAD)" "late start"; is "31 start --base exit" $rc 2
+  TR skip 3 "handed to /v2p review"; is "31 skip exit" $rc 2; TR defer 2 "VERCEL_TOKEN"; is "31 defer exit" $rc 2
+  is "31 no record" "$(find .v2p/work -type f 2>/dev/null | grep -c .)" 0; is "31 no amendment" "$(test -f .v2p/PLAN-AMENDMENTS.md && echo yes)" ""
+  cp "$base/d31" .v2p/EXECUTE.draft.md 2>/dev/null || echo draft > .v2p/EXECUTE.draft.md; TR start 1; is "31 draft back → start" $rc 0
   cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)

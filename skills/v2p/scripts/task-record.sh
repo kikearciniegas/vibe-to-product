@@ -4,6 +4,7 @@
 # Usage: sh task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p];
 #        verify <n> --head <sha> [.v2p]   (exit 0 ok · 1 fail · 2 usage)
 #   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt;
+#                              start, skip and defer refuse to write a record while .v2p/EXECUTE.draft.md is missing;
 #                              a task touching UI files is refused while .v2p/DESIGN.md does not match .v2p/.brand-pass
 #   start <n> --base <sha> "<why>"  re-start: replaces any record for <n> (verifier/manual/ponytail reset) with base
 #                              <sha> (an ancestor of HEAD); appends `base := <sha> (was <old>)` to PLAN-AMENDMENTS.md
@@ -57,7 +58,9 @@ ftoks() { tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr
 uigate() { ui=$(ftoks | grep -E '\.(tsx|jsx|vue|svelte|css|scss|html|swift|kt|dart)$|(^|/)tailwind\.config\.' | head -n 1)
   [ -z "$ui" ] || sh "$S/check-pass.sh" "$d/DESIGN.md" "$d/.brand-pass" >/dev/null ||
     { echo "ERROR: task $n touches UI files ($ui) and .v2p/DESIGN.md has no valid receipt: run /v2p brand" >&2; exit 2; }; }
-write_start() { b=${1:-$(git rev-parse HEAD)}
+# Step 1 copies PLAN §4 into EXECUTE.draft.md before any task (field test V12: skipped, caught only at finalize)
+drafted() { [ -f "$d/EXECUTE.draft.md" ] || { echo "ERROR: $d/EXECUTE.draft.md missing: execute Step 1 copies PLAN §4 into it (references/execute-template.md) before any task record" >&2; exit 2; }; }
+write_start() { drafted; b=${1:-$(git rev-parse HEAD)}
   title=$(sed -n "s/^### Task $n: //p" "$plan" | head -n 1)
   files=$(ftoks | tr '\n' ' ' | sed 's/ $//')
   tidy=$(sh "$S/tidy-check.sh" --tsv "$root" | grep -c .)
@@ -74,7 +77,7 @@ start)
     b=$(git rev-parse -q --verify "$nb^{commit}") || { echo "ERROR: --base $nb does not resolve to a commit" >&2; exit 2; }
     git merge-base --is-ancestor "$b" HEAD || { echo "ERROR: --base $nb is not an ancestor of HEAD" >&2; exit 2; }
     old=; [ -f "$rec" ] && old=$(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec" | head -n 1)
-    uigate; amend_line "base := $b (was ${old:-none}) · $why"; write_start "$b"; echo "restarted: task $n (base $b, was ${old:-none})"; exit 0; fi
+    uigate; drafted; amend_line "base := $b (was ${old:-none}) · $why"; write_start "$b"; echo "restarted: task $n (base $b, was ${old:-none})"; exit 0; fi
   if fresh; then sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }
     echo "resume: task $n (base $(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec"))"; exit 0; fi
   uigate; write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
