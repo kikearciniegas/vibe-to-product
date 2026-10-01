@@ -68,7 +68,7 @@ for SH in sh zsh; do
   # 9. manual observation
   TR manual 2 ""; is "9 empty exit" $rc 2; TR manual 2 none; is "9 none exit" $rc 2
   TR manual 2 "opened it, saw hi"; is "9 exit" $rc 0; has "9 line" "$(cat .v2p/work/execute-task-2.md)" "manual: opened it, saw hi · by user ·"
-  git add -A; git commit -qm 'feat: locale page'
+  git add -A; git commit -qm 'feat: locale page'; TR verify 2; is "9 verify on committed head" $rc 0
   s0=$(sha .v2p/work/execute-task-2.md)
   TR ponytail 2 "1 findings, 1 cut, 0 accepted: dropped an unused helper"; is "9 old format refused" $rc 2
   has "9 old format msg shows new" "$out" "<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>"
@@ -387,6 +387,19 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   rm -f MANUALRAN; v33 "manual: run \`touch MANUALRAN\` → see it; then mechanical: \`grep -c hi src/greet.sh\` → 1"
   is "33b manual before mechanical exit" $rc 0; is "33b manual-first command not run" "$(test -f MANUALRAN && echo yes)" ""
   has "33b mechanical part still runs" "$v" "exit 0 · \`grep -c hi src/greet.sh\` → 1"
+  cd "$base"
+  # 34. ponytail, skip and defer wrote `head: HEAD` unverified, so verify → commit → ponytail (or skip/defer of another
+  # task) moved the newest recorded head past an unchecked commit and finalize-execute passed it. Only verify (after
+  # drift-check) writes head:; the late commit fails finalize until verify runs again.
+  f34=$base/f34-$SH; sh "$here/tests/fixture-execute.sh" "$f34" >/dev/null 2>&1; cd "$f34"
+  TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  git add -A; git commit -qm 'feat: greet'; c1=$(git rev-parse HEAD); TR verify 1
+  echo late >> README.md; git commit -qam 'late: after verify'; c2=$(git rev-parse HEAD)
+  TR ponytail 1 none; is "34 ponytail exit" $rc 0; is "34 ponytail keeps the verified head" "$(sed -n 's/^head: //p' $rec1)" "$c1"
+  TR skip 2 "not in this test"; TR defer 3 "VERCEL_TOKEN"; hasnt "34 skip/defer write no head" "$(cat .v2p/work/execute-task-[23].md)" "head: $c2"
+  FE; is "34 late commit after ponytail/skip/defer exit" $rc 1; has "34 late commit named" "$out" "commits after the newest recorded head $c1 touch README.md"
+  TR verify 1; is "34 re-verify exit" $rc 1; has "34 re-verify sees the late file" "$out" "DRIFT file README.md"
+  git reset -q --hard "$c1"; TR verify 1; FE; is "34 control: late commit gone, re-verified exit" $rc 0
   cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)

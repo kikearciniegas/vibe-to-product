@@ -15,7 +15,9 @@
 #   note <n> "<text>"          the controller's own evidence (`by controller`; repeatable). Never `manual`, which stamps
 #                              `by user` (live: the controller signed the user's name on its own checks, obs. 0210)
 #   ponytail <n> "<text>"      "none" or "<k> findings, <a> applied, <d> deferred, <r> rejected: <one line>" (a+d+r=k);
-#                              run after verify passes on the committed head: also records head: (range base..head).
+#                              run after verify passes on the committed head. Only verify writes head: (it ran
+#                              drift-check on it): ponytail/skip/defer leave it, so a commit after verify stays unchecked
+#                              and finalize-execute refuses it until verify runs again.
 #                              Refused while verifier: is pending (live Task 11 was reviewed before verify).
 #                              Only this writer enforces the format; readers (finalize-execute) accept older lines too.
 #   allow <n> <path> "<why>"   scope amendment: appends to .v2p/PLAN-AMENDMENTS.md and the record's files: line
@@ -136,7 +138,7 @@ ponytail)
     [ -n "$s" ] || { echo "ERROR: expected $fmt; got: $t" >&2; exit 2; }
     [ "$s" = ok ] || { echo "ERROR: $s; expected $fmt" >&2; exit 2; }
   fi
-  put ponytail-review "$t"; put head "$(git rev-parse HEAD)"; seal; echo "ponytail-review: recorded for task $n" ;;
+  put ponytail-review "$t"; seal; echo "ponytail-review: recorded for task $n" ;;
 allow)
   need; p=$3; why=$4; [ -n "$p" ] && [ -n "$why" ] || { echo "ERROR: allow needs <path> and a reason" >&2; exit 2; }
   reason "$why"
@@ -149,9 +151,9 @@ allow)
 skip)
   t=$3; [ -n "$t" ] || { echo "ERROR: skip needs a reason" >&2; exit 2; }; reason "$t"
   fresh || write_start; need
-  put verifier "skipped — $t"; put head "$(git rev-parse HEAD)"; seal; echo "skipped: task $n — $t" ;;
+  put verifier "skipped — $t"; seal; echo "skipped: task $n — $t" ;;
 defer)
   t=$3; [ -n "$t" ] || { echo "ERROR: defer needs the missing credential" >&2; exit 2; }; reason "$t"
   fresh || write_start; need
-  put verifier "deferred — $t"; put head "$(git rev-parse HEAD)"; seal; echo "deferred: task $n — $t" ;;
+  put verifier "deferred — $t"; seal; echo "deferred: task $n — $t" ;;
 esac

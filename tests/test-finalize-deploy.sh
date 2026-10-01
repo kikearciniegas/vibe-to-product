@@ -53,8 +53,8 @@ for SH in sh zsh; do
       '### Task 5: Chunk map' '**Files:** none' '**Verifier:** mechanical: `curl -m 10 -sI https://<domain>/_next/<chunk>.js.map | grep -q 404` → exit 0, `curl -m 10 -sI https://<domain>/ | grep -q 200` → exit 0'; } >> .v2p/PLAN.md
   shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: deploy tasks'
   # execute, the short way: 1 pass, 2 deferred (credential), 3 handed to review, 4 and 5 handed to deploy
-  q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh; q verify 1
-  git add -A; git commit -qm 'feat: greeting'; q ponytail 1 none
+  q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  git add -A; git commit -qm 'feat: greeting'; q verify 1; q ponytail 1 none
   q defer 2 "VERCEL_TOKEN"; q skip 3 "handed to /v2p review"; q skip 4 "handed to /v2p deploy"; q skip 5 "handed to /v2p deploy"
   { printf '%s\n' '# EXECUTE — fixture' 'checked: pending' 'written: 2026-09-24' '' '## 1. Tasks' '' '## 2. Standards' '| item | file | status | evidence |' '|---|---|---|---|'
     awk '/^## 4\./{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/' .v2p/PLAN.md; printf '%s\n' '' 'Next: /v2p review'; } > .v2p/EXECUTE.draft.md

@@ -19,9 +19,9 @@ M5="pending without deferred to deploy"; M6="no 'pre-deploy: pending"; M7="'---'
 for SH in sh zsh; do
   fx=$base/fx-$SH; sh "$here/tests/fixture-execute.sh" "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
   # execute, the short way (test-execute.sh covers each step's refusals)
-  q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh; q verify 1
-  git add -A; git commit -qm 'feat: greeting'; q ponytail 1 none
-  q start 2; printf 'echo hi\n# greeting\n' > src/greet.sh; q verify 2; q manual 2 "saw hi"; git add -A; git commit -qm 'feat: comment'; q ponytail 2 none
+  q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  git add -A; git commit -qm 'feat: greeting'; q verify 1; q ponytail 1 none
+  q start 2; printf 'echo hi\n# greeting\n' > src/greet.sh; git add -A; git commit -qm 'feat: comment'; q verify 2; q manual 2 "saw hi"; q ponytail 2 none
   q skip 3 "handed to /v2p review"
   { printf '%s\n' '# EXECUTE — fixture' 'checked: pending' 'written: 2026-09-24' '' '## 1. Tasks' '' '## 2. Standards' '| item | file | status | evidence |' '|---|---|---|---|'
     awk '/^## 4\./{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/' .v2p/PLAN.md; printf '%s\n' '' 'Next: /v2p review'; } > .v2p/EXECUTE.draft.md

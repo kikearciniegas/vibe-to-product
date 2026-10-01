@@ -41,7 +41,8 @@ dirty=$(git status --porcelain --untracked-files=all -- . | grep -v "^.. ${pre}\
 # 6. base..head
 first=$(head -n 1 "$tmp.t"); base=$(sed -n 's/.* · base: \([^ ]*\) .*/\1/p' "$d/work/execute-task-$first.md" 2>/dev/null); head=$(git rev-parse HEAD)
 [ -n "$base" ] && git merge-base --is-ancestor "$base" HEAD 2>/dev/null || { echo "FAIL: task $first base '${base}' is not an ancestor of HEAD"; fail=1; }
-# 6b. HEAD is the newest recorded head: a commit after the last verify was never checked. A later commit touching only
+# 6b. HEAD is the newest recorded head (only task-record.sh verify writes head:, after drift-check; ponytail/skip/defer
+# never do): a commit after the last verify was never checked. A later commit touching only
 # .v2p/ passes, as step 5 ignores .v2p/ (with merges the newest is either side: fails closed)
 nh=
 while IFS= read -r n; do h=$(sed -n 's/^head: //p' "$d/work/execute-task-$n.md" 2>/dev/null); [ -n "$h" ] || continue
