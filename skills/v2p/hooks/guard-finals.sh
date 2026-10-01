@@ -11,7 +11,12 @@
 # Mention-blocks (write detection inside another language is not feasible): python*/perl/node/ruby run with -c/-e/-E/-i
 # (or --eval), and awk/gawk with -i inplace, are blocked when any of their words mentions a final, reads included.
 # Fail-closed rule: a target still holding an unresolved $var after expansion (f=$(…), for f in …, export f=$(…),
-# $HOME, $1) blocks when the command text mentions a final anywhere; otherwise it passes. A plain f=… is expanded.
+# $HOME, $1) blocks when the command text mentions a final anywhere AND the target could still name a final: it is a
+# bare $f/${f}, or the literal text after its last unresolved part starts with .v2p/ or /.v2p/, ends in a .v2p or
+# .v2p/work directory, or ends in a final's basename ($d/.v2p/PLAN.md, $x/PLAN.md block; $TMPDIR/x, $HOME/backup/
+# pass). Otherwise it passes. A plain f=… is expanded. No variable name is whitelisted.
+# Known false block: ln with a single operand (ln -s .v2p/PLAN.md) is read as creating the final, though it links
+# PLAN.md in the cwd.
 # Known gaps: sed JSON extraction of Write/Edit file_path breaks on paths containing '"'; a target that is itself a
 # command substitution (cp x $(echo .v2p/PLAN.md)) or names a final only after expansion of an unresolved part
 # (.v2p/$n.md); interpreters running a script file or stdin (python3 x.py, python3 - <<EOF); rsync/cp copying a
@@ -68,7 +73,10 @@ function ex(x,  v, l) {
   for (v in V) if (match(x, "\\$(\\{" v "\\}|" v "([^A-Za-z0-9_]|$))")) { l = RLENGTH; if (substr(x, RSTART + l - 1, 1) ~ /[^A-Za-z0-9_}]/) l--
     x = substr(x, 1, RSTART - 1) V[v] substr(x, RSTART + l) }
   return x }
-function chk(x) { x = ex(x); if (x ~ G) hit = 1; if (x ~ /\$[A-Za-z0-9_{]/) unres = 1 }
+function chk(x,  t, b) { x = ex(x); if (x ~ G) hit = 1; if (x !~ /\$[A-Za-z0-9_{]/) return
+  t = x; while (match(t, /\$(\{[^}]*\}?|[A-Za-z0-9_]+)/)) t = substr(t, RSTART + RLENGTH)
+  b = t; sub(/.*\//, "", b)
+  if (x ~ /^\$(\{[A-Za-z0-9_]+\}|[A-Za-z0-9_]+)$/ || t ~ /^\/?\.v2p\// || t ~ /(^|\/)\.v2p(\/work)?\/*$/ || ("/.v2p/" b) ~ G || ("/.v2p/work/" b) ~ G) unres = 1 }
 function cpy(A, na, k, nm,  m, d, ns, S, b) { d = ""; ns = 0
   for (m = k + 1; m <= na; m++) if (A[m] ~ /^--target-directory=/) d = substr(A[m], 20)
     else if (A[m] ~ /^-[A-Za-z]*t$/ && nm != "rsync" && m < na) d = A[++m]; else if (A[m] !~ /^-/) S[++ns] = A[m]

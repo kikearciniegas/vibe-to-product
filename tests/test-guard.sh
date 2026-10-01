@@ -99,6 +99,11 @@ for SH in sh zsh; do
   B "export f=\$(printf .v2p/PLAN.md); tee \"\$f\" </tmp/x"; B "f=\`echo .v2p/PLAN.md\`; sed -i '' s/a/b/ \$f"
   A "for f in a b; do echo \$f; done"; A "for f in a b; do echo x > \$f; done"; A "f=\$(date); echo x > /tmp/\$f"
   A "for f in .v2p/PLAN.md; do cat \$f; done"; A "cat .v2p/PLAN.md > /tmp/x"
+  # G5 narrowed: only a bare \$var target, or one whose literal tail could still complete a final, fails closed
+  A "cat .v2p/PLAN.md > \$TMPDIR/x"; A "cp .v2p/PLAN.md \"\$HOME/backup/\""; A "x=\$(dirname .v2p/PLAN.md); echo x > \$x/notes.md"
+  B "f=\$(echo .v2p/PLAN.md); cp /tmp/x \"\${f}\""; B "for f in .v2p/PLAN.md; do echo x > \${f}; done"
+  B "d=\$(pwd); cp /tmp/x \$d/.v2p/PLAN.md"; B "x=\$(dirname .v2p/PLAN.md); cp /tmp/y \$x/PLAN.md"
+  B "x=\$(dirname .v2p/PLAN.md); echo x > \"\${x}/work/execute-task-5.md\""; B "for f in .v2p/PLAN.md; do cp \$f \$d/.v2p; done"
   # G6: with -t the final is a SOURCE
   A "cp -t /tmp .v2p/PLAN.md"; A "mv -t /tmp/x .v2p/REVIEW.md"
 done
