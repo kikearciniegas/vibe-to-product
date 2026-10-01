@@ -177,6 +177,21 @@ Decision: Q9 (owner chose 30-minute slots)"; has "11 Q9 in BRIEF prose only" "$o
   rep "$V2" "$V2
 Launch in Q4 2026; providers per SCAVENGE Q3."; is "11 quarter and SCAVENGE Qn pass" $rc 0
   cp "$w/BRIEF.keep" "$v/BRIEF.md"
+  # 12. a code task whose mechanical Verifier only greps/tests files is a WARN, not a FAIL (field test V4: a grep for the
+  # renamed cookie passed while sign-out broke; only the e2e suite caught it)
+  M_V4="WARN: Task 2 Verifier: Files has code"
+  rep "$V2" '**Verifier:** mechanical: `grep -q book src/booking.ts` → exit 0
+**Files:** Create `src/booking.ts`'; is "12 grep-only code task exit" $rc 0; has "12 grep-only code task warns" "$out" "$M_V4"
+  rep "$V2" '**Files:** Create `src/booking.ts`, `docs/booking.md`
+**Verifier:** mechanical: `test -f src/booking.ts && grep -c book src/booking.ts` → 1'; has "12 Files first, test -f + grep -c warns" "$out" "$M_V4"
+  rep "$V2" "$V2
+**Files:** Create \`src/booking.ts\`"; hasnt "12 test suite no warn" "$out" "WARN: Task"
+  rep "$V2" '**Verifier:** mechanical: `grep -q book src/booking.ts && sh scripts/smoke.sh` → exit 0
+**Files:** Create `src/booking.ts`'; hasnt "12 run command no warn" "$out" "WARN: Task"
+  rep "$V2" '**Verifier:** mechanical: `grep -q book docs/booking.md` → exit 0
+**Files:** Create `docs/booking.md`'; hasnt "12 docs-only no warn" "$out" "WARN: Task"
+  rep "$V2" '**Verifier:** manual: the owner books a slot on the preview
+**Files:** Create `src/booking.ts`'; hasnt "12 manual no warn" "$out" "WARN: Task"
 done
 # 9. the source was read only
 SH=all; is "9 source untouched" "$(cat "$src/BRIEF.md" "$src/PLAN.md" | shasum -a 256)" "$sum0"

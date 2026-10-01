@@ -60,6 +60,10 @@ while IFS= read -r q; do echo "FAIL: PLAN cites $q, not a label in BRIEF §10 (c
 # `Create`/`;`/end, must exist in the repo now or be matched by a Create of Tasks 1-t (any Files text outside a Modify
 # segment counts as Create). A code token is skipped: a character drift-check would ignore, or neither `/` nor an
 # extension (`withSentryConfig`, `legal.*`). Braces expand; a glob must match one existing or created path.
+# WARN only (field test V4: a grep for a renamed cookie passed while sign-out broke): a task whose Files name a code file
+# (.ts .tsx .js .jsx .mjs .cjs .py .go .rs .rb .sh .swift .kt) and whose mechanical Verifier names no runner word
+# (npm pnpm yarn bun bunx npx node deno python python3 pytest go cargo make sh bash curl vitest jest playwright).
+# ponytail: word list, not a parse; a grep wrapped in `sh -c` passes it.
 lint=$(awk -v q="'" '
   function bt(s,   o) { o = ""; while (match(s, /`[^`]*`/)) { o = o substr(s, RSTART + 1, RLENGTH - 2) "\n"; s = substr(s, RSTART + RLENGTH) } return o }
   function expand(t, arr,   pre, mid, post, k, i, p) {
@@ -85,7 +89,9 @@ lint=$(awk -v q="'" '
       for (j = 1; j <= a[0]; j++) { ok = 0; e = g2re(a[j])
         for (x = 1; x <= nc; x++) if (a[j] ~ cre[x] || (a[j] ~ /[*?]/ && cl[x] ~ e)) { ok = 1; break }
         if (!ok) print "MODIFY\t" t "\t" a[j] } } }
-  function flush(   i, j, ok) { for (i = 1; i <= ni; i++) { ok = 0
+  function flush(   i, j, ok) { if (code && vm && !vrun) print "WARN: Task " t " Verifier: Files has code and the mechanical Verifier only greps/tests files; add the test suite or a run command that exercises the behaviour"
+    code = 0; vm = 0; vrun = 0
+    for (i = 1; i <= ni; i++) { ok = 0
       for (j = 1; j <= nf; j++) if (ip[i] ~ fre[j]) { ok = 1; break }
       if (!ok) print "FAIL: Task " t " Interfaces names `" ip[i] "`, absent from the Files of Tasks 1-" t }
     ni = 0 }
@@ -100,9 +106,11 @@ lint=$(awk -v q="'" '
       c = substr(c, RSTART + RLENGTH) } }
   fl && NR == fl + 1 && /^- / && !/^- \[/ { print "FAIL: Task " t " Files: a bullet list under **Files:** is not read (one line: Create `a`, `b`; Modify `c`)" }
   /^\*\*Files:\*\*/ { fl = NR; f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f); modify(f)
+    k = split(bt(f), tok, "\n"); for (i = 1; i <= k; i++) if (tok[i] ~ /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|rb|sh|swift|kt)$/) code = 1
     e = f; sub(/^\*\*Files:\*\*[ \t]*/, "", e); if (e == "") print "FAIL: Task " t " Files: empty after the label (one line: Create `a`; Modify `b`; or none)" }
   /^\*\*Interfaces:\*\*/ { addiface($0) }
   /^\*\*Verifier:\*\*/ { mech = ($0 ~ /^\*\*Verifier:\*\* *mechanical:/); s = bt($0); if (s == "" && !mech) s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
+    vm = mech; if (s ~ /(^|[^A-Za-z0-9_.\/-])(npm|pnpm|yarn|bun|bunx|npx|node|deno|python3?|pytest|go|cargo|make|sh|bash|curl|vitest|jest|playwright)( |$)/) vrun = 1
     if (mech && $0 !~ /`[^`]+` *→/) r = r "; mechanical with no backticked `command` → expected pair (execute, review and deploy would run nothing)"
     c = s; gsub(/wc -l *\| *tr -d/, "", c)
     if (c ~ /wc -l/ && c ~ /\$\(|(^|[^A-Za-z])test |\[ /) r = r "; raw wc -l in a comparison (macOS pads it: use grep -c, or pipe to tr -d \" \")"
@@ -114,7 +122,7 @@ lint=$(awk -v q="'" '
       if (gsub(/`/, "", c) % 2) { r = r "; a Verifier command cannot contain a backtick (the parser cuts there)"; break } }
     if (r != "") print "FAIL: Task " t " Verifier: " substr(r, 3) }
   END { flush() }' "$draft")
-mods=$(printf '%s\n' "$lint" | sed -n 's/^MODIFY	//p'); lint=$(printf '%s\n' "$lint" | grep -v '^MODIFY	')
+mods=$(printf '%s\n' "$lint" | sed -n 's/^MODIFY	//p'); printf '%s\n' "$lint" | grep '^WARN: '; lint=$(printf '%s\n' "$lint" | grep -v -e '^MODIFY	' -e '^WARN: ')
 [ -z "$lint" ] || { printf '%s\n' "$lint"; fail=1; }
 root=$(dirname "$d")
 mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || continue
