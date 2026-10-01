@@ -4,6 +4,8 @@
 # user's override), no `---` rule exists, `## Architecture` and `## Threat Model` exist, and a landing
 # plan has `## 4b`, Verifier lines pass the lint below, and Interfaces paths are in some Files line up to that task.
 # Usage: sh finalize-plan.sh [.v2p dir]
+# Run it against the real repo tree (.v2p in the repo root): Modify: paths are checked relative to the repo root, so a
+# dry-run in an empty scratch dir false-fails them.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/PLAN.draft.md"; out="$d/PLAN.md"; fail=0
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 [ -f "$d/BRIEF.md" ] || { echo "FAIL: $d/BRIEF.md missing"; exit 1; }
