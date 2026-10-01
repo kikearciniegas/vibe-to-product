@@ -5,8 +5,9 @@
 # (@google/design.md 0.4.0, offline from the npx cache first) reports no error and none of the warnings that matter,
 # the eight canonical sections and the v2p sections appear once each (v2p ones after Do's and Don'ts), Must-Avoid's first
 # bullet is BRIEF §6 byte for byte, Sources bullets have a known kind (a local guide's sha256 matches), no `---` rule
-# outside the frontmatter fence, a `Next: /v2p mapping` line, and no regular root DESIGN.md. On PASS: receipt
-# .v2p/.brand-pass and a root symlink DESIGN.md -> .v2p/DESIGN.md (design skills read the root file).
+# outside the frontmatter fence, a `Next: /v2p mapping` line, and no regular root DESIGN.md unless BRIEF §1 says
+# `Code: existing` (adopt: it is the project's own design doc, which its guards may read; kept as is, never linked).
+# On PASS: receipt .v2p/.brand-pass and, unless kept, a root symlink DESIGN.md -> .v2p/DESIGN.md (design skills read the root file).
 # The linter does not catch duplicated sections, a missing name or `---` rules (measured 2026-09-25): these checks do.
 # ponytail: YAML read by indentation (2-space, one key per line — the template's rule), not a YAML parser; a flow-style frontmatter fails check 3 and says so.
 # Usage: sh finalize-brand.sh [.v2p dir]   (exit 0 PASS · 1 FAIL)
@@ -114,7 +115,8 @@ done < "$tmp.s"
 hr=$(awk -v c="$close" '$0 == "---" && NR != 1 && NR != c { print NR }' "$draft" | tr '\n' ' ')
 [ -z "$hr" ] || { echo "FAIL: '---' rule on lines ${hr% } (use ***)"; fail=1; }
 grep -qxE 'Next: /v2p (mapping|deploy)' "$draft" || { echo "FAIL: no 'Next: /v2p mapping' (or, placeholder over a reviewed cycle, 'Next: /v2p deploy') line"; fail=1; }
-[ -f "$root/DESIGN.md" ] && [ ! -L "$root/DESIGN.md" ] && { echo "FAIL: root DESIGN.md is a regular file; move it aside (it will be a symlink to .v2p/DESIGN.md)"; fail=1; }
+own=; [ -f "$root/DESIGN.md" ] && [ ! -L "$root/DESIGN.md" ] && own=1
+[ -n "$own" ] && ! grep -qE '^- Code: *existing' "$d/BRIEF.md" && { echo "FAIL: root DESIGN.md is a regular file; move it aside (it will be a symlink to .v2p/DESIGN.md)"; fail=1; }
 [ "$fail" -eq 0 ] || { echo "FAIL: DESIGN.md not written"; exit 1; }
 nc=$(grep -c '^colors\.' "$tmp.t"); nt=$(grep -cE '^typography\.[^.]+	' "$tmp.t"); ncp=$(grep -cE '^components\.[^.]+	' "$tmp.t")
 st=$(sed -n 's/^Status: \([a-z]*\).*/\1/p' "$draft" | head -n 1)
@@ -122,6 +124,6 @@ printf '%s\n' "$fm" | grep -q '^description: *"\{0,1\}PLACEHOLDER' && st=placeho
 mv "$draft" "$out"
 # Receipt: mapping, execute's UI gate and review accept DESIGN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.brand-pass"
-ln -sfn "$(basename "$d")/DESIGN.md" "$root/DESIGN.md"
+if [ -n "$own" ]; then rd=", root DESIGN.md: project-owned, kept"; else ln -sfn "$(basename "$d")/DESIGN.md" "$root/DESIGN.md"; rd=" (+ DESIGN.md symlink)"; fi
 rm -f "$d"/work/brand-*
-echo "PASS: $nc colors, $nt typography roles, $ncp components, lint 0 errors / $nw warnings noted, status ${st:-final} -> $out (+ DESIGN.md symlink)"
+echo "PASS: $nc colors, $nt typography roles, $ncp components, lint 0 errors / $nw warnings noted, status ${st:-final} -> $out$rd"

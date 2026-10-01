@@ -118,6 +118,20 @@ for SH in sh zsh; do
   good; sed '1d' "$P" > "$P.new" && mv "$P.new" "$P"; run; nw "no opening fence" "FAIL: no frontmatter"
   good; awk '$0 == "## Motion" { skip = 1; next } skip && /^## / { skip = 0 } !skip' "$P" > "$P.new" && mv "$P.new" "$P"; run; is "11 no Motion section passes (optional)" $rc 0
   good; echo x > "$w/DESIGN.md"; run; nw "regular root DESIGN.md" "root DESIGN.md is a regular file"
+  # 15. adopt (BRIEF §1 Code: existing): a regular root DESIGN.md is the project's own design doc (field test V5: its guard
+  # read it): PASS, kept byte for byte, never linked. Greenfield with the same file still FAILs (control).
+  code() { awk -v c="$1" '{ print } /^- Profile: / { print "- Code: " c }' "$src/BRIEF.md" > "$w/.v2p/BRIEF.md"; }
+  own() { printf '# Project design system\n- primary: light #2E7D46 / dark #4CAF6A\n' > "$w/DESIGN.md"; ds=$(sha "$w/DESIGN.md"); }
+  good; code 'existing at .'; own; run; is "15 adopt exit" $rc 0
+  has "15 adopt PASS names it" "$out" "-> $w/.v2p/DESIGN.md, root DESIGN.md: project-owned, kept"; hasnt "15 adopt no symlink claim" "$out" "+ DESIGN.md symlink"
+  is "15 adopt root byte for byte" "$(sha "$w/DESIGN.md")" "$ds"; is "15 adopt root not a symlink" "$(test -L "$w/DESIGN.md" && echo yes)" ""
+  is "15 adopt receipt" "$(cat "$w/.v2p/.brand-pass")" "$(sha "$w/.v2p/DESIGN.md")"
+  good; code greenfield; own; run; nw "greenfield regular root (control)" "root DESIGN.md is a regular file"
+  is "15 greenfield root untouched" "$(sha "$w/DESIGN.md")" "$ds"
+  good; code 'existing at .'; run; is "15 adopt without a root DESIGN.md exit" $rc 0
+  is "15 adopt without a root DESIGN.md links" "$(test -L "$w/DESIGN.md" && readlink "$w/DESIGN.md")" ".v2p/DESIGN.md"
+  good; code 'existing at .'; echo old > "$w/.v2p/DESIGN.md"; ln -s .v2p/DESIGN.md "$w/DESIGN.md"; run; is "15 adopt re-run over v2p's link exit" $rc 0
+  has "15 adopt link is not project-owned" "$out" "(+ DESIGN.md symlink)"
   good; run PATH=/usr/bin:/bin; nw "no npx" "designmd linter unavailable"
   good; rep 'Next: /v2p mapping' 'Next: later'; run PATH=/usr/bin:/bin; has "11 no npx: own checks still run" "$out" "no 'Next: /v2p mapping' (or"
   good; rep 'description: Warm, precise, local — sunlit orange on cream, deep navy text, calm energy' 'description: PLACEHOLDER — neutral tokens until brand.pdf arrives'

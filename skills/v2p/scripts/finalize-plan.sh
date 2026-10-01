@@ -2,8 +2,7 @@
 # Promote .v2p/PLAN.draft.md to .v2p/PLAN.md only if every task has a Verifier line, §4 has one row
 # per checklist item of the BRIEF §9 standards files, §2's total fits the BRIEF budget (or carries the
 # user's override), no `---` rule exists, `## Architecture` and `## Threat Model` exist, and a landing
-# plan has `## 4b`, Verifier lines pass the lint below, and Interfaces paths are in some Files line up to that task.
-# Usage: sh finalize-plan.sh [.v2p dir]
+# plan has `## 4b`, Verifier lines pass the lint below, and Interfaces paths are in some Files line up to that task.# Usage: sh finalize-plan.sh [.v2p dir]
 # Run it against the real repo tree (.v2p in the repo root): Modify: paths are checked relative to the repo root, so a
 # dry-run in an empty scratch dir false-fails them.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/PLAN.draft.md"; out="$d/PLAN.md"; fail=0
@@ -130,6 +129,10 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
   case $p in (*[*?]*) [ -n "$(find "$root" \( -name node_modules -o -name .git \) -prune -o -path "$root/$p" -print | head -n 1)" ] ;; (*) [ -e "$root/$p" ] ;; esac ||
     echo "FAIL: Task $t Files: Modify \`$p\` is neither in the repo nor in a Create of Tasks 1-$t"; done)
 [ -z "$mf" ] || { printf '%s\n' "$mf"; fail=1; }
+# WARN only (field test V5): a regular root DESIGN.md is the project's own design doc (adopt; brand kept it, its guards may
+# read it); a task whose Files name it would overwrite it. A root symlink is v2p's link to .v2p/DESIGN.md: no WARN.
+[ -f "$root/DESIGN.md" ] && [ ! -L "$root/DESIGN.md" ] && awk '/^### Task / { t = $3; sub(/:$/, "", t) }
+  /^\*\*Files:\*\*/ && /`(\.\/)?DESIGN\.md`/ { print "WARN: Task " t " Files: `DESIGN.md` is the project'"'"'s own design doc (kept by brand); edit it only on purpose, tokens live in .v2p/DESIGN.md" }' "$draft"
 [ "$fail" -eq 0 ] || { echo "FAIL: $out not written"; exit 1; }
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.

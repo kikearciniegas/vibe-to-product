@@ -296,7 +296,7 @@ Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed fi
 
 ## Step 1 — Draft per case
 Portable: follow the case below by hand; the user pastes what a tool would have produced (the guide's palette, type, voice and logo rules; candidate palettes). Take BRIEF answers as given and say "taking X from the BRIEF".
-- **existing**: transcribe the guide into the template: colors (hex; convert Pantone/CMYK only when the guide gives no hex and mark it `derived` in the Colors prose), type roles, voice, logo rules, imagery, must-avoid. A transcription is not re-opinionated: no taste or reference-site skill runs. Gaps the guide leaves (rounded, spacing, elevation, components) are filled and marked `derived`. Sources: `guide:` (a local file with its sha256) and one `font:` line per face.
+- **existing**: transcribe the guide into the template: colors (hex; convert Pantone/CMYK only when the guide gives no hex and mark it `derived` in the Colors prose), type roles, voice, logo rules, imagery, must-avoid. A transcription is not re-opinionated: no taste or reference-site skill runs. Gaps the guide leaves (rounded, spacing, elevation, components) are filled and marked `derived`. Sources: `guide:` (a local file with its sha256) and one `font:` line per face. In adopt mode (BRIEF §1 `Code: existing …`) the guide is often the project's own root `DESIGN.md`: transcribe it, never move or edit it (its guards may read it).
 - **placeholder**: a neutral palette and a system font stack; `description: PLACEHOLDER — neutral tokens until <guide> arrives`; Overview `Status: placeholder`; Sources `- placeholder: brand guide pending (<name>)`; Voice, Logo Rules and Imagery one line each `pending <guide>`. Must-Avoid from BRIEF §6. Motion: the defaults in the template only.
 - **to-create**: confirm the adjectives, reference sites and must-avoid from BRIEF §6; ask only what changes DESIGN.md content. Present up to three candidate directions (token table + a font sample line each), the user picks one, then write the full draft. Reference sites give mood and structure only: no token, font or mark is copied. Logo Rules: `pending: no logo yet — mapping plans a wordmark task` when none exists.
 - **none**: transcribe the kit's tokens (source `- kit: <name>`), or, with no kit, a dense scale and a system font stack; Overview `Mode per surface: Operate`.
@@ -314,7 +314,7 @@ One question per decision point; independent ones together:
 Write the draft to `.v2p/DESIGN.draft.md`. Print it (or its path), the preview page or mockup paths, and a six-line summary: primary / on-primary / surface / on-surface, display and body faces, motion approach. Ask "Approve DESIGN.md (Recommended) / Change tokens / Change direction". A change → back to the step named, then show again. Nothing is final before approval.
 
 ## Step 4 — Finalize
-Portable: rename the draft to `.v2p/DESIGN.md`, create the root link (`ln -sfn .v2p/DESIGN.md DESIGN.md`) and say there is no receipt.
+Portable: rename the draft to `.v2p/DESIGN.md`, create the root link (`ln -sfn .v2p/DESIGN.md DESIGN.md`; not when BRIEF §1 says `Code: existing …` and root `DESIGN.md` is a regular file: that is the project's own, kept as is) and say there is no receipt.
 
 ## Step 5 — Hand off
 Print the path, the counts from the PASS line (or the token counts), `Status: final|placeholder`, then `Next: /v2p mapping` (a placeholder over a reviewed cycle: `Next: /v2p deploy`, and the draft's Next line says so).

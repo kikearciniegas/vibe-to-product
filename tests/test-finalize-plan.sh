@@ -195,6 +195,18 @@ Launch in Q4 2026; providers per SCAVENGE Q3."; is "11 quarter and SCAVENGE Qn p
 **Files:** Create `docs/booking.md`'; hasnt "12 docs-only no warn" "$out" "WARN: Task"
   rep "$V2" '**Verifier:** manual: the owner books a slot on the preview
 **Files:** Create `src/booking.ts`'; hasnt "12 manual no warn" "$out" "WARN: Task"
+  # 13. a regular root DESIGN.md is the project's own design doc (adopt: brand kept it, field test V5): a task whose Files
+  # name it is a WARN; a root symlink is v2p's own link, no WARN (control)
+  M_V5="WARN: Task 2 Files: \`DESIGN.md\` is the project's own design doc"
+  printf '# own\n' > "$w/DESIGN.md"; rep "$V2" "$V2
+**Files:** Modify \`DESIGN.md\`"; is "13 own root exit" $rc 0; has "13 own root warns" "$out" "$M_V5"
+  rep "$V2" "$V2
+**Files:** Create \`docs/x.md\`; Modify \`./DESIGN.md\`"; has "13 ./DESIGN.md warns" "$out" "$M_V5"
+  rep "$V2" "$V2
+**Files:** Modify \`docs/DESIGN.md\`"; hasnt "13 nested DESIGN.md no warn" "$out" "is the project's own design doc"
+  rm "$w/DESIGN.md"; echo x > "$v/DESIGN.md"; ln -s .v2p/DESIGN.md "$w/DESIGN.md"; rep "$V2" "$V2
+**Files:** Modify \`DESIGN.md\`"; hasnt "13 symlink root no warn" "$out" "is the project's own design doc"
+  rm -f "$w/DESIGN.md" "$v/DESIGN.md"
 done
 # 9. the source was read only
 SH=all; is "9 source untouched" "$(cat "$src/BRIEF.md" "$src/PLAN.md" | shasum -a 256)" "$sum0"
