@@ -10,7 +10,7 @@ cd "$root" || exit 2
 [ -e .git ] && GIT_CEILING_DIRECTORIES=${root%/*} && export GIT_CEILING_DIRECTORIES   # an invalid .git here never falls through to a parent repo
 git=none; branch=-; dirty=0
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)
+  branch=$(git symbolic-ref --short -q HEAD) || branch=detached   # unborn: its name; rev-parse printed HEAD, then failed
   dirty=$(git status --porcelain 2>/dev/null | grep -vc '^??'); git=clean; [ "$dirty" -gt 0 ] && git="dirty:$dirty"
 fi
 gp=$git; [ "$git" = none ] && [ -d .git ] && [ -z "$(find .git -mindepth 1 -print -quit)" ] && gp=empty   # copied without history; $git stays none
