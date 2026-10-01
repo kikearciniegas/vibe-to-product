@@ -40,6 +40,9 @@ row() { printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(tracked "$2")" "$(age "$
 # Not counted: the file itself and `## From <path>` merge headings. ponytail: exact basename match; .git, node_modules, .v2p not searched.
 scat() { n=$(grep -rIF --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.v2p -- "$b" . 2>/dev/null | grep -v '^[^:]*:## From ' | cut -d: -f1 | sort -u | grep -vxF "./$p" | grep -c .)
   if [ "$n" -gt 0 ]; then row scattered "$p" "keep:refs=$n"; else row scattered "$p" "merge:$1"; fi; }
+# Decisions destination: with a decisions home, a new file inside it (from-<name>.md, no date so a rerun on another day agrees); else the flat file.
+# ponytail: the home's own naming pattern (e.g. 0001-*.md) is not followed; from-<name>.md sorts apart from it.
+dd() { if [ -n "$dh" ]; then printf '%s/from-%s.md\n' "$dh" "${b%.*}"; else echo docs/DECISIONS.md; fi; }
 
 {
 # 1. canonical files that must exist
@@ -58,7 +61,7 @@ find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name v
     [ "$p" = "$dh" ] && continue
     case $b in
       dist|build|out|.next|.nuxt|.output|.turbo|coverage|__pycache__|.pytest_cache|.mypy_cache|.parcel-cache|.cache) row orphan-build "$p" quarantine; continue ;;
-      notes|ideas|adr|adrs|decisions) row scattered "$p" merge:docs/DECISIONS.md; continue ;;
+      notes|ideas|adr|adrs|decisions) row scattered "$p" "merge:$(dd)"; continue ;;
     esac
     [ -z "$(find "$p" -mindepth 1 -print -quit)" ] && row empty-dir "$p" quarantine
     continue
@@ -72,7 +75,7 @@ find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name v
   case $p in docs/DECISIONS.md|docs/ARCHITECTURE.md|docs/threat-model.md|CHANGELOG.md|README.md|DESIGN.md) continue ;; esac  # root DESIGN.md belongs to brand
   [ -n "$dh" ] && case $p in "$dh"/*) continue ;; esac
   case $b in
-    NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) scat docs/DECISIONS.md ;;
+    NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) scat "$(dd)" ;;
     ARCHITECTURE*|architecture*.md|DESIGN.md|design.md) scat docs/ARCHITECTURE.md ;;
     CHANGES*|HISTORY*) scat CHANGELOG.md ;;
   esac

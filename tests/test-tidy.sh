@@ -75,12 +75,22 @@ for SH in sh zsh; do
   r=$(printf 'x\tpkg/coverage/x\tquarantine\nx\t.next\tquarantine\nx\t.cache/c\tquarantine\n' | $SH "$S/quarantine.sh")
   is "11 V20 quarantine reads .gitignore without git" "$(printf '%s\n' "$r" | grep '^REFUSE' | tr '\t' ' ' | tr '\n' ',')" "REFUSE gitignored pkg/coverage/x,REFUSE gitignored .next,"
   is "11 V20 control: unlisted path moves" "$(printf '%s\n' "$r" | grep -c "^MOVE.*${T}\.cache/c$")" 1
-  mkdir -p docs/decisions; echo 'use x' > docs/decisions/0001-use-x.md; echo 'use y' > docs/decisions/ADR-0002.md; : > docs/decisions/.DS_Store
+  mkdir -p docs/decisions ideas; echo 'i' > ideas/a.md; echo 'use x' > docs/decisions/0001-use-x.md; echo 'use y' > docs/decisions/ADR-0002.md; : > docs/decisions/.DS_Store
   for h in decisions adr; do [ -d docs/$h ] || mv docs/decisions docs/$h
     t=$($SH "$S/tidy-check.sh" --tsv)
     is "11 V22 docs/$h is the decisions home" "$(printf '%s\n' "$t" | grep -cE "^missing${T}docs/DECISIONS\.md|^scattered${T}docs/$h")" 0
     is "11 V22 control: debris inside docs/$h" "$(printf '%s\n' "$t" | grep -c "^debris${T}docs/$h/\.DS_Store")" 1
+    # with a home, scattered notes merge into a new file inside it, never into a flat docs/DECISIONS.md
+    is "11 V22 notes file targets docs/$h" "$(printf '%s\n' "$t" | grep "${T}TODO.md${T}" | cut -f3)" "merge:docs/$h/from-TODO.md"
+    is "11 V22 notes dir targets docs/$h" "$(printf '%s\n' "$t" | grep "^scattered${T}ideas${T}" | cut -f3)" "merge:docs/$h/from-ideas.md"
+    is "11 V22 no flat target" "$(printf '%s\n' "$t" | grep -c "merge:docs/DECISIONS\.md")" 0
   done
+  t=$($SH "$S/tidy-check.sh" --tsv | grep "${T}TODO.md${T}")
+  has "11 V22 quarantine: not merged yet" "$(printf '%s\n' "$t" | $SH "$S/quarantine.sh")" "REFUSE not-merged-into-docs/adr/from-TODO.md${T}TODO.md"
+  printf '## From TODO.md (merged 2026-10-01)\n- x\n' > docs/adr/from-TODO.md
+  is "11 V22 quarantine: merged into the home file" "$(printf '%s\n' "$t" | $SH "$S/quarantine.sh" | grep -c "^MOVE.*${T}TODO.md$")" 1
+  is "11 V22 the merged file is not scattered" "$($SH "$S/tidy-check.sh" --tsv | cut -f2 | grep -c 'from-TODO')" 0
+  rm -rf ideas docs/adr/from-TODO.md
   # V5 follow-up: a root DESIGN.md (project-owned file or v2p's symlink) belongs to brand; never proposed for merge or quarantine
   mkdir -p web; echo '# design' > DESIGN.md; echo '# web design' > web/DESIGN.md; t=$($SH "$S/tidy-check.sh" --tsv)
   is "11 root DESIGN.md file not listed" "$(printf '%s\n' "$t" | cut -f2 | grep -cx DESIGN.md)" 0

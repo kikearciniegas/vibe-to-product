@@ -35,7 +35,7 @@ Each `kind` below has the action `quarantine`.
 
 ## 3. Scattered notes
 `kind` `scattered` or `dup-readme`, action `merge:<dest>`.
-- → `docs/DECISIONS.md`: files `NOTES*`, `notes*.md`, `TODO*`, `todo*.md`, `IDEAS*`, `ideas*.md`, `ROADMAP*`, `BACKLOG*`, `SCRATCH*`, `PLAN*`, `plan*.md`, `DECISIONS*`, `ADR*`, `*.notes.md`, `*.notes.txt`; directories `notes`, `ideas`, `adr`, `adrs`, `decisions` (never the decisions home `docs/decisions/` or `docs/adr*/`, nor notes files inside it)
+- → `docs/DECISIONS.md`: files `NOTES*`, `notes*.md`, `TODO*`, `todo*.md`, `IDEAS*`, `ideas*.md`, `ROADMAP*`, `BACKLOG*`, `SCRATCH*`, `PLAN*`, `plan*.md`, `DECISIONS*`, `ADR*`, `*.notes.md`, `*.notes.txt`; directories `notes`, `ideas`, `adr`, `adrs`, `decisions` (never the decisions home `docs/decisions/` or `docs/adr*/`, nor notes files inside it). When that home exists, the destination is a new file inside it, `<home>/from-<name>.md` (`<name>` = the source's basename without its extension), never a flat `docs/DECISIONS.md`
 - → `docs/ARCHITECTURE.md`: `ARCHITECTURE*`, `architecture*.md`, `DESIGN.md`, `design.md`
 - → `CHANGELOG.md`: `CHANGES*`, `HISTORY*`
 - → `README.md` (root only): `README_*`, `README-*`, `README.txt`, `README.old`, `readme*`, `Readme*`
