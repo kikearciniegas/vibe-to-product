@@ -66,6 +66,11 @@ for SH in sh zsh; do
   # 8d. trust boundary: a draft tracked by git came from the repo, not this session; its commands never run
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git init -q; git add -f .v2p/AUDIT.draft.md; FA; rm -rf .git
   is "8d tracked draft exit" $rc 1; has "8d tracked draft" "$out" "tracked by git"; is "8d nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8e. `\|` inside a backticked cell fails here, as finalize-plan's V30 lint does later (the copied command keeps the
+  # backslash); a `\|` outside backticks is plain text (control)
+  plant "| std1 | core.md | done | \`echo 'a\\|b'\` → exit 0 |"; FA; is "8e escaped pipe in a done cell exit" $rc 1; has "8e escaped pipe" "$out" 'has `\|` inside backticks'
+  plant "| std1 | core.md | pending | \`grep -E 'a\\|b' README.md\` later |"; FA; is "8e escaped pipe in a pending cell exit" $rc 1; has "8e pending names the line" "$out" "FAIL: line "
+  plant "| std1 | core.md | pending | grep -E 'a\\|b' later |"; FA; is "8e escaped pipe outside backticks exit" $rc 0
   cd "$base"
   # B. §4 backup line: exactly one, declined|none|existing archive
   cd "$fx" || exit 2

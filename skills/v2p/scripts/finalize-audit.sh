@@ -31,6 +31,12 @@ check() { printf '%s\n' "$1" | awk -F'|' -v s="$2" 'NF {st=$s; gsub(/^ +| +$/,""
 r2=$(rows '## 2.'); rows2=$(printf '%s\n' "$r2" | grep -c .)
 [ "$rows2" -eq "$expected" ] || { echo "FAIL: §2 rows $rows2/$expected"; fail=1; }
 bad=$(check "$r2" 4); [ -z "$bad" ] || { echo "FAIL: §2"; printf '%s\n' "$bad"; fail=1; }
+# a table row with `\|` inside a backticked span fails here, not later at finalize-plan (its V30 lint; field test: the
+# copied command kept the backslash, a literal pipe in ERE, and silently printed 0). An unescaped pipe splits the cell.
+v30=$(awk '/^\|/ { c = $0; while (match(c, /`[^`]*`/)) { if (index(substr(c, RSTART, RLENGTH), "\\|")) {
+      print "FAIL: line " NR ": table row has `\\|` inside backticks (a copied command keeps the backslash: avoid the pipe, e.g. grep -e a -e b)"; break }
+    c = substr(c, RSTART + RLENGTH) } }' "$draft")
+[ -z "$v30" ] || { printf '%s\n' "$v30"; fail=1; }
 # §2 done evidence runs here (field test V2: slash-literal `rg` patterns "→ 0" proved nothing). Same strict parser and
 # comparison as task-record.sh: exit 0, and a bare-number expected equals the last output line; run in the repo root.
 # An evidence with → where no pair ran is "not verified". Lint: with no →/URL a done evidence is a path, and a path word
