@@ -51,8 +51,8 @@ items < "$tmp.p" > "$tmp.pi"; items < "$tmp.e" > "$tmp.ei"; diff_items=$(comm -3
 bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev (i>5?"|":"") $i; gsub(/^ +| +$/,"",ev)
   if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
-  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
-  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
   else if (st!="pending") print "status not done/pending/N/A/not adopted/gap: " substr($0,1,100) }' "$tmp.e" | sh "$skill/scripts/check-refs.sh" "$root")
 [ -z "$bad" ] || { echo "FAIL: §2"; printf '%s\n' "$bad"; fail=1; }
 [ "$fail" -eq 0 ] || { echo "FAIL: EXECUTE.md not written"; exit 1; }

@@ -112,8 +112,8 @@ bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev 
   if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
   else if (st=="pending") { if (index(ev,"post-launch: ")!=1) print "pending without post-launch: " substr($0,1,100) }
-  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
-  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
   else print "status not done/pending/N/A/not adopted/gap: " substr($0,1,100) }' "$tmp.t" | sh "$skill/scripts/check-refs.sh" "$root")
 [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }
 cnt() { awk -F'|' -v re="$1" '{s=$4; gsub(/^ +| +$/,"",s); if (s ~ re) n++} END {print n+0}' "$tmp.t"; }

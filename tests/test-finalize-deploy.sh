@@ -180,6 +180,8 @@ for SH in sh zsh; do
   sub "$P" "$second" "$(st3 '| gap — TICKET-42 | |')"; no "10 bogus gap" "gap cites no existing path"
   sub "$P" "$second" "$(st3 '| met-by | README.md |')"; no "10 unknown status" "status not done/pending/N/A"
   sub "$P" "$second" "$(st3 '| not adopted — README.md §Auth | |')"; ok "10 not adopted"
+  sub "$P" "$second" "$(st3 '| not adopted - README.md §Auth | |')"; ok "10 not adopted hyphen"
+  sub "$P" "$second" "$(st3 '| gap - docs/DECISIONS.md:1 | |')"; ok "10 gap hyphen"
   sub "$P" "$second" "$(st3 '| gap — docs/DECISIONS.md:1 | |')"; FD; is "10 gap exit" "$rc" 0; has "10 gap counted" "$(grep '^checked: ' .v2p/DEPLOY.md)" "· not adopted 0 · gap 1 · post-launch"
   rm -f .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"
   sub "$P" "$second" "| Not A Review Item |$(printf '%s\n' "$second" | cut -d'|' -f3-)"; no "10 §3 items" "§3 items differ from REVIEW §3"

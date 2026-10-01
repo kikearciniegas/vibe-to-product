@@ -2,7 +2,7 @@
 
 Adopt writes this as `.v2p/AUDIT.draft.md`, never as `AUDIT.md`; the finalize step checks it and produces `AUDIT.md`. Replace every `<…>`.
 
-Statuses are exactly `done`, `pending`, `N/A`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `` `cmd` → expected `` (any `→` makes it a command claim, so a path is written without one), a path, or a URL. A cell command has no pipe (a cell needs `\|`, which is copied into PLAN §4 and reads there as a literal pipe): use `grep -c`, `rg -e a -e b`. An absence claim (`→ 0`, `` `! …` ``) carries a positive control in the same cell: `` control: `cmd` → n ``. `N/A` needs `BRIEF §n` in the evidence cell. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
+Statuses are exactly `done`, `pending`, `N/A — <reason citing BRIEF §n>`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `` `cmd` → expected `` (any `→` makes it a command claim, so a path is written without one), a path, or a URL. A cell command has no pipe (a cell needs `\|`, which is copied into PLAN §4 and reads there as a literal pipe): use `grep -c`, `rg -e a -e b`. An absence claim (`→ 0`, `` `! …` ``) carries a positive control in the same cell: `` control: `cmd` → n ``. `N/A` carries its `BRIEF §n` reason in the status cell, never in the evidence cell: execute empties the evidence when it copies the table. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
 <!-- claude-only -->
 The finalize step is `sh <skill>/scripts/finalize-audit.sh .v2p`: it checks the row counts against the standards files, the evidence rules above and the §5 merges, runs every §2 `done` row's `` `cmd` → expected `` pair in the repo root (exit 0; a bare-number expected must equal the last output line; a `→` with nothing run fails; a path-only evidence whose path word holds a quote, pipe, `\`, `^` or `$` fails as a pattern; an absence claim without `control:` only warns), inserts the `tidy-check.sh` output into §4, stamps the `checked:` line and writes the receipt `.v2p/.audit-pass`.
 <!-- /claude-only -->
@@ -21,7 +21,7 @@ written: <YYYY-MM-DD> by v2p adopt · reads: .v2p/BRIEF.md (<written date>) · r
 |---|---|---|---|
 | <label> | core.md | done | `<command>` → <output> |
 | <label> | web.md | pending | |
-| <label> | landing.md | N/A | BRIEF §9 block OFF |
+| <label> | landing.md | N/A — BRIEF §9 block OFF | |
 | <label> | core.md | not adopted — docs/DECISIONS.md §Sessions | |
 Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against the standards files)
 

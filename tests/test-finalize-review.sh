@@ -84,6 +84,8 @@ for SH in sh zsh; do
   st3 '| gap — TICKET-42 | |'; is "17 bogus gap exit" $rc 1; has "17 bogus gap" "$out" "gap cites no existing path"
   st3 '| met-by | README.md |'; is "17 unknown exit" $rc 1; has "17 unknown status" "$out" "status not done/pending/N/A"
   st3 '| gap — docs/DECISIONS.md:1 | |'; is "17 gap exit" $rc 0; has "17 gap counted" "$(grep '^checked: ' .v2p/REVIEW.md)" "· not adopted 0 · gap 1 ·"
+  st3 '| not adopted - README.md §Auth | |'; is "17 not adopted hyphen exit" $rc 0
+  st3 '| gap - docs/DECISIONS.md:1 | |'; is "17 gap hyphen exit" $rc 0
   st3 '| not adopted — README.md §Auth | |'; is "17 not adopted exit" $rc 0; has "17 not adopted counted" "$(grep '^checked: ' .v2p/REVIEW.md)" "· not adopted 1 · gap 0 ·"
   # 13. a deferred task's verifier is not re-run (live: it needs a credential that does not exist until deploy).
   # EXECUTE §1 row 1 re-written as deferred and re-sealed; a committed change breaks task 1's verifier only.

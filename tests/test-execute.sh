@@ -93,6 +93,8 @@ for SH in sh zsh; do
   echo x >> README.md
   plant "|$it1| core.md | not adopted — README.md §Auth | |"; FE; is "10 not adopted exit" $rc 1; hasnt "10 not adopted accepted" "$out" "§2"
   plant "|$it1| core.md | gap — src/greet.sh:1 | |"; FE; is "10 gap exit" $rc 1; hasnt "10 gap accepted" "$out" "§2"
+  plant "|$it1| core.md | not adopted - README.md §Auth | |"; FE; hasnt "10 not adopted hyphen accepted" "$out" "§2"
+  plant "|$it1| core.md | gap - src/greet.sh:1 | |"; FE; hasnt "10 gap hyphen accepted" "$out" "§2"
   git checkout -q README.md
   plant "|$it1| core.md | not adopted — docs/OWNER-NOTES.md §Auth | |"; FE; is "10 not adopted missing exit" $rc 1; has "10 not adopted missing path" "$out" "not adopted cites no existing path"
   plant "|$it1| core.md | gap — TICKET-42 | |"; FE; is "10 bogus gap exit" $rc 1; has "10 bogus gap" "$out" "gap cites no existing path"

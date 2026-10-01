@@ -39,6 +39,14 @@ for SH in sh zsh; do
   # 7. §3 (modularity) shares the rules
   rm -f .v2p/AUDIT.md .v2p/.audit-pass; sed 's/^| mod1 | pending | |$/| mod1 | gap — nowhere.md | |/' "$G" > .v2p/AUDIT.draft.md
   FA; is "7 §3 bogus gap exit" $rc 1; has "7 §3 bogus gap" "$out" "gap cites no existing path"
+  # 9. V1 loose ends: `N/A — BRIEF §n` in the status cell (adopt.md's form) passes; the template's N/A row, with the
+  # evidence cell emptied as execute's copy does, still passes; a hyphen works like the em dash after not adopted / gap
+  plant '| std1 | core.md | N/A — BRIEF §9 block OFF | |'; FA; is "9 N/A reason in status exit" $rc 0
+  plant '| std1 | core.md | N/A — not needed | |'; FA; is "9 N/A without BRIEF exit" $rc 1; has "9 N/A without BRIEF" "$out" "N/A without BRIEF §"
+  trow=$(grep -m1 '^| <label> | [a-z-]*\.md | N/A' "$here/skills/v2p/references/audit-template.md" | awk -F'|' -v OFS='|' '{$2=" std1 "; $5=" "; print}')
+  plant "$trow"; FA; is "9 template N/A row survives an emptied evidence cell" $rc 0
+  plant '| std1 | core.md | not adopted - README.md §Auth | |'; FA; is "9 not adopted hyphen exit" $rc 0
+  plant '| std1 | core.md | gap - BACKLOG.md:1 | |'; FA; is "9 gap hyphen exit" $rc 0
   # 8. a §2 done row's `cmd` → expected pair runs here (field test V2: slash-literal patterns "→ 0" proved nothing):
   # same parser and comparison as task-record.sh, run in the repo root; an arrow with nothing run fails
   plant '| std1 | core.md | done | `grep -c fixture README.md` → 1 |'; FA; is "8 matching output exit" $rc 0
