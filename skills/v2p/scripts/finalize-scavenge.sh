@@ -8,7 +8,7 @@ urls=$(grep -oE 'https?://[^ )|`>]+' "$draft" | sed 's/[.,;]$//' | sort -u)
 [ -n "$urls" ] || { echo "FAIL: no URLs in draft"; exit 1; }
 total=0; ok=0; fail=0
 # work/ checkpoints are a resume aid, not proof: requiring them made agents write them after the fact.
-for u in $urls; do
+for u in $(printf '%s\n' "$urls"); do  # zsh does not split an unquoted $urls
   total=$((total + 1))
   c=$(curl -s -o /dev/null -L -m 20 -w '%{http_code}' "$u")
   # 401/403/429 = page exists but blocks bots; anything else outside 2xx/3xx is dead.
