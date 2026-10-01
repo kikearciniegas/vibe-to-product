@@ -126,6 +126,16 @@ for SH in sh zsh; do
   sub2 "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: grep -c hi src/greet.sh → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
   grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "16 fixture edited" $? 0
   FR; is "16 unbackticked exit" $rc 1; has "16 unbackticked" "$out" "FAIL: verifier of task 2: mechanical with no backticked"
+  # 17. a: a mechanical Verifier whose commands are all `<placeholder>`s ran nothing and counted as verified (one runnable
+  # command beside a placeholder is enough); b: a backticked `cmd` → x inside the manual part was extracted and run
+  reseal() { shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; }
+  keep() { [ -f .v2p/REVIEW.md ] && { sed 's/^checked: .*/checked: pending/' .v2p/REVIEW.md > "$P"; rm .v2p/REVIEW.md .v2p/.review-pass; }; }
+  sub2 'mechanical: grep -c hi src/greet.sh → 1' 'mechanical: `grep -c hi <file>` → 1'; reseal
+  FR; keep; is "17a all placeholders exit" $rc 1; has "17a all placeholders" "$out" "FAIL: verifier of task 2: every command is a <placeholder>: nothing ran"
+  sub2 '`grep -c hi <file>` → 1' '`grep -c hi <file>` → 1, `true` → exit 0'; reseal
+  FR; keep; hasnt "17a one runnable beside a placeholder" "$out" "every command is a <placeholder>"; has "17a runnable ran" "$out" "run: task 2: true"
+  rm -f MANUALRAN; sub2 'manual: the user opens it' 'manual: run `touch MANUALRAN` → see it'; reseal
+  FR; keep; hasnt "17b manual part not run" "$out" "run: task 2: touch"; is "17b no MANUALRAN" "$(test -f MANUALRAN && echo yes)" ""; has "17b mechanical part runs" "$out" "run: task 2: true"
   cd "$base"
 done
 SH=all; is "12 source untouched" "$(shasum -a 256 < "$src")" "$sum0"

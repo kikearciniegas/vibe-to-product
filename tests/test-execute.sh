@@ -359,6 +359,23 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   git reset -q --hard "$c1"; mkdir -p .v2p; echo n > .v2p/notes.md; git add .v2p/notes.md; git commit -qm 'v2p: notes'
   FE; is "32 .v2p-only commit after last head exit" $rc 0; has "32 .v2p-only PASS" "$out" "PASS: 1/3 tasks (2 skipped)"
   cd "$base"
+  # 33. Verifier loose ends. a: a mechanical Verifier whose commands are all `<placeholder>`s ran nothing and recorded
+  # pass; now fail (one runnable command beside a placeholder still passes). b: a backticked `cmd` → x inside the
+  # manual part was extracted and run; only the mechanical part is (either order of the two parts).
+  f33=$base/f33-$SH; sh "$here/tests/fixture-execute.sh" "$f33" >/dev/null 2>&1; cd "$f33"; cp .v2p/PLAN.md "$base/p33"
+  v33() { V=$1 awk '/^\*\*Verifier:\*\* mechanical: `sh -c / { print "**Verifier:** " ENVIRON["V"]; next } { print }' "$base/p33" > .v2p/PLAN.md
+    shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; TR start 2; TR verify 2; v=$(grep '^verifier:' .v2p/work/execute-task-2.md); }
+  v33 'mechanical: `grep -c hi <file>` → 1, `curl -m 1 https://<domain>/` → 200   |   manual: the user opens it'
+  is "33a all placeholders exit" $rc 1; has "33a all placeholders record" "$v" "verifier: fail"; has "33a msg" "$out" "nothing ran"
+  printf 'echo hi\n' > src/greet.sh
+  v33 'mechanical: `grep -c hi src/greet.sh` → 1, `curl -m 1 https://<domain>/` → 200   |   manual: the user opens it'
+  is "33a one runnable beside a placeholder exit" $rc 0; has "33a runnable ran" "$v" "verifier: pass · attempts: 1 · exit 0 · \`grep -c hi src/greet.sh\` → 1"
+  rm -f MANUALRAN; v33 "mechanical: \`grep -c hi src/greet.sh\` → 1   |   manual: run \`touch MANUALRAN\` → see it"
+  is "33b manual after mechanical exit" $rc 0; is "33b manual command not run" "$(test -f MANUALRAN && echo yes)" ""; hasnt "33b not in record" "$v" "touch MANUALRAN"
+  rm -f MANUALRAN; v33 "manual: run \`touch MANUALRAN\` → see it; then mechanical: \`grep -c hi src/greet.sh\` → 1"
+  is "33b manual before mechanical exit" $rc 0; is "33b manual-first command not run" "$(test -f MANUALRAN && echo yes)" ""
+  has "33b mechanical part still runs" "$v" "exit 0 · \`grep -c hi src/greet.sh\` → 1"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

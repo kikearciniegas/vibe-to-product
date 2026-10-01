@@ -46,10 +46,11 @@ M1="target host 'fixture.test;rm' is not a plain hostname"; M2="§1 missing cana
 M5="pending without post-launch"; M6="FAIL: rollback line"; M7="secret-looking value in .v2p/DEPLOY.draft.md:"; M8="'---' rule"; M9="no 'Next: live' line"
 for SH in sh zsh; do
   fx=$base/fx-$SH; sh "$here/tests/fixture-execute.sh" "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
-  # PLAN: a deploy runbook task (its verifier needs the live host) and one whose placeholder deploy cannot fill
+  # PLAN: a deploy runbook task (its verifier needs the live host) and one with a placeholder deploy cannot fill beside a
+  # runnable command (all placeholders would run nothing: not verified, see "10 all placeholders")
   { printf '%s\n' '' '### Task 4: Deploy runbook' '**Files:** Modify: `docs/secrets.md`' \
       "**Verifier:** manual: dashboards; then mechanical: \`curl -m 10 -sI https://<domain> | grep -q 'HTTP/2 200'\` → exit 0" '' \
-      '### Task 5: Chunk map' '**Files:** none' '**Verifier:** mechanical: `curl -m 10 -sI https://<domain>/_next/<chunk>.js.map | grep -q 404` → exit 0'; } >> .v2p/PLAN.md
+      '### Task 5: Chunk map' '**Files:** none' '**Verifier:** mechanical: `curl -m 10 -sI https://<domain>/_next/<chunk>.js.map | grep -q 404` → exit 0, `curl -m 10 -sI https://<domain>/ | grep -q 200` → exit 0'; } >> .v2p/PLAN.md
   shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: deploy tasks'
   # execute, the short way: 1 pass, 2 deferred (credential), 3 handed to review, 4 and 5 handed to deploy
   q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh; q verify 1
@@ -94,10 +95,10 @@ for SH in sh zsh; do
   sed 's/^---$/***/' "$P" > "$P.new" && mv "$P.new" "$P"; FD; hasnt "8 rule" "$out" "$M8"
   printf '\nNext: live\n' >> "$P"; mkdir -p .v2p/work; echo "head: x" > .v2p/work/deploy-scan.md
   FD; is "9 exit" "$rc" 0; S12=$(printf '%s' "$SCANC" | cut -c1-12); SD=$(( $(grep -c . "$base/rows-$SH") - 1 ))
-  has "9 PASS" "$out" "PASS: scan high $S12, findings 1 (fixed 1 · accepted 0), verifiers 3/3, placeholders left 1, rulings 0, standards done $SD, post-launch 1, canary HEALTHY -> .v2p/DEPLOY.md"
+  has "9 PASS" "$out" "PASS: scan high $S12, findings 1 (fixed 1 · accepted 0), verifiers 4/4, placeholders left 1, rulings 0, standards done $SD, post-launch 1, canary HEALTHY -> .v2p/DEPLOY.md"
   has "9 deferred task re-run" "$out" "run: task 2:"; has "9 deploy task re-run on the target" "$out" "run: task 4: curl -m 10 -sI https://fixture.test | grep -q 'HTTP/2 200'"
   has "9 unfillable placeholder skipped" "$out" "skip: task 5: curl -m 10 -sI https://fixture.test/_next/<chunk>.js.map"; hasnt "9 review-handed task not run" "$out" "run: task 3"
-  is "9 checked" "$(grep '^checked: ' .v2p/DEPLOY.md)" "checked: scan high $S12 · findings 1 (fixed 1 · accepted 0) · verifiers 3/3 pass · placeholders left 1 · rulings 0 · standards done $SD · N/A 0 · not adopted 0 · gap 0 · post-launch 1 · live 2/2 · canary HEALTHY · rollback 41s · branch $XB · head $(git rev-parse HEAD)"
+  is "9 checked" "$(grep '^checked: ' .v2p/DEPLOY.md)" "checked: scan high $S12 · findings 1 (fixed 1 · accepted 0) · verifiers 4/4 pass · placeholders left 1 · rulings 0 · standards done $SD · N/A 0 · not adopted 0 · gap 0 · post-launch 1 · live 2/2 · canary HEALTHY · rollback 41s · branch $XB · head $(git rev-parse HEAD)"
   is "9 receipt" "$(cat .v2p/.deploy-pass)" "$(shasum -a 256 .v2p/DEPLOY.md | cut -d' ' -f1)"; is "9 draft gone" "$(test -f "$P" && echo yes)" ""
   is "9 checkpoints cleared" "$(test -f .v2p/work/deploy-scan.md && echo yes)" ""
   sed 's/^checked: .*/checked: pending/' .v2p/DEPLOY.md > "$G"; rm .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"
@@ -214,6 +215,14 @@ for SH in sh zsh; do
   shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "10 unbackticked fixture edited" $? 0
   no "10 unbackticked mechanical verifier" "FAIL: verifier of task 2: mechanical with no backticked"
   cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  # a mechanical Verifier whose commands are all `<placeholder>`s once <domain>/<url> are filled ran nothing: not verified
+  sub .v2p/PLAN.md "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: `grep -c hi <file>` → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  no "10 all placeholders" "FAIL: verifier of task 2: every command is a <placeholder>: nothing ran"
+  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  # a backticked `cmd` → x inside the manual part is not run
+  rm -f MANUALRAN; sub .v2p/PLAN.md 'manual: the user opens it' 'manual: run `touch MANUALRAN` → see it'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  FD; hasnt "10 manual part not run" "$out" "run: task 2: touch"; is "10 no MANUALRAN" "$(test -f MANUALRAN && echo yes)" ""; has "10 mechanical part runs" "$out" "run: task 2: sh -c"
+  rm -f MANUALRAN .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"; cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
   is "10 curl only ever hit the fixture host" "$(grep -v '://fixture\.test' "$fk/calls" | grep -c .)" 0
   ok "10 good draft still passes"
   cd "$base"

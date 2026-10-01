@@ -95,7 +95,8 @@ while IFS= read -r n; do
   printf '%s\n' "$skipped" | grep -qx "$n" && continue
   if printf '%s\n' "$ruled" | grep -qx "$n"; then echo "ruling: task $n verifier not re-run (plan defect)"; nr=$((nr + 1)); continue; fi
   vl=$(awk -v n="$n" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Verifier:\*\*/ {print; exit}' "$plan")
-  printf '%s\n' "$vl" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"
+  # mechanical part only: a `cmd` → x inside the manual: part is prose for a person, never run
+  printf '%s\n' "$vl" | sed 's/manual:.*mechanical:/mechanical:/; s/manual:.*//' | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"; ran=0
   # 0 commands from a mechanical Verifier is "not verified", never a pass (field test: 14 vacuous passes)
   [ -s "$tmp.c" ] || ! printf '%s\n' "$vl" | grep -qE '^\*\*Verifier:\*\* *mechanical:' ||
     { echo "FAIL: verifier of task $n: mechanical with no backticked \`command\` → expected pair; nothing ran (not verified)"; fail=1; }
@@ -103,13 +104,15 @@ while IFS= read -r n; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     # same rule as task-record.sh: only an unquoted `<word>` is a placeholder; `'<loc>'` and `< file` run
     printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>' && continue
-    vt=$((vt + 1)); echo "run: task $n: $c"
+    vt=$((vt + 1)); ran=$((ran + 1)); echo "run: task $n: $c"
     # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh) — by design,
     # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     if [ "$r" -ne 0 ]; then echo "FAIL: verifier of task $n fails after review fixes: $c exit $r"; fail=1
     else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: verifier of task $n fails after review fixes: $c → $last (expected $x)"; fail=1; fi ;; esac; fi
   done < "$tmp.c"
+  # every extracted command a <placeholder>: nothing ran, not verified (finalize-audit's rule)
+  [ -s "$tmp.c" ] && [ "$ran" -eq 0 ] && { echo "FAIL: verifier of task $n: every command is a <placeholder>: nothing ran (not verified)"; fail=1; }
 done < "$tmp.r"
 [ "$fail" -eq 0 ] || { echo "FAIL: REVIEW.md not written"; exit 1; }
 c="checked: runs $runs/$nreq · findings $fsum (fixed $fx · accepted $fa · open $fo) · standards done $sd · N/A $sa · not adopted $sx · gap $sg · deferred $sk · verifiers $vp/$vt pass · rulings $nr · branch $now · head $head"

@@ -163,7 +163,8 @@ vt=0; vp=0; nr=0; left=0
   printf '%s\n' "$skipped" | grep -qx "$n" && continue
   if printf '%s\n' "$ruled" | grep -qx "$n"; then echo "ruling: task $n verifier not re-run (plan defect)"; nr=$((nr + 1)); continue; fi
   vl=$(awk -v n="$n" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && /^\*\*Verifier:\*\*/ {print; exit}' "$plan")
-  printf '%s\n' "$vl" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"
+  # mechanical part only: a `cmd` → x inside the manual: part is prose for a person, never run
+  printf '%s\n' "$vl" | sed 's/manual:.*mechanical:/mechanical:/; s/manual:.*//' | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"; ran=0
   # 0 commands from a mechanical Verifier is "not verified", never a pass (field test: 14 vacuous passes)
   [ -s "$tmp.c" ] || ! printf '%s\n' "$vl" | grep -qE '^\*\*Verifier:\*\* *mechanical:' ||
     { echo "FAIL: verifier of task $n: mechanical with no backticked \`command\` → expected pair; nothing ran (not verified)"; fail=1; }
@@ -171,12 +172,14 @@ vt=0; vp=0; nr=0; left=0
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/' | sed "s|<domain>|$host|g; s|<url>|https://$host|g"); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     # same rule as task-record.sh: only an unquoted `<word>` is a placeholder; `'<loc>'` and `< file` run
     if printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>'; then left=$((left + 1)); echo "skip: task $n: $c (placeholder)"; continue; fi
-    vt=$((vt + 1)); echo "run: task $n: $c"
+    vt=$((vt + 1)); ran=$((ran + 1)); echo "run: task $n: $c"
     # trust boundary: $c is a Verifier command from PLAN.md (hash-locked, checked above) plus the host validated in step 2
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     if [ "$r" -ne 0 ]; then echo "FAIL: verifier of task $n fails on the live target: $c exit $r"; fail=1
     else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: verifier of task $n fails on the live target: $c → $last (expected $x)"; fail=1; fi ;; esac; fi
   done < "$tmp.c"
+  # every extracted command a <placeholder>: nothing ran, not verified (finalize-audit's rule)
+  [ -s "$tmp.c" ] && [ "$ran" -eq 0 ] && { echo "FAIL: verifier of task $n: every command is a <placeholder>: nothing ran (not verified)"; fail=1; }
 done < "$tmp.k"
 # 13. live: 200 over https, http redirects to https (curl from PATH)
 if [ -n "$host" ]; then

@@ -52,6 +52,8 @@ sealed() { [ -f "$rec" ] && [ -f "$pass" ] && [ "$(shasum -a 256 "$rec" | cut -d
 put() { K=$1 awk 'skip && /^  /{next} {skip=0} index($0, ENVIRON["K"] ": ")==1 || $0==ENVIRON["K"] ":" {skip=1; next} {print}' "$rec" > "$tmp"
   printf '%s: %s\n' "$1" "$2" | sed 's/: $/:/' >> "$tmp"; [ -n "$3" ] && sed 's/^/  /' "$3" >> "$tmp"; mv "$tmp" "$rec"; }
 tline() { awk -v n="$n" -v k="$1" '$0 ~ "^### Task "n":" {f=1;next} f && /^### / {exit} f && index($0, "**" k ":**")==1 {print; exit}' "$plan"; }
+# the mechanical part of a Verifier line: a `cmd` → x inside its manual: part is prose for a person, never run
+mpart() { sed 's/manual:.*mechanical:/mechanical:/; s/manual:.*//'; }
 ftoks() { tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr -d '`' | sed 's/ .*//; s/<[^>]*>/*/g'; }
 # UI gate: a task whose Files name a UI file starts only while .v2p/DESIGN.md matches its receipt (brand before UI work)
 # ponytail: extension heuristic; a .ts styling file (vanilla-extract) passes — extend the list when it bites.
@@ -93,8 +95,8 @@ verify)
     printf '%s\n' "$dc"; echo "FAIL: task $n blocked by drift"; exit 1; fi
   a=$(printf '%s\n' "$dc" | sed -n 's/.*(\([0-9]*\) allowed by amendments).*/\1/p'); [ "${a:-0}" -eq 0 ] && drift=none || drift="allowed $a"
   # strict parse: a command counts only when its closing backtick is followed by →
-  tline Verifier | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp"
-  ok=1; res=; : > "$tmp.o"
+  tline Verifier | mpart | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp"
+  ok=1; res=; ran=0; : > "$tmp.o"
   while IFS= read -r m; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     [ -n "$res" ] && sep='; ' || sep=' · '
@@ -104,7 +106,7 @@ verify)
       res="$res$sep\`$c\` → skipped: placeholder"; continue; fi
     # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh above) — by design,
     # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
-    sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
+    ran=$((ran + 1)); sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     good=0; [ "$r" -eq 0 ] && good=1
     case $x in ''|*[!0-9]*) ;; *) [ "$last" = "$x" ] || good=0 ;; esac
     [ "$good" -eq 1 ] || ok=0
@@ -113,6 +115,8 @@ verify)
   # 0 commands extracted from a mechanical Verifier is "not verified", never a pass (field test: 14 vacuous passes)
   if [ ! -s "$tmp" ] && tline Verifier | grep -qE '^\*\*Verifier:\*\* *mechanical:'; then ok=0
     res=" · no backticked \`command\` → expected pair in a mechanical Verifier: nothing ran (fix the PLAN and re-run finalize-plan)"; fi
+  # every extracted command a <placeholder>: nothing ran either (finalize-audit's rule: at least one command actually ran)
+  if [ -s "$tmp" ] && [ "$ran" -eq 0 ]; then ok=0; res="$res · every command is a <placeholder>: nothing ran (not verified)"; fi
   [ "$ok" -eq 1 ] && v=pass || v=fail
   [ -n "$hd" ] && h=$(git rev-parse "$hd^{commit}") || h=$(git rev-parse HEAD)
   put verifier "$v · attempts: $k${res}"; put head "$h"; put drift "$drift"; put tidy-delta 0; put output "" "$tmp.o"; seal
