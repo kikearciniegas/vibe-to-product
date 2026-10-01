@@ -11,12 +11,13 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)
   dirty=$(git status --porcelain 2>/dev/null | grep -vc '^??'); git=clean; [ "$dirty" -gt 0 ] && git="dirty:$dirty"
 fi
+gp=$git; [ "$git" = none ] && [ -d .git ] && [ -z "$(find .git -mindepth 1 -print -quit)" ] && gp=empty   # copied without history; $git stays none
 code=no
 for m in package.json pyproject.toml requirements.txt go.mod Cargo.toml Package.swift pubspec.yaml build.gradle build.gradle.kts Gemfile composer.json; do [ -f "$m" ] && code=yes; done
 [ "$code" = no ] && [ -n "$(find . -path ./.git -prune -o -path ./node_modules -prune -o -path ./.v2p -prune -o -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.py' -o -name '*.go' -o -name '*.rs' -o -name '*.swift' -o -name '*.kt' -o -name '*.java' -o -name '*.rb' -o -name '*.php' -o -name '*.dart' -o -name '*.vue' -o -name '*.svelte' \) -print -quit)" ] && code=yes
 brief=none; [ -f .v2p/BRIEF.md ] && brief=yes
 audit=no; [ -f .v2p/AUDIT.md ] && grep -q '^checked:' .v2p/AUDIT.md && audit=yes
-probe="root:$root code:$code git:$git branch:$branch brief:$brief audit:$audit"
+probe="root:$root code:$code git:$gp branch:$branch brief:$brief audit:$audit"
 [ "$mode" = probe ] && { echo "$probe"; exit 0; }
 
 ignored() { [ "$git" != none ] && git check-ignore -q -- "$1"; }

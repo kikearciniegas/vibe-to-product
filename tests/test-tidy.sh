@@ -57,6 +57,11 @@ for SH in sh zsh; do
   n1=$(find "$HOME/.v2p-backups" -name MANIFEST.tsv | wc -l)
   printf 'log\tdebug.log\tquarantine\n' | $SH "$S/quarantine.sh" --apply >/dev/null; printf 'debris\tsrc/app.ts.bak\tquarantine\n' | $SH "$S/quarantine.sh" --apply >/dev/null
   is "9b two manifests" "$(( $(find "$HOME/.v2p-backups" -name MANIFEST.tsv | wc -l) - n1 ))" 2
+  # 11. copy without git history (field test V19-V23): empty .git/, .gitignore read directly, referenced BACKLOG, decisions home
+  nf=$base/nogit-$SH; mkdir -p "$nf/.git" "$nf/src"; cd "$nf"; echo 'export const a = 1' > src/a.ts
+  p=$($SH "$S/tidy-check.sh" --probe); has "11 V19 empty .git" "$p" "git:empty "
+  has "11 V19 control: no .git" "$($SH "$S/tidy-check.sh" --probe src)" "git:none "
+  mkdir -p src/x/.git; : > src/x/.git/junk; has "11 V19 control: non-empty broken .git" "$($SH "$S/tidy-check.sh" --probe src/x)" "git:none "; rm -rf src/x
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it

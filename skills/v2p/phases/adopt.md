@@ -7,7 +7,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 ## Preconditions
 - The router ran the probe. Portable: ask the user to paste `ls -a` and `git status --short`.
 <!-- claude-only -->
-  Claude Code: `sh <this skill's dir>/scripts/tidy-check.sh --probe` prints `root:<abs> code:yes|no git:none|clean|dirty:<n> branch:<b> brief:yes|none audit:yes|no`.
+  Claude Code: `sh <this skill's dir>/scripts/tidy-check.sh --probe` prints `root:<abs> code:yes|no git:none|empty|clean|dirty:<n> branch:<b> brief:yes|none audit:yes|no`.
 <!-- /claude-only -->
 - `.v2p/BRIEF.md` exists → say "BRIEF kept; running audit + tidy", run Step 0 and Step 1, then skip Steps 2–3. (This is also the manual re-tidy path.) Step 1 still runs because AUDIT §1 and §3 come from the scan.
 - `.v2p/AUDIT.md` exists and passed its check → offer resume (keep) or re-run.
@@ -23,6 +23,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
   Size: `du -sh <root>`. On yes: `sh <skill>/scripts/backup.sh <root>`; it writes `~/.v2p-backups/<project>/<ts>-original.tar.gz` and prints `BACKUP <path> · <n> entries · <size>` and `restore: <command>`. Exit 1 (unreadable file, disk full) leaves no partial archive: show its message and ask again (retry / skip) before continuing.
 <!-- /claude-only -->
 - No git → continue, no branch.
+- Empty `.git/` (probe `git:empty`: the folder was copied without its history) → tell the user before continuing as no git: "History is missing. To restore it, copy the original project's `.git/` folder over this empty one, or `git clone` the remote elsewhere and move its `.git/` here; then run `/v2p adopt` again."
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
 - Clean tree → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c v2p/adopt-<YYYY-MM-DD>`.
 - v2p never commits, stashes, resets or switches on a dirty tree. The closing message tells the user what to commit.
