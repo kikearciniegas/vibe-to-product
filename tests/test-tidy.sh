@@ -72,6 +72,9 @@ for SH in sh zsh; do
   is "11 V21 control: unreferenced TODO merged" "$(grep "${T}TODO.md${T}" "$base/nf-$SH" | cut -f3)" "merge:docs/DECISIONS.md"
   is "11 V21 keep is not a violation" "$($SH "$S/tidy-check.sh" | sed -n 's/^tidy: //p')" "$(( $(grep -c . "$base/nf-$SH") - $(grep -c "${T}keep:" "$base/nf-$SH") )) violations"
   is "11 V21 quarantine skips keep" "$($SH "$S/quarantine.sh" < "$base/nf-$SH" | grep -c BACKLOG)" 0
+  r=$(printf 'x\tpkg/coverage/x\tquarantine\nx\t.next\tquarantine\nx\t.cache/c\tquarantine\n' | $SH "$S/quarantine.sh")
+  is "11 V20 quarantine reads .gitignore without git" "$(printf '%s\n' "$r" | grep '^REFUSE' | tr '\t' ' ' | tr '\n' ',')" "REFUSE gitignored pkg/coverage/x,REFUSE gitignored .next,"
+  is "11 V20 control: unlisted path moves" "$(printf '%s\n' "$r" | grep -c "^MOVE.*${T}\.cache/c$")" 1
   mkdir -p docs/decisions; echo 'use x' > docs/decisions/0001-use-x.md; echo 'use y' > docs/decisions/ADR-0002.md; : > docs/decisions/.DS_Store
   for h in decisions adr; do [ -d docs/$h ] || mv docs/decisions docs/$h
     t=$($SH "$S/tidy-check.sh" --tsv)

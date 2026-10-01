@@ -12,6 +12,14 @@ case $root in /|"$HOME") echo "REFUSE root is $root" >&2; exit 2 ;; esac
 cd "$root" || exit 2
 [ -e .git ] && GIT_CEILING_DIRECTORIES=${root%/*} && export GIT_CEILING_DIRECTORIES   # an invalid .git here never falls through to a parent repo
 git=no; git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git=yes
+# Without git, .gitignore is read directly (copied from tidy-check.sh): each entry hides that name or path and everything under it.
+# ponytail: exact names only (leading and trailing / dropped); glob (*) and negation (!) entries are skipped.
+gi=; [ $git = no ] && [ -f .gitignore ] && gi=$(sed -e 's/[[:space:]]*$//' -e 's|^/||' -e 's|/$||' .gitignore | grep -v -e '^#' -e '^!' -e '^$' -e '\*')
+ignored() { [ -n "$gi" ] || return 1
+  while IFS= read -r e; do case /$1/ in */"$e"/*) return 0 ;; esac; done <<EOF
+$gi
+EOF
+  return 1; }
 sha() { shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1 || sha256sum "$1" | cut -d' ' -f1; }
 ts=$(date +%Y-%m-%d-%H%M%S); q="$HOME/.v2p-backups/${root##*/}/$ts"; [ -e "$q" ] && q="$q-$$"   # same-second rerun must not truncate a manifest
 man="$q/MANIFEST.tsv"; res="$q/restore.sh"
@@ -30,6 +38,7 @@ check() { p=$1
   if [ $git = yes ]; then
     git check-ignore -q -- "$p" && { refuse "gitignored" "$p"; return 1; }
     [ -n "$(git status --porcelain -- "$p" | grep -v '^??')" ] && { refuse "uncommitted-changes" "$p"; return 1; }
+  else ignored "$p" && { refuse "gitignored" "$p"; return 1; }
   fi
   return 0
 }
