@@ -305,7 +305,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   # untracked file into the task commit. It now runs drift-check first: nothing is committed while one is present;
   # Step 0's remedy (.git/info/exclude) clears it and the commit holds only the task's files.
   f29=$base/f29-$SH; sh "$here/tests/fixture-execute.sh" "$f29" >/dev/null 2>&1; cd "$f29"
-  ol=$(grep -m1 'git add -A && git commit -m' "$here/skills/v2p/phases/execute.md" | sed 's/^ *`//; s/`$//' |
+  ol=$(grep -m1 'git add -A.* && git commit -m "<type>' "$here/skills/v2p/phases/execute.md" | sed 's/^ *`//; s/`$//' |
     K="$here/skills/v2p" awk '{ gsub(/<n>/, "1"); gsub(/<type>: <task title>/, "feat: greet"); i = index($0, "<this skill'"'"'s dir>")
       if (i) $0 = substr($0, 1, i - 1) ENVIRON["K"] substr($0, i + 18); print }')
   has "29 one-liner extracted" "$ol" "git commit -m \"feat: greet\""
@@ -316,6 +316,18 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   is "29 nothing committed" "$(git rev-parse HEAD)" "$h0"; is "29 mockup in no commit" "$(git log --name-only --format= | grep -c mockup.png)" 0
   echo mockup.png >> .git/info/exclude; out=$($SH -c "$ol" 2>&1); rc=$?
   is "29 excluded → commit exit" $rc 0; is "29 commit = task files only" "$(git show --name-only --format= HEAD | sort | tr '\n' ' ')" "src/greet.sh tests/greet.test.sh "
+  # 29b. drift-check passes .v2p/* by design, so `git add -A` swept an untracked, non-ignored .v2p/ file (PLAN.md when
+  # branching in place) into the task commit; the one-liner stages only `.` minus .v2p/. Also run from a project that
+  # is a subdirectory of its repo: a file outside the project (drift-check never sees it) stays out too.
+  echo n > .v2p/notes.md; printf 'echo hi\n# 2\n' > src/greet.sh; out=$($SH -c "$ol" 2>&1); rc=$?
+  is "29b commit exit" $rc 0; is "29b .v2p file not committed" "$(git show --name-only --format= HEAD | tr '\n' ' ')" "src/greet.sh "
+  is "29b .v2p file still untracked" "$(git status --porcelain -- .v2p/notes.md)" "?? .v2p/notes.md"
+  sub=$base/f29s-$SH; mkdir -p "$sub"; sh "$here/tests/fixture-execute.sh" "$sub/proj" >/dev/null 2>&1; rm -rf "$sub/proj/.git"
+  mv "$sub/proj/.gitignore" "$sub/.gitignore"; sed -i.b 's|^|proj/|' "$sub/.gitignore"; rm -f "$sub/.gitignore.b"
+  (cd "$sub" && git init -q && git add -A && git commit -qm base); cd "$sub/proj"
+  TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  echo n > .v2p/notes.md; echo o > ../outside.txt; out=$($SH -c "$ol" 2>&1); rc=$?
+  is "29b subdir commit exit" $rc 0; is "29b subdir commit = task files only" "$(git show --name-only --format= HEAD | sort | tr '\n' ' ')" "proj/src/greet.sh proj/tests/greet.test.sh "
   cd "$base"
   # 30. field test V8: tasks committed in sequence, then an earlier one re-verified, saw the later tasks' files as drift.
   # --head <sha> measures base..<sha> (no untracked scan); <sha> must be an ancestor of HEAD and a descendant of base.
