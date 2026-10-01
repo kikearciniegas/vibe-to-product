@@ -108,15 +108,18 @@ for SH in sh zsh; do
   par=$base/par-$SH; mkdir -p "$par/sub/.git"; git -C "$par" init -q; printf 'secret.md\n' > "$par/.gitignore"; cd "$par/sub"
   has "12 default root = subdir, git:empty" "$($SH "$S/tidy-check.sh" --probe)" "root:$par/sub code:no git:empty "
   has "12 explicit root, git:empty" "$($SH "$S/tidy-check.sh" --probe .)" "root:$par/sub code:no git:empty "
-  has "12 control: valid parent repo" "$($SH "$S/tidy-check.sh" --probe "$par")" "root:$par code:no git:clean "
+  has "12 control: valid parent repo (no commit yet)" "$($SH "$S/tidy-check.sh" --probe "$par")" "root:$par code:no git:unborn "
   has "12 quarantine default root = subdir" "$(printf 'x\tnone\tquarantine\n' | $SH "$S/quarantine.sh")" "/.v2p-backups/sub/"
   echo s > secret.md; is "12 quarantine ignores the parent's .gitignore" "$(printf 'x\tsecret.md\tquarantine\n' | $SH "$S/quarantine.sh" | grep -c '^MOVE')" 1
   # 13. a fresh `git init` (no commits): rev-parse --abbrev-ref printed HEAD and failed, so `|| echo detached` made the
   # probe two lines. One line, the unborn branch's name; a detached HEAD prints branch:detached
   ub=$base/unborn-$SH; mkdir -p "$ub"; git -C "$ub" init -q -b trunk; p=$($SH "$S/tidy-check.sh" --probe "$ub")
   is "13 unborn probe is one line" "$(printf '%s\n' "$p" | grep -c .)" 1; has "13 unborn branch name" "$p" " branch:trunk "
+  # an unborn repo has no HEAD to be clean against: git:unborn, even with untracked files; a staged file is still dirty
+  echo x > "$ub/a.txt"; has "13 unborn, untracked files" "$($SH "$S/tidy-check.sh" --probe "$ub")" " git:unborn "
+  git -C "$ub" add a.txt; has "13 unborn, staged file" "$($SH "$S/tidy-check.sh" --probe "$ub")" " git:dirty:1 "; git -C "$ub" rm -q --cached a.txt; rm "$ub/a.txt"
   git -C "$ub" -c user.email=t@t -c user.name=t commit -q --allow-empty -m c; git -C "$ub" checkout -q --detach
-  p=$($SH "$S/tidy-check.sh" --probe "$ub"); is "13 detached probe is one line" "$(printf '%s\n' "$p" | grep -c .)" 1; has "13 detached" "$p" " branch:detached "
+  p=$($SH "$S/tidy-check.sh" --probe "$ub"); is "13 detached probe is one line" "$(printf '%s\n' "$p" | grep -c .)" 1; has "13 detached" "$p" " branch:detached "; has "13 control: a commit makes it clean" "$p" " git:clean "
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it

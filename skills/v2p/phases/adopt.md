@@ -7,7 +7,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 ## Preconditions
 - The router ran the probe. Portable: ask the user to paste `ls -a` and `git status --short`.
 <!-- claude-only -->
-  Claude Code: `sh <this skill's dir>/scripts/tidy-check.sh --probe` prints `root:<abs> code:yes|no git:none|empty|clean|dirty:<n> branch:<b> brief:yes|none audit:yes|no writable:yes|no`.
+  Claude Code: `sh <this skill's dir>/scripts/tidy-check.sh --probe` prints `root:<abs> code:yes|no git:none|empty|unborn|clean|dirty:<n> branch:<b> brief:yes|none audit:yes|no writable:yes|no`.
 <!-- /claude-only -->
 - `.v2p/BRIEF.md` exists → say "BRIEF kept; running audit + tidy", run Step 0 and Step 1, then skip Steps 2–3. (This is also the manual re-tidy path.) Step 1 still runs because AUDIT §1 and §3 come from the scan.
 - `.v2p/AUDIT.md` exists and passed its check → offer resume (keep) or re-run.
@@ -27,6 +27,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 <!-- /claude-only -->
 - No git → continue, no branch.
 - Empty `.git/` (probe `git:empty`: the folder was copied without its history) → tell the user before continuing as no git: "History is missing. To restore it, copy the original project's `.git/` folder over this empty one, or `git clone` the remote elsewhere and move its `.git/` here; then run `/v2p adopt` again."
+- No commit yet (probe `git:unborn`) → continue on `<branch>`, no branch offer: there is no commit to branch from, and every file is untracked.
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
 - Clean tree, already on today's adopt branch (`v2p/adopt-<YYYY-MM-DD>` or `v2p/adopt-<YYYY-MM-DD>-<n>`: a same-day re-run) → stay on it, no question.
 - Clean tree otherwise → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c <name>`, where `<name>` is `v2p/adopt-<YYYY-MM-DD>`, or, when that branch exists, the first free of `v2p/adopt-<YYYY-MM-DD>-2`, `-3`, … (free = `git rev-parse --verify --quiet refs/heads/<name>` fails).
