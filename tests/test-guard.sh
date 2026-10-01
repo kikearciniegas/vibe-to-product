@@ -74,7 +74,8 @@ for SH in sh zsh; do
   B "bash -c 'echo x > .v2p/PLAN.md'"; B "eval 'cp /tmp/x .v2p/PLAN.md'"; B "echo \"\$(echo x > .v2p/PLAN.md)\""
   B "sudo cp /tmp/x .v2p/PLAN.md"; B "if true; then cp /tmp/x .v2p/PLAN.md; fi"; B "echo x 2>&1 >.v2p/PLAN.md"
   B "echo ok${nl}cp /tmp/x .v2p/PLAN.md"; A "cp /tmp/a /tmp/b${nl}cat .v2p/PLAN.md"; A "echo 'x > .v2p/PLAN.md'"
-  A "cat >> notes.md <<'EOF'${nl}don't echo x > .v2p/PLAN.md${nl}EOF"; B "cat <<-EOF > /tmp/y${nl}	x${nl}	EOF${nl}cp /tmp/y .v2p/PLAN.md"
+  A "cat >> notes.md <<EOF${nl}echo x > .v2p/PLAN.md${nl}EOF"; B "cat >> notes.md <<'EOF'${nl}don't${nl}EOF${nl}echo x > .v2p/PLAN.md"
+  A "echo x > \"\\.v2p/PLAN.md\""; B "cat <<-EOF > /tmp/y${nl}	x${nl}	EOF${nl}cp /tmp/y .v2p/PLAN.md"
   A "echo hi # > .v2p/PLAN.md"; A "echo x > .v2p/PLAN.md.bak"; B "echo \"x\\\\\" > .v2p/PLAN.md"; A "echo \"x\\\" > .v2p/PLAN.md\""
 done
 rm -rf "$t"; echo "test-guard: $fails failures"
