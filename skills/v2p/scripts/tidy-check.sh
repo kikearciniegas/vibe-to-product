@@ -35,7 +35,12 @@ $gi
 EOF
   return 1; }
 tracked() { [ "$git" != none ] && git ls-files --error-unmatch -- "$1" >/dev/null 2>&1 && echo yes || echo no; }
-age() { [ -e "$1" ] || { printf "%s\n" -; return; }; m=$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0); echo $(( ( $(date +%s) - m ) / 86400 )); }
+# age: a tracked file's last commit time (a clone sets every mtime to now), else mtime. One git log pass maps
+# every path to its newest commit time; the first occurrence per path wins (log is newest first).
+ct=${TMPDIR:-/tmp}/tidy.$$.ct; : > "$ct"
+[ "$git" != none ] && git -c core.quotepath=off log --no-renames --format=@%ct --name-only 2>/dev/null | awk '/^@/{t=substr($0,2);next} NF && !($0 in s){s[$0]=1; print t "\t" $0}' > "$ct"
+age() { [ -e "$1" ] || { printf "%s\n" -; return; }; m=$(P=$1 awk -F'\t' '$2==ENVIRON["P"]{print $1; exit}' "$ct")
+  [ -n "$m" ] || m=$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0); echo $(( ( $(date +%s) - m ) / 86400 )); }
 row() { printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(tracked "$2")" "$(age "$2")"; }
 # A scattered file other files mention by name (e.g. "see BACKLOG.md") is live, not stray: keep it and show how many files refer to it.
 # Not counted: the file itself and `## From <path>` merge headings. ponytail: exact basename match; .git, node_modules, .v2p not searched.
@@ -87,5 +92,5 @@ done
 rows=$(grep -vc "	keep:" "${TMPDIR:-/tmp}/tidy.$$"); [ -n "$rows" ] || rows=0   # keep rows are shown, not violations
 if [ "$mode" = tsv ]; then cat "${TMPDIR:-/tmp}/tidy.$$"; else
   echo "$probe"; echo "kind	path	action	tracked	age_days"; cat "${TMPDIR:-/tmp}/tidy.$$"; echo "tidy: $rows violations"; fi
-rm -f "${TMPDIR:-/tmp}/tidy.$$"
+rm -f "${TMPDIR:-/tmp}/tidy.$$" "$ct"
 [ "$rows" -eq 0 ]

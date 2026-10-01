@@ -120,6 +120,14 @@ for SH in sh zsh; do
   git -C "$ub" add a.txt; has "13 unborn, staged file" "$($SH "$S/tidy-check.sh" --probe "$ub")" " git:dirty:1 "; git -C "$ub" rm -q --cached a.txt; rm "$ub/a.txt"
   git -C "$ub" -c user.email=t@t -c user.name=t commit -q --allow-empty -m c; git -C "$ub" checkout -q --detach
   p=$($SH "$S/tidy-check.sh" --probe "$ub"); is "13 detached probe is one line" "$(printf '%s\n' "$p" | grep -c .)" 1; has "13 detached" "$p" " branch:detached "; has "13 control: a commit makes it clean" "$p" " git:clean "
+  # 14. age_days: a tracked file's age is its last commit, not its mtime (a fresh clone sets every mtime to now);
+  # an untracked file keeps its mtime
+  ag=$base/age-$SH; mkdir -p "$ag"; cd "$ag"; git init -q; now=$(date +%s)
+  for n in 40 30; do echo $n > a_old.txt; git add a_old.txt; GIT_COMMITTER_DATE="$((now - n * 86400)) +0000" git -c user.email=t@t -c user.name=t commit -qm c$n; done; touch a_old.txt
+  echo b > b.bak; touch -t "$(date -r $((now - 10 * 86400)) +%Y%m%d%H%M 2>/dev/null || date -d @$((now - 10 * 86400)) +%Y%m%d%H%M)" b.bak
+  t=$($SH "$S/tidy-check.sh" --tsv)
+  is "14 tracked: newest commit date" "$(printf '%s\n' "$t" | grep "${T}a_old.txt${T}" | cut -f4,5)" "yes${T}30"
+  is "14 untracked: mtime" "$(printf '%s\n' "$t" | grep "${T}b.bak${T}" | cut -f4,5)" "no${T}10"
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it
