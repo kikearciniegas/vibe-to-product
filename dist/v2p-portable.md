@@ -649,7 +649,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 
 ## Step 0 — Backup and git safety
 - First, before any write: when the probe says `code:yes`, ask "Make a full backup of `<root>` (<size>) first, so you can go back to the original version? (Recommended) / Skip". Full = the whole folder: `.git`, uncommitted, untracked and ignored files included. On yes, print the archive path and its restore command; the restore extracts beside the project (`<root>.restored`) and never overwrites it. Record the outcome in the draft's §4: `backup: <archive path>`, `backup: declined`, or `backup: none` when the probe says `code:no`. With an existing BRIEF (re-tidy), ask again; the user may skip.
-  Portable: ask the user to copy or zip the whole project folder to a place outside it, and wait for their confirmation.
+  Portable: ask the user to copy or zip the whole project folder to a place outside it, and wait for their confirmation; record `backup: user copy at <the absolute path they give>` (or `backup: declined`).
 - No git → continue, no branch.
 - Empty `.git/` (probe `git:empty`: the folder was copied without its history) → tell the user before continuing as no git: "History is missing. To restore it, copy the original project's `.git/` folder over this empty one, or `git clone` the remote elsewhere and move its `.git/` here; then run `/v2p adopt` again."
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
@@ -771,8 +771,8 @@ Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against
 
 ## 4. Tidy
 <tidy check output — inserted by the finalize step; do not write by hand>
-backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none>
-quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined>
+backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none | user copy at <abs path of the user's copy or zip>>
+quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined | by hand to <abs dir the user moved the items into>>
 
 ## 5. Merges (originals quarantined after the destination gained "## From <path>")
 | source | destination |
@@ -847,7 +847,7 @@ Tracked files are moved like any other; git then shows ` D <path>` and the user 
 ## 6. Quarantine layout
 `~/.v2p-backups/<project>/<YYYY-MM-DD-HHMMSS>/` mirrors the relative paths. `MANIFEST.tsv` has one row per item (`path sha256 tracked reason restore`; a header comment names the root, the time and the restore command). `restore.sh` has one `mkdir -p … && mv …` per file and one `mkdir -p` per emptied directory. Each move is verified by sha256. v2p never empties the quarantine; the user does.
 
-Portable (no scripts): list the rows as a table with the columns `kind path action tracked age_days`, and the user moves approved items by hand with `mkdir -p ~/.v2p-backups/<project>/<ts>/<dir> && mv <path> ~/.v2p-backups/<project>/<ts>/<path>`. There is no receipt without the scripts; say so.
+Portable (no scripts): list the rows as a table with the columns `kind path action tracked age_days`, and the user moves approved items by hand with `mkdir -p ~/.v2p-backups/<project>/<ts>/<dir> && mv <path> ~/.v2p-backups/<project>/<ts>/<path>`; AUDIT §4 then records `quarantine: by hand to ~/.v2p-backups/<project>/<ts>`. There is no receipt without the scripts; say so.
 
 ***
 

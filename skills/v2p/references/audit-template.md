@@ -31,8 +31,8 @@ Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against
 
 ## 4. Tidy
 <tidy check output — inserted by the finalize step; do not write by hand>
-backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none>
-quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined>
+backup: <~/.v2p-backups/<project>/<ts>-original.tar.gz | declined | none | user copy at <abs path of the user's copy or zip>>
+quarantine: <~/.v2p-backups/<project>/<ts>/MANIFEST.tsv | declined | by hand to <abs dir the user moved the items into>>
 
 ## 5. Merges (originals quarantined after the destination gained "## From <path>")
 | source | destination |

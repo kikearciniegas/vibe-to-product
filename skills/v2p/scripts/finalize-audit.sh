@@ -74,18 +74,21 @@ bad=$(check "$r3" 3); [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad";
 
 # §4: backup line, quarantine line + tidy output produced here, never typed
 bline=$(grep -E '^backup: ' "$draft")
-if [ "$(grep -c '^backup: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$bline" | grep -qE '^backup: (declined|none|~?/.*-original\.tar\.gz)$'; then
-  echo "FAIL: §4 needs exactly one 'backup: declined|none|<path>-original.tar.gz' line"; fail=1
+if [ "$(grep -c '^backup: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$bline" | grep -qE '^backup: (declined|none|~?/.*-original\.tar\.gz|user copy at ~?/.+)$'; then
+  echo "FAIL: §4 needs exactly one 'backup: declined|none|<path>-original.tar.gz|user copy at <path>' line"; fail=1
 else
-  bp=${bline#backup: }; case $bp in "~/"*) bp="$HOME/${bp#??}" ;; esac
-  case $bp in declined|none) ;; *) [ -f "$bp" ] || { echo "FAIL: backup $bp not found"; fail=1; } ;; esac
+  # `user copy at <path>`: the portable flow's copy or zip made by the user; it must exist, as an archive must
+  bp=${bline#backup: }; bu=${bp#user copy at }; case $bu in "~/"*) bu="$HOME/${bu#??}" ;; esac
+  case $bp in declined|none) ;; "user copy at "*) [ -e "$bu" ] || { echo "FAIL: backup $bu not found"; fail=1; } ;;
+    *) [ -f "$bu" ] || { echo "FAIL: backup $bu not found"; fail=1; } ;; esac
 fi
 qline=$(grep -E '^quarantine: ' "$draft")
-if [ "$(grep -c '^quarantine: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$qline" | grep -qE '^quarantine: (declined|~?/.*/MANIFEST\.tsv)$'; then
-  echo "FAIL: §4 needs exactly one 'quarantine: declined|<path>/MANIFEST.tsv' line"; fail=1
+if [ "$(grep -c '^quarantine: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$qline" | grep -qE '^quarantine: (declined|~?/.*/MANIFEST\.tsv|by hand to ~?/.+)$'; then
+  echo "FAIL: §4 needs exactly one 'quarantine: declined|<path>/MANIFEST.tsv|by hand to <dir>' line"; fail=1
 else
-  qp=${qline#quarantine: }; case $qp in "~/"*) qp="$HOME/${qp#??}" ;; esac
-  [ "$qp" = declined ] || [ -f "$qp" ] || { echo "FAIL: $qp not found"; fail=1; }
+  # `by hand to <dir>`: the portable flow's hand moves (no MANIFEST); the directory must exist
+  qp=${qline#quarantine: }; qp=${qp#by hand to }; case $qp in "~/"*) qp="$HOME/${qp#??}" ;; esac
+  case $qline in *": by hand to "*) [ -d "$qp" ] ;; *) [ "$qp" = declined ] || [ -f "$qp" ] ;; esac || { echo "FAIL: $qp not found"; fail=1; }
 fi
 tidy=$(sh "$skill/scripts/tidy-check.sh" "$root" 2>&1); v=$(printf '%s\n' "$tidy" | sed -n 's/^tidy: \([0-9]*\) violations/\1/p')
 [ -n "$v" ] || { echo "FAIL: tidy-check.sh gave no count"; fail=1; }

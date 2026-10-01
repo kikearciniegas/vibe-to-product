@@ -91,6 +91,16 @@ for SH in sh zsh; do
   bk 'backup: yes'; FA; is "B bad value exit" $rc 1; has "B bad value" "$out" "backup:"
   sed 's#^backup: declined#backup: declined\nbackup: none#' "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; FA; is "B two lines exit" $rc 1
   grep -v '^backup: ' "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; FA; is "B no line exit" $rc 1
+  # Q. portable values: a copy the user made, items the user moved by hand (each path must exist)
+  mkdir -p "$HOME/copies/proj" "$HOME/.v2p-backups/p/by-hand"
+  bk 'backup: user copy at ~/copies/proj'; FA; is "Q user copy exit" $rc 0
+  bk "backup: user copy at $HOME/copies/proj"; FA; is "Q user copy abs exit" $rc 0
+  bk 'backup: user copy at ~/copies/missing'; FA; is "Q user copy missing exit" $rc 1; has "Q user copy missing" "$out" "not found"
+  bk 'backup: user copy at'; FA; is "Q user copy no path exit" $rc 1
+  qk() { sed "s#^quarantine: .*#$1#" "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; }
+  qk 'quarantine: by hand to ~/.v2p-backups/p/by-hand'; FA; is "Q by hand exit" $rc 0; has "Q by hand stamped" "$(sed -n 2p .v2p/AUDIT.md)" "quarantine: by hand to ~/.v2p-backups/p/by-hand"
+  qk 'quarantine: by hand to ~/.v2p-backups/p/gone'; FA; is "Q by hand missing exit" $rc 1; has "Q by hand missing" "$out" "not found"
+  qk 'quarantine: moved'; FA; is "Q bad value exit" $rc 1; has "Q bad value" "$out" "quarantine:"
 done
 SH=all; echo "test-finalize-audit: $fails failures (scratch: $base)"
 [ "$fails" -eq 0 ] && rm -rf "$base"
