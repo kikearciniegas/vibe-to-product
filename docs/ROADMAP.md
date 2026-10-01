@@ -6,7 +6,7 @@ Status as of 2026-09-25. Decisions come from the user; each slice gets a spec in
 - **Slice 1:** router, handshake, standards by profile, portable pack.
 - **Slice 2:** scavenge (with the `finalize-scavenge.sh` gate and Q7 = /last30days + official changelog), mapping, stack guide, skills catalog.
 
-## Slice 3: adopt + tidy (built 2026-09-23 · b8d250f · live test pending)
+## Slice 3: adopt + tidy (built 2026-09-23 · b8d250f · live-tested 2026-09-30 in adopt mode on a mature project: V19–V23 found and fixed; quarantine not exercised)
 - **Adopt:** v2p runs in any folder (empty, new, existing, half-built). For existing code it scans the project, derives a BRIEF with every value marked `inferred`, writes an AUDIT, creates the missing files, and merges scattered notes into the standard files.
 - **Layout:** `.v2p/` for phase handoffs (BRIEF, SCAVENGE, PLAN, REVIEW, DEPLOY, AUDIT); `docs/` for ARCHITECTURE, DECISIONS and threat-model; README, CHANGELOG and .env.example at the root.
 - **Tidy:** a rule set of which files and folders should exist, checked by `tidy-check.sh`. Cleanup goes through `quarantine.sh`: you approve the list, the files move to `~/.v2p-backups/<project>/<timestamp>/` with a manifest and a restore command, and nothing is ever hard-deleted.
@@ -31,7 +31,7 @@ Checks run on a tiered cadence (spec: `docs/specs/slice-4-spec.md` §4):
 
 Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` skill; `superpowers:verification-before-completion` is the equivalent.
 
-## Slice 5: deploy (built 2026-09-25 · live test pending)
+## Slice 5: deploy (built 2026-09-25 · live test pending: blocked on Docker for Strix and a GitHub remote on a throwaway copy)
 - **Gate first:** deploy reads the sealed REVIEW.md, runs the full `claude-security` scan (whole repo, effort high) and fixes or accepts every finding; Strix is optional (Docker + an LLM key, installed only on your yes).
 - **Shipping is delegated:** the PLAN's deploy runbook is walked with you (values never pass through v2p), then gstack `/setup-deploy`, a `gh pr create`, `/land-and-deploy <url>` and `/canary <url>`; no per-provider deploy script.
 - **Receipt:** `finalize-deploy.sh` checks the scan stamp and commit accounting, the deploy and canary reports, the merge into `origin/<base>`, every PLAN verifier re-run against the live host, two live curls, the rollback line and the secrets register, then writes the deploy receipt.
@@ -48,14 +48,15 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
   To keep this possible, the source stays compatible with that layout: relative paths, POSIX sh scripts, and Claude-only behaviour confined to claude-only blocks and hooks.
 
 ## Open items
-- **First adopt-mode field test on a mature project (field test, 2026-09-30):** 31 issues with evidence, root cause, fix and acceptance test in `docs/field-tests/2026-09-30-field test-adopt.md`. Two are P0. V0: no mechanical Verifier has ever run, because the backtick-only extractor matched 0 of 14 and every `verifier: pass` was vacuous. V1: review Step 3 cannot finalize on a mature project. Fix these before any further live test. Index (fix order and details in the field test):
+- **First adopt-mode field test on a mature project (field test, 2026-09-30):** 31 issues with evidence, root cause, fix and acceptance test in `docs/field-tests/2026-09-30-field test-adopt.md`. Two are P0. V0: no mechanical Verifier has ever run, because the backtick-only extractor matched 0 of 14 and every `verifier: pass` was vacuous. V1: review Step 3 cannot finalize on a mature project. All 31 were fixed on 2026-10-01 (see the Done lines below); none has been exercised in a live run yet. Index (fix order and details in the field test):
   - **P0** V0 no verifier command ever runs · V1 review Step 3 has no honest status for "not built" / "owner decided otherwise"
   - **P1** V2 audit "done" evidence never executed · V3 mapping invents decision provenance, carries unverified gaps as facts · V4 structural verifiers pass while behaviour is broken · V5 brand in adopt mode overwrites the repo's design-system doc
   - **P2 execute** V6 commit uses `git add -A` · V7 drift-check counts files untracked before the task · V8 drift-check always measures `base..HEAD`, so re-verifying a finished task shows later tasks as drift · V9 finalize-execute deletes task records · V10 `task-record manual` can't say decision vs observation · V11 no-op task not stopped · V12 draft not enforced at execute start
   - **P2 review** V13 named skills disabled for model invocation · V14 claude-security low scan needs a typed command + 60 s confirm · V15 preview URL assumed, never declared
   - **P2 research** V16 official legal sites block fetches · V17 scavenged numeric obligations never checked · V18 link check deletes unreachable evidence
   - **P3** V19 empty `.git` · V20 tidy-check without git · V21 merge proposals for heavily referenced files · V22 ignores existing decision/changelog homes · V23 probe skips writability · V24 last30days overflows subagent · V25 `]` swallowed by URL regex · V26 source cap vs jurisdictions · V27 Files as bullets · V28 finalize-plan dry-run needs repo tree · V29 guard hook blocks any command that mentions a `.v2p/` final · V30 commands in table cells
-- Slice 6: brand (built 2026-09-25): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`). Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
+- Slice 6: brand (built 2026-09-25; no live run with a real brand guide yet): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`). Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
+- **Next:** a live re-test of the fixed skill on a throwaway fixture (adopt → review, including quarantine and brand with a real guide). Every gate changed on 2026-10-01 and has only been exercised by the test suites.
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
 - Slice 5 live: a Strix run (needs Docker) and the first real deploy of the fixture (needs a GitHub remote; use a throwaway copy).
 - **Done 2026-10-01 (951c00d..75e3b46):** V0, V27, V28, V30, and finalize-review now checks the PLAN.md receipt. Live runs recorded before this have vacuous `verifier: pass` lines.
