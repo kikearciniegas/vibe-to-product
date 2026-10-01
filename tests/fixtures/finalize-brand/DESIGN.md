@@ -6,6 +6,8 @@ colors:
   on-primary: "#eeeeee"
   surface: oklch(98% 0.01 80)
   on-surface: "#1E293B"
+  error: "#B91C1C"
+  on-error: "#FFFFFF"
 typography:
   display:
     fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
@@ -29,6 +31,9 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primari}"
     rounded: "{rounded.md}"
+  alert-error:
+    backgroundColor: "{colors.error}"
+    textColor: "{colors.on-error}"
   card:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"

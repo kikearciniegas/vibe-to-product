@@ -1,7 +1,7 @@
 #!/bin/sh
 # Promote .v2p/DESIGN.draft.md to .v2p/DESIGN.md only if the frontmatter has name, description and the required
-# tokens (components.button-primary/page pair {colors.primary}/{colors.on-primary} and {colors.surface}/{colors.on-surface},
-# which is what makes the linter's contrast check fire), every color is quoted 6-digit hex, the pinned linter
+# tokens (components.button-primary/page/alert-error pair {colors.primary}/{colors.on-primary}, {colors.surface}/{colors.on-surface}
+# and {colors.error}/{colors.on-error}, which is what makes the linter's contrast check fire), every color is quoted 6-digit hex, the pinned linter
 # (@google/design.md 0.4.0, offline from the npx cache first) reports no error and none of the warnings that matter,
 # the eight canonical sections and the v2p sections appear once each (v2p ones after Do's and Don'ts), Must-Avoid's first
 # bullet is BRIEF §6 byte for byte, Sources bullets have a known kind (a local guide's sha256 matches), no `---` rule
@@ -37,6 +37,8 @@ colors.primary
 colors.on-primary
 colors.surface
 colors.on-surface
+colors.error
+colors.on-error
 typography.display.fontFamily
 typography.body.fontFamily
 rounded.md
@@ -45,6 +47,8 @@ components.button-primary.backgroundColor {colors.primary}
 components.button-primary.textColor {colors.on-primary}
 components.page.backgroundColor {colors.surface}
 components.page.textColor {colors.on-surface}
+components.alert-error.backgroundColor {colors.error}
+components.alert-error.textColor {colors.on-error}
 EOF
 # 4. every colors.<k> is a quoted 6-digit hex (unquoted `#…` is a YAML comment)
 bad=$(printf '%s\n' "$fm" | awk '/^[^ ]/ { c = ($0 ~ /^colors:/); next }

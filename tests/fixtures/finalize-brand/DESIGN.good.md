@@ -6,6 +6,8 @@ colors:
   on-primary: "#FFFFFF"
   surface: "#FFF8F1"
   on-surface: "#1E293B"
+  error: "#B91C1C"
+  on-error: "#FFFFFF"
 typography:
   display:
     fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
@@ -29,6 +31,9 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
     rounded: "{rounded.md}"
+  alert-error:
+    backgroundColor: "{colors.error}"
+    textColor: "{colors.on-error}"
   page:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.on-surface}"
@@ -41,7 +46,7 @@ Status: final · brand case: to-create · profile: landing
 Creative north star: a neighbourhood groomer you can trust with your dog. Mode per surface: Persuade.
 
 ## Colors
-Light theme only. Orange `primary` signals the one action (book a slot); navy `on-surface` carries all text on cream `surface`.
+Light theme only. Orange `primary` signals the one action (book a slot); navy `on-surface` carries all text on cream `surface`. Red `error` marks failed bookings and field errors (`derived`: the palette has no red).
 
 ## Typography
 Plus Jakarta Sans for display and body, self-hosted through next/font; display 700 with tight tracking, body 1rem / 1.5.

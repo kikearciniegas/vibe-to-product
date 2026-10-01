@@ -296,13 +296,13 @@ Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed fi
 
 ## Step 1 — Draft per case
 Portable: follow the case below by hand; the user pastes what a tool would have produced (the guide's palette, type, voice and logo rules; candidate palettes). Take BRIEF answers as given and say "taking X from the BRIEF".
-- **existing**: transcribe the guide into the template: colors (hex; convert Pantone/CMYK only when the guide gives no hex and mark it `derived` in the Colors prose), type roles, voice, logo rules, imagery, must-avoid. A transcription is not re-opinionated: no taste or reference-site skill runs. Gaps the guide leaves (rounded, spacing, elevation, components) are filled and marked `derived`. Sources: `guide:` (a local file with its sha256) and one `font:` line per face. In adopt mode (BRIEF §1 `Code: existing …`) the guide is often the project's own root `DESIGN.md`: transcribe it, never move or edit it (its guards may read it).
+- **existing**: transcribe the guide into the template: colors (hex; convert Pantone/CMYK only when the guide gives no hex and mark it `derived` in the Colors prose), type roles, voice, logo rules, imagery, must-avoid. A transcription is not re-opinionated: no taste or reference-site skill runs. Gaps the guide leaves (rounded, spacing, elevation, components, the `error`/`on-error` pair) are filled and marked `derived`. Sources: `guide:` (a local file with its sha256) and one `font:` line per face. In adopt mode (BRIEF §1 `Code: existing …`) the guide is often the project's own root `DESIGN.md`: transcribe it, never move or edit it (its guards may read it).
 - **placeholder**: a neutral palette and a system font stack; `description: PLACEHOLDER — neutral tokens until <guide> arrives`; Overview `Status: placeholder`; Sources `- placeholder: brand guide pending (<name>)`; Voice, Logo Rules and Imagery one line each `pending <guide>`. Must-Avoid from BRIEF §6. Motion: the defaults in the template only.
 - **to-create**: confirm the adjectives, reference sites and must-avoid from BRIEF §6; ask only what changes DESIGN.md content. Present up to three candidate directions (token table + a font sample line each), the user picks one, then write the full draft. No reference sites in BRIEF §6 → suggest the user browse Dribbble (https://dribbble.com/), Awwwards (https://www.awwwards.com/), Behance (https://www.behance.net/) and Pinterest (https://www.pinterest.com/) and paste 2–3 links they like; the user browses, the agent does not scrape them. Reference sites give mood and structure only: no token, font or mark is copied. Logo Rules: `pending: no logo yet — mapping plans a wordmark task` when none exists.
 - **none**: transcribe the kit's tokens (source `- kit: <name>`), or, with no kit, a dense scale and a system font stack; Overview `Mode per surface: Operate`.
 - **re-theme**: write the incumbent tokens (the ones the code uses now) to `.v2p/work/brand-incumbent.md`, then run the matching case; ask which incumbent tokens are kept.
 
-Every case: Must-Avoid first bullet `- BRIEF §6: <verbatim>`; Motion from the template's defaults (springs only for `native-app` or gesture UI); no skill draws a vector logo, so Logo Rules transcribe the guide or record a decision.
+Every case: the `error`/`on-error` pair from the guide or kit, else derived from the palette (marked `derived` in the Colors prose); Must-Avoid first bullet `- BRIEF §6: <verbatim>`; Motion from the template's defaults (springs only for `native-app` or gesture UI); no skill draws a vector logo, so Logo Rules transcribe the guide or record a decision.
 
 ## Step 2 — Questions
 One question per decision point; independent ones together:
@@ -329,7 +329,8 @@ Copy the block below into `.v2p/DESIGN.draft.md` (brand Step 3) and replace ever
 
 Rules:
 - Frontmatter is normative; the prose explains it. Two-space indentation, one key per line, no flow style (`{…}` maps, `[…]` lists).
-- Required tokens: `name`, `description`; `colors.primary`, `colors.on-primary`, `colors.surface`, `colors.on-surface`; `typography.display.fontFamily`, `typography.body.fontFamily`; `rounded.md`; `spacing.md`; `components.button-primary` with `backgroundColor: "{colors.primary}"` and `textColor: "{colors.on-primary}"`; `components.page` with `backgroundColor: "{colors.surface}"` and `textColor: "{colors.on-surface}"` (those two pairs are what the linter measures for 4.5:1 contrast).
+- Required tokens: `name`, `description`; `colors.primary`, `colors.on-primary`, `colors.surface`, `colors.on-surface`, `colors.error`, `colors.on-error`; `typography.display.fontFamily`, `typography.body.fontFamily`; `rounded.md`; `spacing.md`; `components.button-primary` with `backgroundColor: "{colors.primary}"` and `textColor: "{colors.on-primary}"`; `components.page` with `backgroundColor: "{colors.surface}"` and `textColor: "{colors.on-surface}"`; `components.alert-error` with `backgroundColor: "{colors.error}"` and `textColor: "{colors.on-error}"` (those three pairs are what the linter measures for 4.5:1 contrast).
+- `error` / `on-error` are the error-state pair (failed submit, field error): execute never invents a token, so it exists from the start. A guide or kit without one → derive it from the palette and say `derived` in the Colors prose.
 - Every `colors.*` value is a quoted 6-digit hex (`"#RRGGBB"`; unquoted, `#` starts a YAML comment). Dimensions are plain values (`3rem`, `16px`): the linter rejects `clamp()` as a dimension (measured 2026-09-25); put the fluid scale in the Typography prose.
 - The eight canonical sections, in this order, each exactly once: Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts. Then the v2p sections, in this order, each exactly once: Motion (optional), Voice, Logo Rules, Imagery, Must-Avoid, Sources.
 - `## Must-Avoid` first bullet is literally `- BRIEF §6: <the BRIEF's Must-avoid text, verbatim>` (`none` when the BRIEF has none).
@@ -347,6 +348,8 @@ colors:
   on-primary: "#RRGGBB"
   surface: "#RRGGBB"
   on-surface: "#RRGGBB"
+  error: "#RRGGBB"
+  on-error: "#RRGGBB"
   <more descriptive slugs; every value a quoted 6-digit hex>
 typography:
   display:
@@ -374,6 +377,9 @@ components:
   page:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.on-surface}"
+  alert-error:
+    backgroundColor: "{colors.error}"
+    textColor: "{colors.on-error}"
 ---
 
 # <project name>
@@ -383,7 +389,7 @@ Status: <final | placeholder> · brand case: <existing | to-create | none> · pr
 Creative north star: <one sentence>. Mode per surface: <Persuade/Operate/Read/Experience per BRIEF §1 profile>.
 
 ## Colors
-<strategy and roles; light/dark decision; which token signals action; `derived` where a value was converted (Pantone/CMYK) or filled in>
+<strategy and roles; light/dark decision; which token signals action, which signals an error; `derived` where a value was converted (Pantone/CMYK) or filled in>
 
 ## Typography
 <faces, roles, loading (next/font/google unless a Sources licence line says otherwise; self-hosted), fluid scale, rationale>

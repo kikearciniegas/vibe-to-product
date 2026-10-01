@@ -4,7 +4,8 @@ Copy the block below into `.v2p/DESIGN.draft.md` (brand Step 3) and replace ever
 
 Rules:
 - Frontmatter is normative; the prose explains it. Two-space indentation, one key per line, no flow style (`{…}` maps, `[…]` lists).
-- Required tokens: `name`, `description`; `colors.primary`, `colors.on-primary`, `colors.surface`, `colors.on-surface`; `typography.display.fontFamily`, `typography.body.fontFamily`; `rounded.md`; `spacing.md`; `components.button-primary` with `backgroundColor: "{colors.primary}"` and `textColor: "{colors.on-primary}"`; `components.page` with `backgroundColor: "{colors.surface}"` and `textColor: "{colors.on-surface}"` (those two pairs are what the linter measures for 4.5:1 contrast).
+- Required tokens: `name`, `description`; `colors.primary`, `colors.on-primary`, `colors.surface`, `colors.on-surface`, `colors.error`, `colors.on-error`; `typography.display.fontFamily`, `typography.body.fontFamily`; `rounded.md`; `spacing.md`; `components.button-primary` with `backgroundColor: "{colors.primary}"` and `textColor: "{colors.on-primary}"`; `components.page` with `backgroundColor: "{colors.surface}"` and `textColor: "{colors.on-surface}"`; `components.alert-error` with `backgroundColor: "{colors.error}"` and `textColor: "{colors.on-error}"` (those three pairs are what the linter measures for 4.5:1 contrast).
+- `error` / `on-error` are the error-state pair (failed submit, field error): execute never invents a token, so it exists from the start. A guide or kit without one → derive it from the palette and say `derived` in the Colors prose.
 - Every `colors.*` value is a quoted 6-digit hex (`"#RRGGBB"`; unquoted, `#` starts a YAML comment). Dimensions are plain values (`3rem`, `16px`): the linter rejects `clamp()` as a dimension (measured 2026-09-25); put the fluid scale in the Typography prose.
 - The eight canonical sections, in this order, each exactly once: Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts. Then the v2p sections, in this order, each exactly once: Motion (optional), Voice, Logo Rules, Imagery, Must-Avoid, Sources.
 - `## Must-Avoid` first bullet is literally `- BRIEF §6: <the BRIEF's Must-avoid text, verbatim>` (`none` when the BRIEF has none).
@@ -22,6 +23,8 @@ colors:
   on-primary: "#RRGGBB"
   surface: "#RRGGBB"
   on-surface: "#RRGGBB"
+  error: "#RRGGBB"
+  on-error: "#RRGGBB"
   <more descriptive slugs; every value a quoted 6-digit hex>
 typography:
   display:
@@ -49,6 +52,9 @@ components:
   page:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.on-surface}"
+  alert-error:
+    backgroundColor: "{colors.error}"
+    textColor: "{colors.on-error}"
 ---
 
 # <project name>
@@ -58,7 +64,7 @@ Status: <final | placeholder> · brand case: <existing | to-create | none> · pr
 Creative north star: <one sentence>. Mode per surface: <Persuade/Operate/Read/Experience per BRIEF §1 profile>.
 
 ## Colors
-<strategy and roles; light/dark decision; which token signals action; `derived` where a value was converted (Pantone/CMYK) or filled in>
+<strategy and roles; light/dark decision; which token signals action, which signals an error; `derived` where a value was converted (Pantone/CMYK) or filled in>
 
 ## Typography
 <faces, roles, loading (next/font/google unless a Sources licence line says otherwise; self-hosted), fluid scale, rationale>

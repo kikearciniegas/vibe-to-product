@@ -29,7 +29,7 @@ for SH in sh zsh; do
   # 0. the bad draft fails every check and writes nothing
   run; is "0 exit" $rc 1
   for m in "lint error broken-ref" "lint warning contrast-ratio" "section 'Colors' appears 2 times" "section 'Voice' appears 0 times" \
-    "Must-Avoid first bullet" "Sources is empty" "'---' rule on lines 52" "colors.surface is not 6-digit hex" "frontmatter missing components.page" \
+    "Must-Avoid first bullet" "Sources is empty" "'---' rule on lines 57" "colors.surface is not 6-digit hex" "frontmatter missing components.page" \
     "no 'Next: /v2p mapping'" "components.button-primary.textColor must be {colors.on-primary}"; do has "0 $m" "$out" "$m"; done
   is "0 no DESIGN.md" "$(test -f "$v/DESIGN.md" && echo yes)" ""; is "0 no receipt" "$(test -f "$v/.brand-pass" && echo yes)" ""
   is "0 no symlink" "$(test -e "$w/DESIGN.md" && echo yes)" ""; n0=$nfail
@@ -64,7 +64,7 @@ for SH in sh zsh; do
   run; hasnt "9 page" "$out" "components.page"; is "9 two fewer" $((n0 - nfail)) 12; is "9 one FAIL left" $nfail 1
   # 10. Next line → PASS
   printf '%s\n' '' 'Next: /v2p mapping' >> "$P"
-  run; is "10 exit" $rc 0; has "10 PASS" "$out" "PASS: 4 colors, 2 typography roles, 2 components, lint 0 errors / 0 warnings noted, status final"
+  run; is "10 exit" $rc 0; has "10 PASS" "$out" "PASS: 6 colors, 2 typography roles, 3 components, lint 0 errors / 0 warnings noted, status final"
   is "10 draft gone" "$(test -f "$P" && echo yes)" ""; is "10 receipt" "$(cat "$v/.brand-pass")" "$(sha "$v/DESIGN.md")"
   is "10 symlink" "$(test -L "$w/DESIGN.md" && readlink "$w/DESIGN.md")" ".v2p/DESIGN.md"; is "10 work cleared" "$(test -f "$v/work/brand-x.md" && echo yes)" ""
   # 12. an edit after finalize breaks the receipt
@@ -90,7 +90,7 @@ for SH in sh zsh; do
   has "13b next deploy" "$A" "Next: /v2p deploy"; is "13b nothing moved" "$(test -f "$v/REVIEW.md" && test ! -e "$C" && echo yes)" yes
   cp "$base/d-$SH" "$v/DESIGN.md"; mv "$base/bp-$SH" "$v/.brand-pass"
   # 11. falsifiers on the good file: each changes one thing and expects the named FAIL (exit 1, nothing written)
-  good; run; is "11 good exit" $rc 0; has "11 good PASS" "$out" "PASS: 4 colors, 2 typography roles, 2 components, lint 0 errors"
+  good; run; is "11 good exit" $rc 0; has "11 good PASS" "$out" "PASS: 6 colors, 2 typography roles, 3 components, lint 0 errors"
   nw() { is "11 $1 exit" $rc 1; has "11 $1" "$out" "$2"; is "11 $1 nothing written" "$(test -f "$w/.v2p/DESIGN.md" && echo yes)" ""; }
   good; ins '^## Voice$' '## Motion
 - Approach: expressive
@@ -114,6 +114,13 @@ for SH in sh zsh; do
   good; rep '  on-surface: "#1E293B"' '  on-surface: "#1E293B"
   unused: "#123456"'; run; is "11 orphan color exit" $rc 0; has "11 orphan NOTE" "$out" "NOTE: lint orphaned-tokens"; has "11 orphan counted" "$out" "/ 1 warnings noted"
   good; rep '  primary: "#C2410C"' '  primary: #C2410C'; run; nw "unquoted hex" "colors.primary is not 6-digit hex (#C2410C)"
+  # 16. the error colour pair (a UI error state needs a token; execute never invents one) and its component, which is
+  # what makes the linter measure its contrast
+  good; rep '  error: "#B91C1C"' ''; run; nw "no colors.error" "frontmatter missing colors.error"
+  good; rep '  on-error: "#FFFFFF"' ''; run; nw "no colors.on-error" "frontmatter missing colors.on-error"
+  good; rep '    textColor: "{colors.on-error}"' '    textColor: "{colors.on-surface}"'; run; nw "alert-error pairing" "components.alert-error.textColor must be {colors.on-error}"
+  good; awk '$0 == "  alert-error:" { getline; getline; next } { print }' "$P" > "$P.new" && mv "$P.new" "$P"; run; nw "no alert-error" "frontmatter missing components.alert-error.backgroundColor"
+  good; rep '  error: "#B91C1C"' '  error: "#FCA5A5"'; run; nw "error contrast" "lint warning contrast-ratio"
   good; rep 'name: Pawsley Grooming' 'name:'; run; nw "empty name" "frontmatter missing name"
   good; sed '1d' "$P" > "$P.new" && mv "$P.new" "$P"; run; nw "no opening fence" "FAIL: no frontmatter"
   good; awk '$0 == "## Motion" { skip = 1; next } skip && /^## / { skip = 0 } !skip' "$P" > "$P.new" && mv "$P.new" "$P"; run; is "11 no Motion section passes (optional)" $rc 0
