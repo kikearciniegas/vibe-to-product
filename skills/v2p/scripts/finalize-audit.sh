@@ -1,6 +1,6 @@
 #!/bin/sh
 # Promote .v2p/AUDIT.draft.md to .v2p/AUDIT.md only if §2/§3 row counts match the standards files,
-# every `done` has evidence (its `cmd` → expected pairs re-run here), every `N/A` cites BRIEF, merges landed, and §4 is
+# every `done` has evidence (its `cmd` → expected pairs re-run here, §2 and §3), every `N/A` cites BRIEF, merges landed, and §4 is
 # tidy-check.sh's own output.
 # Usage: sh finalize-audit.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/AUDIT.draft.md"; out="$d/AUDIT.md"; brief="$d/BRIEF.md"; fail=0
@@ -44,10 +44,10 @@ v30=$(awk '/^\|/ { c = $0; while (match(c, /`[^`]*`/)) { if (index(substr(c, RST
 # Absence (→ 0 or `! …`) without `control:` in the cell is only a WARN.
 # trust boundary: the draft is unsealed, written by this session (adopt Step 4) and gitignored (`.v2p/*.draft.md`); its
 # writer can already run commands. A draft tracked by git came from the repo instead, so nothing from it runs.
+# §3 (modularity) done rows run the same way: runev <label> <rows> <status field>.
 vt=0; vp=0
-if git -C "$d" ls-files --error-unmatch AUDIT.draft.md >/dev/null 2>&1; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
-else printf '%s\n' "$r2" | awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); if (st!="done") next; it=$2; gsub(/^ +| +$/,"",it)
-  ev=""; for (i=5;i<NF;i++) ev=ev (i>5?"|":"") $i; print it "\t" ev}' > "$tmp.d"
+runev() { printf '%s\n' "$2" | awk -F'|' -v s="$3" '{st=$s; gsub(/^ +| +$/,"",st); if (st!="done") next; it=$2; gsub(/^ +| +$/,"",it)
+  ev=""; for (i=s+1;i<NF;i++) ev=ev (i>s+1?"|":"") $i; print it "\t" ev}' > "$tmp.d"
 while IFS='	' read -r it ev; do
   printf '%s\n' "$ev" | grep -oE '`[^`]+` *→ *`?[^`,;|]*' > "$tmp.c"; ran=0; abs=0
   while IFS= read -r m; do
@@ -55,18 +55,20 @@ while IFS='	' read -r it ev; do
     printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>' && continue
     vt=$((vt + 1)); ran=1; case $c in '!'*) abs=1 ;; esac; [ "$x" = 0 ] && abs=1
     (cd "$root" && sh -c "$c") > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
-    if [ "$r" -ne 0 ]; then echo "FAIL: §2 $it: \`$c\` exit $r"; fail=1
-    else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: §2 $it: \`$c\` → $last (expected $x)"; fail=1; fi ;; esac; fi
+    if [ "$r" -ne 0 ]; then echo "FAIL: $1 $it: \`$c\` exit $r"; fail=1
+    else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: $1 $it: \`$c\` → $last (expected $x)"; fail=1; fi ;; esac; fi
   done < "$tmp.c"
   case $ev in
-    *→*) [ "$ran" -eq 1 ] || { echo "FAIL: §2 $it: done evidence has → but no backticked \`command\` → expected pair; nothing ran (not verified)"; fail=1; }
-      [ "$abs" -eq 0 ] || case $ev in *control:*) ;; *) echo "WARN: §2 $it: absence claim (→ 0 or \`! …\`) with no positive control (add · control: \`cmd\` → n)" ;; esac ;;
+    *→*) [ "$ran" -eq 1 ] || { echo "FAIL: $1 $it: done evidence has → but no backticked \`command\` → expected pair; nothing ran (not verified)"; fail=1; }
+      [ "$abs" -eq 0 ] || case $ev in *control:*) ;; *) echo "WARN: $1 $it: absence claim (→ 0 or \`! …\`) with no positive control (add · control: \`cmd\` → n)" ;; esac ;;
     *http://*|*https://*) ;;
     *) w=$(printf '%s\n' "$ev" | tr -d '`' | tr ' ' '\n' | grep '/' | grep "[|\\^\$'\"]" | head -n 1)
-      [ -z "$w" ] || { echo "FAIL: §2 $it: done evidence '$w' has a quote, pipe or regex character: a pattern, not a path (write \`command\` → expected)"; fail=1; } ;;
+      [ -z "$w" ] || { echo "FAIL: $1 $it: done evidence '$w' has a quote, pipe or regex character: a pattern, not a path (write \`command\` → expected)"; fail=1; } ;;
   esac
-done < "$tmp.d"; fi
+done < "$tmp.d"; }
 r3=$(rows '## 3.'); rows3=$(printf '%s\n' "$r3" | grep -c .)
+if git -C "$d" ls-files --error-unmatch AUDIT.draft.md >/dev/null 2>&1; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
+else runev §2 "$r2" 4; runev §3 "$r3" 3; fi
 [ "$rows3" -eq "$modexp" ] || { echo "FAIL: §3 rows $rows3/$modexp"; fail=1; }
 bad=$(check "$r3" 3); [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }
 

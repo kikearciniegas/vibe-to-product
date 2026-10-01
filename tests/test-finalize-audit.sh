@@ -71,6 +71,14 @@ for SH in sh zsh; do
   plant "| std1 | core.md | done | \`echo 'a\\|b'\` → exit 0 |"; FA; is "8e escaped pipe in a done cell exit" $rc 1; has "8e escaped pipe" "$out" 'has `\|` inside backticks'
   plant "| std1 | core.md | pending | \`grep -E 'a\\|b' README.md\` later |"; FA; is "8e escaped pipe in a pending cell exit" $rc 1; has "8e pending names the line" "$out" "FAIL: line "
   plant "| std1 | core.md | pending | grep -E 'a\\|b' later |"; FA; is "8e escaped pipe outside backticks exit" $rc 0
+  # 8f. §3 (modularity) done evidence runs like §2's: same loop, same trust boundary
+  m3() { rm -f .v2p/AUDIT.md .v2p/.audit-pass; R=$1 awk '!done && $0 == "| mod1 | pending | |" { print ENVIRON["R"]; done = 1; next } { print }' "$G" > .v2p/AUDIT.draft.md; }
+  m3 '| mod1 | done | `grep -c fixture README.md` → 2 |'; FA; is "8f §3 differing output exit" $rc 1
+  has "8f §3 differing output" "$out" 'FAIL: §3 mod1: `grep -c fixture README.md` → 1 (expected 2)'
+  m3 '| mod1 | done | `grep -c fixture README.md` → 1 |'; FA; is "8f §3 matching exit" $rc 0; has "8f §3 runs counted" "$out" "evidence runs 1/1"
+  m3 "| mod1 | done | rg 'big/file' → 0 |"; FA; is "8f §3 unbackticked arrow exit" $rc 1; has "8f §3 unbackticked arrow" "$out" "FAIL: §3 mod1: done evidence has → but no backticked"
+  m3 '| mod1 | done | `touch pwned` → exit 0 |'; git init -q; git add -f .v2p/AUDIT.draft.md; FA; rm -rf .git
+  is "8f §3 tracked draft exit" $rc 1; is "8f §3 nothing ran" "$(test -f pwned && echo yes)" ""
   cd "$base"
   # B. §4 backup line: exactly one, declined|none|existing archive
   cd "$fx" || exit 2
