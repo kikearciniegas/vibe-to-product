@@ -2,7 +2,7 @@
 # Promote .v2p/PLAN.draft.md to .v2p/PLAN.md only if every task has a Verifier line, §4 has one row
 # per checklist item of the BRIEF §9 standards files, §2's total fits the BRIEF budget (or carries the
 # user's override), no `---` rule exists, `## Architecture` and `## Threat Model` exist, and a landing
-# plan has `## 4b`, Verifier lines pass the lint below, and Interfaces paths are in some Files line up to that task.# Usage: sh finalize-plan.sh [.v2p dir]
+# plan has `## 4b`, §6 has an `Order:` line naming only existing tasks, Verifier lines pass the lint below, and Interfaces paths are in some Files line up to that task.# Usage: sh finalize-plan.sh [.v2p dir]
 # Run it against the real repo tree (.v2p in the repo root): Modify: paths are checked relative to the repo root, so a
 # dry-run in an empty scratch dir false-fails them.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/PLAN.draft.md"; out="$d/PLAN.md"; fail=0
@@ -33,6 +33,13 @@ if ! grep -q '^## Architecture' "$draft"; then echo "FAIL: no '## Architecture' 
 elif ! awk '/^## Architecture/ { a = 1; next } /^## / { a = 0 } a && /^```mermaid/ { m = 1 } END { exit !m }' "$draft"; then
   echo "FAIL: '## Architecture' has no \`\`\`mermaid block"; fail=1; fi
 grep -q '^## Threat Model' "$draft" || { echo "FAIL: no '## Threat Model' section"; fail=1; }
+# §6 Order: execute runs the tasks in that order: a §6 line holding `Order:`, whose numbers are all `### Task <n>` numbers
+order=$(awk '/^## 6/ { f = 1; next } /^## / { f = 0 } f && /(^|[^A-Za-z])Order:/ { sub(/.*Order:/, ""); print "x" $0; exit }' "$draft")
+if [ -z "$order" ]; then echo "FAIL: §6 has no 'Order:' line (task numbers in run order)"; fail=1
+elif ! printf '%s\n' "$order" | grep -q '[0-9]'; then echo "FAIL: §6 Order: names no task number"; fail=1
+else for n in $(printf '%s\n' "$order" | grep -oE '[0-9]+' | sort -un); do
+  grep -qE "^### Task $n([^0-9]|\$)" "$draft" || { echo "FAIL: §6 Order: names task $n, not a task in §5"; fail=1; }; done
+fi
 if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b' "$draft"; then
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
 fi

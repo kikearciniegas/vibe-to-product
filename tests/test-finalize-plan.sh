@@ -22,7 +22,7 @@ hasnt() { case $2 in *"$3"*) echo "FAIL [$SH] $1: still has '$3'"; fails=$((fail
 ins() { RE=$1 T=$2 awk '!done && $0 ~ ENVIRON["RE"] { print ENVIRON["T"]; done = 1 } { print }' "$P" > "$P.new" && mv "$P.new" "$P"; }
 run() { out=$($SH "$F" "$v" 2>&1); rc=$?; nfail=$(printf '%s\n' "$out" | grep -c '^FAIL: [^$]' ); }
 M_TOT="§2 has no 'Total monthly at launch"; M_BUD="FAIL: budget:"; M_HR="FAIL: '---' rule"
-M_4B="no '## 4b' section"; M_AR="no '## Architecture' section"; M_TM="no '## Threat Model' section"; M_MM="'## Architecture' has no"
+M_4B="no '## 4b' section"; M_OR="FAIL: §6 has no 'Order:' line"; M_AR="no '## Architecture' section"; M_TM="no '## Threat Model' section"; M_MM="'## Architecture' has no"
 for SH in sh zsh; do
   w=$base/$SH; v=$w/.v2p; P=$v/PLAN.draft.md; mkdir -p "$v"
   cp "$src/BRIEF.md" "$v/BRIEF.md"
@@ -30,7 +30,7 @@ for SH in sh zsh; do
   ntasks=$(grep -c '^### Task' "$P"); hr0=$(grep -n '^---$' "$P" | cut -d: -f1 | tr '\n' ' ')
   # 0. the original bad plan fails every new check and writes nothing
   run; is "0 exit" $rc 1
-  for m in "$M_TOT" "$M_HR" "$M_4B" "$M_AR" "$M_TM"; do has "0 $m" "$out" "$m"; done
+  for m in "$M_TOT" "$M_HR" "$M_4B" "$M_AR" "$M_TM" "$M_OR"; do has "0 $m" "$out" "$m"; done
   has "0 hr lines" "$out" "lines $hr0"; is "0 no PLAN.md" "$(test -f "$v/PLAN.md" && echo yes)" ""
   n0=$nfail
   # 1. the plan's own launch cost (hosting $20 + Sentry $29) → total present, over the $25 budget
@@ -62,6 +62,11 @@ for SH in sh zsh; do
   sed 's/^- Profile: landing/- Profile: saas-web/' "$w/BRIEF.keep" > "$v/BRIEF.md"; grep -v '^## 4b' "$P" > "$w/no4b"
   cp "$P" "$w/keep4b"; cp "$w/no4b" "$P"; run; hasnt "6b saas-web no 4b" "$out" "$M_4B"
   cp "$w/keep4b" "$P"; cp "$w/BRIEF.keep" "$v/BRIEF.md"
+  # 6c. §6 Order: line (execute runs tasks in that order; the template had none)
+  ins '^Next: /v2p execute' '## 6. Handoff
+Order: 1 → 2
+'
+  run; hasnt "6c order" "$out" "$M_OR"
   # 7. Architecture
   ins '^## 2\.' '## Architecture
 Browser → static site → booking form handler → email provider.'
@@ -183,6 +188,15 @@ curl -m 5 -sI https://x | grep -cE 'hsts|csp'
   rep "$V1" "$V1
 **Files:** Create \`src/app/[locale]/page.tsx\`" "$V2" "$V2
 **Interfaces:** Consumes \`src/app/l/page.tsx\`"; has "10 [locale] is literal, not a class" "$out" "Task 2 Interfaces names \`src/app/l/page.tsx\`"
+  # 10j. §6 Order: present, inside §6, naming only §5 task numbers (mid-line `Tasks: n. Order: …` as fixture-execute writes it)
+  rep 'Order: 1 → 2' 'Tasks: 2 (mechanical 2, manual 0). Order: 2 → 1'; is "10j mid-line, any sequence passes" $rc 0
+  rep 'Order: 1 → 2' 'Order: 1 → 3'; is "10j unknown task exit" $rc 1; has "10j unknown task" "$out" "FAIL: §6 Order: names task 3, not a task in §5"
+  rep 'Order: 1 → 2' 'Order: 1 → 12'; has "10j 12 is not 1 or 2" "$out" "names task 12"
+  rep '### Task 2: Booking form' '### Task 20: Booking form'; has "10j Task 20 is not task 2" "$out" "names task 2,"
+  rep 'Order: 1 → 2' ''; is "10j no Order exit" $rc 1; has "10j no Order" "$out" "$M_OR"
+  rep 'Order: 1 → 2' '' "$V2" "$V2
+Order: 1 → 2"; has "10j Order outside §6 does not count" "$out" "$M_OR"
+  rep 'Order: 1 → 2' 'Order: tbd'; is "10j Order without numbers exit" $rc 1; has "10j Order without numbers" "$out" "FAIL: §6 Order: names no task number"
   # 11. provenance (field test V3: PLAN recorded a Qn as an owner decision nobody made): a `Qn` the PLAN cites
   # must be a label in BRIEF §10's item column; quarters (`Q4 2026`) and SCAVENGE's own Qn are not decision labels
   b10() { R=$1 awk '/^## 11/ { print "## 10. Decisions log"; print "| item | status | value |"; print "|---|---|---|"; print ENVIRON["R"]; print "" } { print }' "$w/BRIEF.keep" > "$v/BRIEF.md"; }

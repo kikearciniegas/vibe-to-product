@@ -1,7 +1,7 @@
 # Harbor Street Bike Repair Landing Page Implementation Plan
 
 Deliberately BAD draft for tests/test-finalize-plan.sh: §2 has no total line, `---` rules,
-no §4b / Architecture / Threat Model. §4 rows are generated at test time from the live
+no §4b / Architecture / Threat Model / §6 Order. §4 rows are generated at test time from the live
 standards files (the line below the §4 table header).
 
 ---

@@ -63,6 +63,7 @@ Rows: <n> = <core> + <web> + <profile> (measured from BRIEF §9 files)
 
 ## 6. Handoff
 Tasks: <n> (mechanical <m>, manual <k>). `/ralph-loop` eligible: tasks <ids> (mechanical only, `--max-iterations` required).
+Order: <every task number in run order, e.g. 1 → 2 → 3; execute follows this line>
 Next: /v2p execute
 ````
 
