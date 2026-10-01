@@ -48,14 +48,18 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
   To keep this possible, the source stays compatible with that layout: relative paths, POSIX sh scripts, and Claude-only behaviour confined to claude-only blocks and hooks.
 
 ## Open items
-- **First adopt-mode field test on a mature project (field test, 2026-09-30):** 31 issues with evidence, root cause, fix and acceptance test in `docs/field-tests/2026-09-30-field test-adopt.md`. Two are P0. V0: no mechanical Verifier has ever run, because the backtick-only extractor matched 0 of 14 and every `verifier: pass` was vacuous. V1: review Step 3 cannot finalize on a mature project. Fix these before any further live test. The re-verify and guard-hook items below are V8 and V29 there.
+- **First adopt-mode field test on a mature project (field test, 2026-09-30):** 31 issues with evidence, root cause, fix and acceptance test in `docs/field-tests/2026-09-30-field test-adopt.md`. Two are P0. V0: no mechanical Verifier has ever run, because the backtick-only extractor matched 0 of 14 and every `verifier: pass` was vacuous. V1: review Step 3 cannot finalize on a mature project. Fix these before any further live test. Index (fix order and details in the field test):
+  - **P0** V0 no verifier command ever runs · V1 review Step 3 has no honest status for "not built" / "owner decided otherwise"
+  - **P1** V2 audit "done" evidence never executed · V3 mapping invents decision provenance, carries unverified gaps as facts · V4 structural verifiers pass while behaviour is broken · V5 brand in adopt mode overwrites the repo's design-system doc
+  - **P2 execute** V6 commit uses `git add -A` · V7 drift-check counts files untracked before the task · V8 drift-check always measures `base..HEAD`, so re-verifying a finished task shows later tasks as drift · V9 finalize-execute deletes task records · V10 `task-record manual` can't say decision vs observation · V11 no-op task not stopped · V12 draft not enforced at execute start
+  - **P2 review** V13 named skills disabled for model invocation · V14 claude-security low scan needs a typed command + 60 s confirm · V15 preview URL assumed, never declared
+  - **P2 research** V16 official legal sites block fetches · V17 scavenged numeric obligations never checked · V18 link check deletes unreachable evidence
+  - **P3** V19 empty `.git` · V20 tidy-check without git · V21 merge proposals for heavily referenced files · V22 ignores existing decision/changelog homes · V23 probe skips writability · V24 last30days overflows subagent · V25 `]` swallowed by URL regex · V26 source cap vs jurisdictions · V27 Files as bullets · V28 finalize-plan dry-run needs repo tree · V29 guard hook blocks any command that mentions a `.v2p/` final · V30 commands in table cells
 - Slice 6: brand (built 2026-09-25): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`); the test project's guide is still pending, so it re-themes when `brand.pdf` arrives. Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
 - Slice 5 live: a Strix run (needs Docker) and the first real deploy of the fixture (needs a GitHub remote; use a throwaway copy).
 - The duplicate `agent-reach` in `~/.agents/skills` (managed by `npx skills`), not cleaned up.
 - `finalize-review.sh` should check PLAN.md against its receipt, as `finalize-deploy.sh` does: both re-run PLAN verifiers through `sh -c`.
-- Re-verifying a finished task: `drift-check.sh` compares base..HEAD, so later tasks' commits always show as drift; needs a design choice.
-- Guard hook false positive: a multi-line Bash command that mentions a `.v2p/` final on one line and a write on another is blocked.
 - `finalize-execute.sh` has no check that the recorded head keeps up with the branch head.
 - Implementer routing (`builder` vs `quick`) is prose in execute.md, not scripted.
 - The slice-5 spec says the guard hook is not installed; it is (global settings), so the spec line is stale.
