@@ -13,15 +13,17 @@ for SH in sh zsh; do
   # 1-2. probe, row count, kinds, absences
   p=$($SH "$S/tidy-check.sh" --probe); has "1 probe" "$p" "code:yes git:dirty:1 branch:"; has "1 probe" "$p" "brief:none audit:no"
   $SH "$S/tidy-check.sh" --tsv > "$base/tsv-$SH"; is "2 exit" $? 1
-  is "2 rows" "$(grep -c . "$base/tsv-$SH")" 15
-  is "2 kinds" "$(cut -f1 "$base/tsv-$SH" | sort | uniq -c | tr -s ' ' | tr '\n' ',')" " 2 debris, 2 duplicate, 1 empty-dir, 1 gitignore, 1 log, 5 missing, 1 orphan-build, 2 scattered,"
+  is "2 rows" "$(grep -c . "$base/tsv-$SH")" 16
+  is "2 kinds" "$(cut -f1 "$base/tsv-$SH" | sort | uniq -c | tr -s ' ' | tr '\n' ',')" " 2 debris, 2 duplicate, 1 empty-dir, 2 gitignore, 1 log, 5 missing, 1 orphan-build, 2 scattered,"
   is "2 tracked duplicate" "$(grep -c "^duplicate${T}.*${T}yes${T}" "$base/tsv-$SH")" 1
+  is "2 gitignore rows" "$(grep "^gitignore${T}" "$base/tsv-$SH" | cut -f2 | tr '\n' ' ')" ".v2p/work/ .v2p/*.draft.md "
   is "2 absent" "$(cut -f2 "$base/tsv-$SH" | grep -cxE 'dist|dist/bundle.js|\.env|link\.ts|package-lock\.json|src/index\.ts')" 0
   # 3. falsifier: fixing each finding drops the count to 0 (separate copy)
   f3=$base/f3-$SH; sh "$here/tests/fixture-messy.sh" "$f3"; cd "$f3"
   mkdir -p .v2p docs; touch README.md CHANGELOG.md .v2p/BRIEF.md docs/ARCHITECTURE.md docs/DECISIONS.md
-  is "3 after creating 5" "$($SH "$S/tidy-check.sh" --tsv | grep -c .)" 10
-  printf '.v2p/work/\n' >> .gitignore; rm -rf .DS_Store build debug.log empty-dir notes README_final_v2.md src/app.ts.bak src/index_old.ts TODO.md
+  is "3 after creating 5" "$($SH "$S/tidy-check.sh" --tsv | grep -c .)" 11
+  printf '.v2p/work/\n' >> .gitignore; is "3 work line alone leaves the draft row" "$($SH "$S/tidy-check.sh" --tsv | grep "^gitignore${T}" | cut -f2)" ".v2p/*.draft.md"
+  printf '.v2p/*.draft.md\n' >> .gitignore; rm -rf .DS_Store build debug.log empty-dir notes README_final_v2.md src/app.ts.bak src/index_old.ts TODO.md
   out=$($SH "$S/tidy-check.sh"); is "3 clean exit" $? 0; has "3 clean" "$out" "tidy: 0 violations"
   cd "$fx"
   # 4. dry-run moves nothing
@@ -41,7 +43,7 @@ for SH in sh zsh; do
   is "6 dir rows" "$(grep -v '^#' "$man" | awk -F'\t' '$2=="-"' | grep -c .)" 3
   is "6 sha verified" "$(grep -v '^#' "$man" | awk -F'\t' '$2!="-"{print $1"\t"$2}' | while IFS="$T" read -r f h; do [ "$(shasum -a 256 "$q/$f" | cut -d' ' -f1)" = "$h" ] && echo ok; done | grep -c ok)" 8
   has "6 git D" "$(git status --short)" " D README_final_v2.md"
-  is "6 after" "$($SH "$S/tidy-check.sh" --tsv | cut -f1 | sort | uniq -c | tr -s ' ' | tr '\n' ',')" " 1 gitignore, 4 missing,"
+  is "6 after" "$($SH "$S/tidy-check.sh" --tsv | cut -f1 | sort | uniq -c | tr -s ' ' | tr '\n' ',')" " 2 gitignore, 4 missing,"
   # 7. re-apply: everything missing, first manifest unchanged
   m1=$(cat "$man"); r=$($SH "$S/quarantine.sh" --apply < "$base/list-$SH"); is "7 exit" $? 1
   is "7 missing" "$(printf '%s\n' "$r" | grep -c '^REFUSE missing')" 9; is "7 manifest unchanged" "$(cat "$man")" "$m1"

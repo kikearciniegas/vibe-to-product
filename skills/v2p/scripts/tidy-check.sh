@@ -52,6 +52,7 @@ for f in README.md .gitignore CHANGELOG.md .v2p/BRIEF.md docs/ARCHITECTURE.md do
 [ -n "$(find . -maxdepth 1 -name '.env*' ! -name '.env.example' -print -quit)" ] && [ ! -f .env.example ] && row missing .env.example create
 [ -d node_modules ] && ! ignored node_modules && row gitignore node_modules gitignore
 [ "$git" != none ] && [ -f .gitignore ] && ! grep -q '^\.v2p/work/' .gitignore && row gitignore .v2p/work/ gitignore
+[ "$git" != none ] && [ -f .gitignore ] && ! grep -q '^\.v2p/\*\.draft\.md' .gitignore && row gitignore '.v2p/*.draft.md' gitignore
 
 # 2. walk (never descends into never-touch dirs; symlinks are skipped, never followed)
 find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name venv -o -name vendor -o -name .v2p -o -name .claude -o -name .serena -o -name .github -o -name .vscode -o -name .idea -o -type l \) -prune -o -print | sed 's|^\./||' | sort | while IFS= read -r p; do
