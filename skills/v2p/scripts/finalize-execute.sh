@@ -40,7 +40,7 @@ dirty=$(git status --porcelain --untracked-files=all -- . | grep -v "^.. ${pre}\
 # 6. base..head
 first=$(head -n 1 "$tmp.t"); base=$(sed -n 's/.* · base: \([^ ]*\) .*/\1/p' "$d/work/execute-task-$first.md" 2>/dev/null); head=$(git rev-parse HEAD)
 [ -n "$base" ] && git merge-base --is-ancestor "$base" HEAD 2>/dev/null || { echo "FAIL: task $first base '${base}' is not an ancestor of HEAD"; fail=1; }
-# 7. §2 = PLAN §4 items; statuses done/pending/N/A (cells split from the left: item | file | status | evidence…)
+# 7. §2 = PLAN §4 items; statuses done/pending/N/A/not adopted/gap (cells split from the left: item | file | status | evidence…)
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/ && !/^\|---/' "$2"; }
 items() { awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' | sort; }
 [ -f "$draft" ] || { echo "FAIL: EXECUTE.md not written"; exit 1; }
@@ -51,7 +51,9 @@ items < "$tmp.p" > "$tmp.pi"; items < "$tmp.e" > "$tmp.ei"; diff_items=$(comm -3
 bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev (i>5?"|":"") $i; gsub(/^ +| +$/,"",ev)
   if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
-  else if (st!="pending") print "status not done/pending/N/A: " substr($0,1,100) }' "$tmp.e")
+  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
+  else if (st!="pending") print "status not done/pending/N/A/not adopted/gap: " substr($0,1,100) }' "$tmp.e" | sh "$skill/scripts/check-refs.sh" "$root")
 [ -z "$bad" ] || { echo "FAIL: §2"; printf '%s\n' "$bad"; fail=1; }
 [ "$fail" -eq 0 ] || { echo "FAIL: EXECUTE.md not written"; exit 1; }
 # 9. §1 from the records
@@ -66,7 +68,9 @@ done < "$tmp.t"; } > "$tmp.s1"
 sd=$(awk -F'|' '{s=$4; gsub(/^ +| +$/,"",s); if (s=="done") n++} END {print n+0}' "$tmp.e")
 sa=$(awk -F'|' '{s=$4; gsub(/^ +| +$/,"",s); if (s ~ /^N\/A/) n++} END {print n+0}' "$tmp.e")
 sp=$(awk -F'|' '{s=$4; gsub(/^ +| +$/,"",s); if (s=="pending") n++} END {print n+0}' "$tmp.e")
-c="checked: tasks $done_n/$total · skipped $skipped · standards done $sd · N/A $sa · pending $sp · branch $now · base $base · head $head"
+sx=$(awk -F'|' '{s=$4; gsub(/^ +| +$/,"",s); if (s ~ /^not adopted( |$)/) n++} END {print n+0}' "$tmp.e")
+sg=$(awk -F'|' '{s=$4; gsub(/^ +| +$/,"",s); if (s ~ /^gap( |$)/) n++} END {print n+0}' "$tmp.e")
+c="checked: tasks $done_n/$total · skipped $skipped · standards done $sd · N/A $sa · not adopted $sx · gap $sg · pending $sp · branch $now · base $base · head $head"
 awk -v t="$tmp.s1" -v c="$c" '
   /^checked: /{print c; next}
   /^## 1\./{print; print ""; while ((getline l < t) > 0) print l; print ""; skip=1; next}

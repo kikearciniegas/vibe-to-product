@@ -89,6 +89,14 @@ for SH in sh zsh; do
   plant "|$it1| core.md | [x] | |"; FE; has "10 [x]" "$out" "status not done/pending/N/A"
   grep -vF "$row1" "$base/draft" > $D; FE; has "10 row deleted" "$out" "§2 rows 192/193"
   plant "| renamed item | core.md | pending | |"; FE; has "10 item renamed" "$out" "items differ from PLAN §4"
+  # not adopted / gap cite an existing repo path (valid rows: a dirty README keeps the PASS from consuming the records)
+  echo x >> README.md
+  plant "|$it1| core.md | not adopted — README.md §Auth | |"; FE; is "10 not adopted exit" $rc 1; hasnt "10 not adopted accepted" "$out" "§2"
+  plant "|$it1| core.md | gap — src/greet.sh:1 | |"; FE; is "10 gap exit" $rc 1; hasnt "10 gap accepted" "$out" "§2"
+  git checkout -q README.md
+  plant "|$it1| core.md | not adopted — docs/OWNER-NOTES.md §Auth | |"; FE; is "10 not adopted missing exit" $rc 1; has "10 not adopted missing path" "$out" "not adopted cites no existing path"
+  plant "|$it1| core.md | gap — TICKET-42 | |"; FE; is "10 bogus gap exit" $rc 1; has "10 bogus gap" "$out" "gap cites no existing path"
+  plant "|$it1| core.md | met-by | README.md |"; FE; is "10 unknown exit" $rc 1; has "10 unknown status" "$out" "status not done/pending/N/A"
   plant "|$it1| core.md | done | \`sh tests/greet.test.sh\` → exit 0 |"; echo x >> README.md; FE; is "10 dirty exit" $rc 1; has "10 dirty" "$out" "uncommitted: README.md"; hasnt "10 only dirty" "$out" "§2"
   git checkout -q README.md
   FE; is "10 PASS exit" $rc 0; has "10 PASS" "$out" "PASS: 2/3 tasks (1 skipped), 1 done rows"
@@ -97,7 +105,7 @@ for SH in sh zsh; do
   has "10 old-format ponytail kept" "$(grep '^| 1 |' $E)" "2 findings, 1 cut, 1 accepted: old-format line"
   has "10 new-format ponytail kept" "$(grep '^| 2 |' $E)" "3 findings, 1 applied, 1 deferred, 1 rejected:"
   has "10 row 3 skipped" "$(grep '^| 3 |' $E)" "skipped — handed to /v2p review"
-  has "10 checked" "$(grep '^checked: ' $E)" "checked: tasks 2/3 · skipped 1 · standards done 1 · N/A 0 · pending 192 · branch $main"
+  has "10 checked" "$(grep '^checked: ' $E)" "checked: tasks 2/3 · skipped 1 · standards done 1 · N/A 0 · not adopted 0 · gap 0 · pending 192 · branch $main"
   is "10 receipt" "$(cat .v2p/.execute-pass)" "$(sha $E)"; is "10 draft gone" "$(test -f $D && echo yes)" ""
   is "10 records gone" "$(find .v2p/work -name '*execute-task-*' | grep -c .)" 0; is "10 amendments kept" "$(test -f .v2p/PLAN-AMENDMENTS.md && echo yes)" yes
   # 10b. branch mode (review): the union of task scopes + amendments is OK; a stray file is not
