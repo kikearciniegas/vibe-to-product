@@ -2,13 +2,14 @@
 # Promote .v2p/EXECUTE.draft.md to .v2p/EXECUTE.md only if PLAN still matches its receipt, every PLAN task has a
 # sealed record from task-record.sh (pass, skipped with a reason, or deferred with the missing credential; manual and
 # ponytail-review lines where due),
-# all records share the current branch, HEAD is the newest recorded head (later commits may touch only .v2p/), the tree
+# all records share the current branch, HEAD is the newest recorded head (later commits may touch only .v2p/), every
+# commit since the first task's base lies in a task's base..head (or touches only .v2p/), the tree
 # is clean outside .v2p/, and §2 has the same items as PLAN §4 with
 # valid statuses. §1 is generated here from the records, never typed. Usage: sh finalize-execute.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; fail=0
 [ -d "$d" ] || { echo "FAIL: $d not found"; exit 1; }
 d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 1
-draft=$d/EXECUTE.draft.md; out=$d/EXECUTE.md; plan=$d/PLAN.md; tmp=${TMPDIR:-/tmp}/fe.$$; trap 'rm -f "$tmp.t" "$tmp.p" "$tmp.e" "$tmp.pi" "$tmp.ei" "$tmp.s1"' EXIT
+draft=$d/EXECUTE.draft.md; out=$d/EXECUTE.md; plan=$d/PLAN.md; tmp=${TMPDIR:-/tmp}/fe.$$; trap 'rm -f "$tmp.t" "$tmp.p" "$tmp.e" "$tmp.pi" "$tmp.ei" "$tmp.s1" "$tmp.r" "$tmp.u"' EXIT
 sh "$skill/scripts/check-pass.sh" "$plan" "$d/.plan-pass" >/dev/null || { echo "FAIL: PLAN.md does not match its receipt"; exit 1; }
 if [ -f "$draft" ]; then grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
 else echo "FAIL: $draft missing"; fail=1; fi
@@ -51,6 +52,18 @@ while IFS= read -r n; do h=$(sed -n 's/^head: //p' "$d/work/execute-task-$n.md" 
 done < "$tmp.t"
 if [ -n "$nh" ]; then late=$(git diff --name-only --relative "$nh" HEAD -- . | grep -v '^\.v2p/' | tr '\n' ' ')
   [ -z "$late" ] || { echo "FAIL: commits after the newest recorded head $nh touch ${late% } (re-run task-record.sh verify <n> for the task they belong to)"; fail=1; }; fi
+# 6c. every commit in base..<newest head> lies in a task's base..head (exclusive base, inclusive head) or touches only
+# .v2p/: a commit between one task's verify and the next task's start was never drift-checked. A skipped task has no
+# range; a deferred one keeps the head an earlier verify drift-checked, if any. 6b covers the commits after the newest head
+if [ -n "$base" ]; then : > "$tmp.r"
+  while IFS= read -r n; do r=$d/work/execute-task-$n.md; h=$(sed -n 's/^head: //p' "$r" 2>/dev/null); [ -n "$h" ] || continue
+    grep -q '^verifier: skipped' "$r" && continue
+    tb=$(sed -n 's/.* · base: \([^ ]*\) .*/\1/p' "$r"); [ -n "$tb" ] && git rev-list "$tb..$h" >> "$tmp.r" 2>/dev/null
+  done < "$tmp.t"
+  git rev-list "$base..${nh:-HEAD}" 2>/dev/null | while IFS= read -r c; do grep -qx "$c" "$tmp.r" && continue
+    f=$(git diff --name-only --relative "$c^" "$c" -- . | grep -v '^\.v2p/' | tr '\n' ' ')
+    [ -z "$f" ] || echo "FAIL: commit $c touches ${f% } and lies in no task's base..head (never drift-checked: task-record.sh start <n> --base <its parent> for the task it belongs to, then verify)"
+  done > "$tmp.u"; [ -s "$tmp.u" ] && { cat "$tmp.u"; fail=1; }; fi
 # 7. §2 = PLAN §4 items; statuses done/pending/N/A/not adopted/gap (cells split from the left: item | file | status | evidence…)
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/ && !/^\|---/' "$2"; }
 items() { awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' | sort; }

@@ -401,6 +401,24 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   TR verify 1; is "34 re-verify exit" $rc 1; has "34 re-verify sees the late file" "$out" "DRIFT file README.md"
   git reset -q --hard "$c1"; TR verify 1; FE; is "34 control: late commit gone, re-verified exit" $rc 0
   cd "$base"
+  # 35. a commit between task 1's verify and task 2's start lay in no task's base..head, so drift-check never saw it,
+  # and the newest-head check (32) passed it. Every commit in <exec base>..HEAD must lie in a verified task's range
+  # (exclusive base, inclusive head) or touch only .v2p/. $1: code | v2p (the commit between the two tasks) | skip (task 2
+  # verified, then skipped: a skipped task has no range) | none
+  f35=$base/f35-$SH
+  t35() { cd "$base"; sh "$here/tests/fixture-execute.sh" "$f35" >/dev/null 2>&1; cd "$f35"
+    TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+    git add -A; git commit -qm 'feat: greet'; TR verify 1; TR ponytail 1 none
+    case $1 in code) echo between >> README.md; git commit -qam 'between: code' ;;
+      v2p) echo n > .v2p/notes.md; git add .v2p/notes.md; git commit -qm 'between: v2p' ;; esac; cb=$(git rev-parse HEAD)
+    TR start 2; printf 'echo hi\n# greeting\n' > src/greet.sh; mkdir -p 'app/[locale]'; echo p > 'app/[locale]/page.tsx'
+    git add -A; git commit -qm 'feat: page'; cp=$(git rev-parse HEAD); TR verify 2
+    if [ "$1" = skip ]; then TR skip 2 "verified, then skipped"; else TR manual 2 "opened it"; TR ponytail 2 none; fi; TR skip 3 "not in this test"; FE; }
+  t35 code; is "35 code commit between tasks exit" $rc 1; has "35 code commit named" "$out" "commit $cb touches README.md"
+  t35 v2p; is "35 .v2p-only commit between tasks exit" $rc 0; has "35 .v2p-only PASS" "$out" "PASS: 2/3 tasks (1 skipped)"
+  t35 skip; is "35 skipped task has no range exit" $rc 1; has "35 skipped task's commit named" "$out" "commit $cp touches"
+  t35 none; is "35 control: sequential tasks exit" $rc 0; has "35 control PASS" "$out" "PASS: 2/3 tasks (1 skipped)"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }
