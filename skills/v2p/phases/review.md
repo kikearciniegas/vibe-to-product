@@ -11,10 +11,14 @@ Review the whole execute branch once with the phase-level checks, fix what they 
 - Existing `.v2p/REVIEW.md` with its receipt → offer: resume (keep) or re-run.
 - Clean tree and HEAD on the branch named in the EXECUTE `checked:` line (`branch <b>`); otherwise print what differs and stop.
 - Model guard (router §2).
+<!-- claude-only -->
+- Named skills enabled: `jq -r '.skillOverrides // {} | to_entries[] | select(.value == "off") | .key' ~/.claude/settings.json | grep -xE '([^:]+:)?(review|requesting-code-review-extras|simplify|ponytail-review|ponytail-audit|security-review|claude-security|verification-before-completion|verification-before-completion-extras|design-review|gstack-extras|make-interfaces-feel-better|review-animations|translation-quality|codex|qa|qa-only|browse)'` lists the Step 1 skills set to `off`. Any listed → one `AskUserQuestion` at phase start, naming them: enable them in `skillOverrides`, or the user types each one when its check runs. This is the phase's opening prompt; Step 1's claude-security cost question, when needed, goes in it too.
+<!-- /claude-only -->
 - Checkpoints: `.v2p/work/review-<check>.md` is reusable when its line 1 `head:` equals the current `git rev-parse HEAD`; otherwise it is stale: overwrite it, never read it.
 
 ## Step 0 — Scope
 `base` and `branch` come from the EXECUTE `checked:` line; the diff under review is `git diff <base>..HEAD`. A file changed on the branch that no PLAN task names (and no amendment grants) is finding #1.
+Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start.
 <!-- claude-only -->
 Claude Code: `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` (changed set against the union of every task's Files list plus `.v2p/PLAN-AMENDMENTS.md`).
 <!-- /claude-only -->
@@ -38,7 +42,7 @@ Portable: run each check yourself, as a separate pass with its own list; the cod
 Claude Code invocations (verified on this machine 2026-09-24, see `references/skills-catalog.md`):
 - code-review: gstack `/review` + `requesting-code-review-extras` (main thread).
 - simplify: the Claude Code built-in `/simplify` on the branch diff (it applies fixes: each one becomes a fix commit under Step 2's rules), then the `ponytail-review` skill on `git diff <base>..HEAD`, then `ponytail-audit` on the repo (plugin `ponytail@ponytail` 4.9.0). `ponytail-review` = diff, `ponytail-audit` = whole repo.
-- security: the Claude Code built-in `/security-review` (reviews the pending changes of the current branch), and the `claude-security` plugin at its lowest tier: ask the user to type `/claude-security scan changes --base <base> --effort low` (the plugin's menu skill has `disable-model-invocation: true`, so the model cannot start it; the explicit `--base` matters, because a bare sha is read as `--commit`). It asks its own fixed cost confirmation, needs the Workflow tool, and writes `CLAUDE-SECURITY-<timestamp>/CLAUDE-SECURITY-RESULTS.md` behind its own `.gitignore`. The full-effort scan is deploy's. The row's run cell names both invocations; findings = the sum.
+- security: the Claude Code built-in `/security-review` (reviews the pending changes of the current branch), and the `claude-security` plugin at its lowest tier: `/claude-security scan changes --base <base> --effort low` (the explicit `--base` matters, because a bare sha is read as `--commit`). Plugin 0.12.0 has no `disable-model-invocation`: the model may invoke this scan when the user's request accepted its time or token cost in words. Otherwise it asks its own fixed cost confirmation; if that still blocks, ask for the scan in the phase's opening prompt (Preconditions). It needs the Workflow tool, and writes `CLAUDE-SECURITY-<timestamp>/CLAUDE-SECURITY-RESULTS.md` behind its own `.gitignore`. The full-effort scan is deploy's. The row's run cell names both invocations; findings = the sum.
 - verification: `superpowers:verification-before-completion` + `verification-before-completion-extras` on EXECUTE §2.
 - ux-laws: gstack `/design-review <preview URL>` + `gstack-extras`. Pass the URL explicitly: on a feature branch without one it switches to diff-aware mode. Its setup reads the root `DESIGN.md` (the symlink to `.v2p/DESIGN.md`) and compares the page with it; decline its offer to save a DESIGN.md. Then `make-interfaces-feel-better` in `full` mode on the branch's UI diff, and `review-animations` (emil) only when the diff matches `transition|animate|framer|motion|@keyframes`. Not `/impeccable audit` or `critique` (duplicates). All outputs go into `.v2p/work/review-ux-laws.md`; the run cell names `DESIGN.md` (e.g. `/design-review http://localhost:3101 against DESIGN.md + make-interfaces-feel-better full`). Never `mcp__claude-in-chrome__*`; `/browse` for anything that needs a click.
 - i18n: the `translation-quality` skill.
@@ -74,7 +78,7 @@ Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-
 <!-- claude-only -->
 ## Claude Code note
 - Main thread runs the gstack skills (they need `AskUserQuestion`); `planner` audits evidence; `/codex` runs through its skill only.
-- `AskUserQuestion` for: accepting an `open` finding, `/codex` unavailable → continue without, deferred rows.
+- `AskUserQuestion` for: named skills set to `off` (Preconditions), accepting an `open` finding, `/codex` unavailable → continue without, deferred rows.
 - Strix is deploy's: optional, needs Docker + an LLM key; never installed here.
 <!-- /claude-only -->
 

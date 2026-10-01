@@ -11,6 +11,7 @@ Rules: §1 has one row per required check, findings cell `<n> findings` (the cod
 # REVIEW — <project name>
 checked: pending   ← the finalize step replaces: runs <r>/<required> · findings <f> (fixed <x> · accepted <a> · open <o>) · standards done <d> · N/A <n> · not adopted <x> · gap <g> · deferred <k> · verifiers <v>/<v> pass · branch <b> · head <sha>
 written: <YYYY-MM-DD> by v2p review · reads: .v2p/EXECUTE.md (<hash, first 12>) · diff: <base>..<head>
+preview: <URL> · started by <cmd>
 
 ## 1. Runs
 | check | run (exact command or skill invocation) | findings |

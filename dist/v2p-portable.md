@@ -910,6 +910,7 @@ Review the whole execute branch once with the phase-level checks, fix what they 
 
 ## Step 0 — Scope
 `base` and `branch` come from the EXECUTE `checked:` line; the diff under review is `git diff <base>..HEAD`. A file changed on the branch that no PLAN task names (and no amendment grants) is finding #1.
+Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start.
 
 ## Step 1 — Runs
 Each check writes a checkpoint first (line 1: `head: <sha> · check: <name> · run: <exact invocation>`, then one finding per line: `- <path:line> · <severity> · <one line>`), then one row in REVIEW.draft.md §1 (`references/review-template.md`).
@@ -1031,6 +1032,7 @@ Rules: §1 has one row per required check, findings cell `<n> findings` (the cod
 # REVIEW — <project name>
 checked: pending   ← the finalize step replaces: runs <r>/<required> · findings <f> (fixed <x> · accepted <a> · open <o>) · standards done <d> · N/A <n> · not adopted <x> · gap <g> · deferred <k> · verifiers <v>/<v> pass · branch <b> · head <sha>
 written: <YYYY-MM-DD> by v2p review · reads: .v2p/EXECUTE.md (<hash, first 12>) · diff: <base>..<head>
+preview: <URL> · started by <cmd>
 
 ## 1. Runs
 | check | run (exact command or skill invocation) | findings |
