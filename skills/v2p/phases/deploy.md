@@ -31,7 +31,7 @@ Claude Code: `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` as the
 Portable: run whatever scanner the user has (or none) and say so; the strix row reads `unavailable: portable`; there is no receipt.
 <!-- claude-only -->
 Claude Code:
-- The scan: ask the user to type `/claude-security scan codebase --effort high` (no `--scope`: the menu skill has `disable-model-invocation: true`, so the model cannot start it). The plugin asks its own whole-repository and cost confirmation; it runs minutes to tens of minutes (keep waiting). It writes `CLAUDE-SECURITY-<ts>/` with `CLAUDE-SECURITY-RESULTS.{md,jsonl,sarif}` and the stamp `CLAUDE-SECURITY-REVISION-<sha12>.json` behind its own `.gitignore`. The §1 run cell is that exact invocation; §2 rows come from the JSONL.
+- The scan: `/claude-security scan codebase --effort high` (no `--scope`). Plugin 0.12.0 has no `disable-model-invocation`: the model may invoke this scan when the user's request accepted its time or token cost in words. Otherwise it asks its own whole-repository and cost confirmation; if that still blocks, ask for the scan in the phase's opening prompt (Preconditions). It runs minutes to tens of minutes (keep waiting). It writes `CLAUDE-SECURITY-<ts>/` with `CLAUDE-SECURITY-RESULTS.{md,jsonl,sarif}` and the stamp `CLAUDE-SECURITY-REVISION-<sha12>.json` behind its own `.gitignore`. The §1 run cell is that exact invocation; §2 rows come from the JSONL.
 - Fixes: `builder` (code) or `quick` (docs) under execute's dispatch rules, Files = the finding's paths, `superpowers:test-driven-development`, one commit per fix with the branch check in the same command (`[ "$(git rev-parse --abbrev-ref HEAD)" = <review branch> ] && git add -A && git commit -m "fix: <finding id> <one line>"`), then `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p`. `AskUserQuestion` before accepting any finding; for CRITICAL/HIGH record the user's reason verbatim. This line is the weakest gate: the script checks the `accepted:` shape, not who accepted it.
 - Strix: probe `command -v docker && docker info` and whether `STRIX_LLM` and `LLM_API_KEY` are set (names only). Install only through the `installing-third-party-tools` skill, on the user's yes to one `AskUserQuestion`. Its `strix_runs/` may hold `*.log` files the tidy check flags; leave them for the user.
 <!-- /claude-only -->
@@ -79,7 +79,7 @@ Print the path, the `checked:` counts, `live: https://<host>`, then `Next: live 
 
 <!-- claude-only -->
 ## Claude Code note
-- Main thread runs the gstack skills and asks the questions (they need `AskUserQuestion`); the user types `/claude-security …`; `builder`/`quick` fix; `planner` audits §3 read-only. Load `gstack-extras` with any gstack skill.
+- Main thread runs the gstack skills and asks the questions (they need `AskUserQuestion`); the main thread invokes `/claude-security …` (Step 1's cost rule); `builder`/`quick` fix; `planner` audits §3 read-only. Load `gstack-extras` with any gstack skill.
 - `AskUserQuestion` for: the Strix offer, accepting a finding, the deferred credentials, the go-live, the rollback values, the post-launch rows. gstack skills ask their own; not duplicated.
 - Never `mcp__claude-in-chrome__*`; `/browse` for anything that needs a click. Never read `.env*`; never echo a value from a dashboard into the transcript.
 - Strix only through `installing-third-party-tools`, on the user's yes.
