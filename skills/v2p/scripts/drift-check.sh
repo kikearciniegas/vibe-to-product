@@ -1,13 +1,17 @@
 #!/bin/sh
-# Read-only scope gate for execute/review. Usage: sh drift-check.sh <n> [.v2p] | sh drift-check.sh --branch [.v2p]
+# Read-only scope gate for execute/review. Usage: sh drift-check.sh <n> [--head <sha>] [.v2p] | sh drift-check.sh --branch [.v2p]
 # Exit 0 clean · 1 drift · 2 usage/no record. Task mode: every path changed since the task's recorded base
 # (committed or not, plus untracked) must match the PLAN task's **Files:** tokens, a PLAN-AMENDMENTS.md line
 # for that task, `.v2p/*` or a lockfile. Branch mode: same against the union of all tasks (review).
 # Also DRIFT branch (checkout switched since start), DRIFT base (rebased), DRIFT tidy (new tidy-check rows).
+# --head <sha> (task mode; re-verifying an earlier task after later tasks committed, field test V8): only base..<sha>, no
+# untracked or uncommitted files; <sha> must be an ancestor of HEAD and a descendant of the task's base (exit 2 otherwise).
 # Matcher: string equality first (so `app/[locale]/page.tsx` matches itself), then glob via eval (zsh matches
 # a case pattern held in a variable literally). `*` crosses `/`: `components/*.tsx` also allows `components/x/y.tsx` (accepted).
 skill=$(cd "$(dirname "$0")/.." && pwd -P)
-case $1 in --branch) n=; mode=branch ;; ''|*[!0-9]*) echo "usage: drift-check.sh <n>|--branch [.v2p]" >&2; exit 2 ;; *) n=$1; mode=task ;; esac
+case $1 in --branch) n=; mode=branch ;; ''|*[!0-9]*) echo "usage: drift-check.sh <n> [--head <sha>]|--branch [.v2p]" >&2; exit 2 ;; *) n=$1; mode=task ;; esac
+hd=; if [ "$mode" = task ] && [ "$2" = --head ]; then
+  [ -n "$3" ] || { echo "usage: drift-check.sh <n> [--head <sha>]|--branch [.v2p]" >&2; exit 2; }; hd=$3; shift 2; fi
 d=${2:-.v2p}; [ -d "$d" ] || { echo "ERROR: $d not found" >&2; exit 2; }
 d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 2
 plan=$d/PLAN.md; amend=$d/PLAN-AMENDMENTS.md; [ -f "$plan" ] || { echo "ERROR: $plan missing" >&2; exit 2; }
@@ -24,6 +28,9 @@ else
   tasks=$(grep -o '^### Task [0-9]*' "$plan" | awk '{print $3}')
 fi
 [ -n "$base" ] && [ -n "$branch" ] || { echo "ERROR: no base/branch recorded" >&2; exit 2; }
+if [ -n "$hd" ]; then h=$(git rev-parse -q --verify "$hd^{commit}") || { echo "ERROR: --head $hd does not resolve to a commit" >&2; exit 2; }
+  git merge-base --is-ancestor "$h" HEAD || { echo "ERROR: --head $hd is not an ancestor of HEAD" >&2; exit 2; }
+  git merge-base --is-ancestor "$base" "$h" || { echo "ERROR: --head $hd is not a descendant of the task's base $base" >&2; exit 2; }; fi
 tmp=${TMPDIR:-/tmp}/dc.$$; trap 'rm -f "$tmp" "$tmp.a" "$tmp.b"' EXIT; drift=0
 now=$(git rev-parse --abbrev-ref HEAD)
 [ "$now" = "$branch" ] || { echo "DRIFT branch $now (recorded $branch)"; drift=1; }
@@ -62,7 +69,8 @@ while IFS= read -r p; do
 done < "$tmp.a"
 match() { f=$1; p=$2; [ "$f" = "$p" ] && return 0; case $p in *\**) ;; *) return 1;; esac
   e=$(printf '%s' "$p" | sed 's/\[/\\[/g; s/\]/\\]/g'); eval "case \"\$f\" in $e) return 0;; esac"; return 1; }
-{ git diff --name-only --relative --no-renames "$base" -- . 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u > "$tmp"
+if [ -n "$hd" ]; then git diff --name-only --relative --no-renames "$base" "$h" -- . 2>/dev/null
+else git diff --name-only --relative --no-renames "$base" -- . 2>/dev/null; git ls-files --others --exclude-standard; fi | sort -u > "$tmp"
 k=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue; k=$((k + 1))

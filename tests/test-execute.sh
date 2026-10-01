@@ -310,6 +310,26 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   echo mockup.png >> .git/info/exclude; out=$($SH -c "$ol" 2>&1); rc=$?
   is "29 excluded → commit exit" $rc 0; is "29 commit = task files only" "$(git show --name-only --format= HEAD | sort | tr '\n' ' ')" "src/greet.sh tests/greet.test.sh "
   cd "$base"
+  # 30. field test V8: tasks committed in sequence, then an earlier one re-verified, saw the later tasks' files as drift.
+  # --head <sha> measures base..<sha> (no untracked scan); <sha> must be an ancestor of HEAD and a descendant of base.
+  f30=$base/f30-$SH; sh "$here/tests/fixture-execute.sh" "$f30" >/dev/null 2>&1; cd "$f30"; b0=$(git rev-parse HEAD)
+  TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  git add -A; git commit -qm 'feat: greet'; c1=$(git rev-parse HEAD)
+  TR start 2; printf 'echo hi\n# greeting\n' > src/greet.sh; mkdir -p 'app/[locale]'; echo p > 'app/[locale]/page.tsx'; git add -A; git commit -qm 'feat: page'; c2=$(git rev-parse HEAD)
+  DC 1; is "30 without --head: later task is drift" $rc 1; has "30 later task drift" "$out" "DRIFT file app/[locale]/page.tsx"
+  DC 1 --head "$c1"; is "30 --head c1 exit" $rc 0; has "30 --head c1 OK" "$out" "OK: 2 changed paths within Task 1 scope"
+  DC 1 --head "$c2"; is "30 --head c2 still checks the range" $rc 1; has "30 --head c2 drift" "$out" "DRIFT file app/[locale]/page.tsx"
+  echo x > stray.txt; DC 1 --head "$c1"; is "30 --head skips untracked" $rc 0; DC 1; has "30 untracked without --head" "$out" "DRIFT file stray.txt"; rm stray.txt
+  DC 1 --head deadbeef; is "30 unknown sha exit" $rc 2; has "30 unknown sha msg" "$out" "does not resolve to a commit"
+  orphan=$(git commit-tree "HEAD^{tree}" -m orphan); DC 1 --head "$orphan"; is "30 non-ancestor exit" $rc 2; has "30 non-ancestor msg" "$out" "is not an ancestor of HEAD"
+  side=$(git commit-tree "$c1^{tree}" -p "$c1" -m side); DC 1 --head "$side"; is "30 side commit exit" $rc 2; has "30 side commit msg" "$out" "is not an ancestor of HEAD"
+  DC 2 --head "$b0"; is "30 before base exit" $rc 2; has "30 before base msg" "$out" "is not a descendant of the task's base"
+  DC 1 --head; is "30 --head without sha exit" $rc 2
+  s0=$(sha $rec1); TR verify 1 --head deadbeef; is "30 verify bad sha exit" $rc 2; is "30 verify bad sha writes nothing" "$(sha $rec1)" "$s0"
+  TR verify 1 --head "$c1"; is "30 verify --head exit" $rc 0; has "30 verify --head pass" "$(cat $rec1)" "verifier: pass · attempts: 1"
+  has "30 head = c1" "$(cat $rec1)" "head: $c1"; has "30 drift none" "$(cat $rec1)" "drift: none"
+  TR verify 1 --head "$c2"; is "30 verify --head c2 blocked" $rc 1
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

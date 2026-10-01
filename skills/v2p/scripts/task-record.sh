@@ -1,12 +1,15 @@
 #!/bin/sh
 # The only writer of execute's per-task records (.v2p/work/execute-task-<n>.md + receipt .execute-task-<n>-pass)
 # and of .v2p/PLAN-AMENDMENTS.md. PLAN.md is never edited: scope granted mid-execute is appended here.
-# Usage: sh task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p]   (exit 0 ok · 1 fail · 2 usage)
+# Usage: sh task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> "<why>" [.v2p];
+#        verify <n> --head <sha> [.v2p]   (exit 0 ok · 1 fail · 2 usage)
 #   start <n>                  record base (HEAD), branch, tidy count; resumes if the record matches the PLAN receipt;
 #                              a task touching UI files is refused while .v2p/DESIGN.md does not match .v2p/.brand-pass
 #   start <n> --base <sha> "<why>"  re-start: replaces any record for <n> (verifier/manual/ponytail reset) with base
 #                              <sha> (an ancestor of HEAD); appends `base := <sha> (was <old>)` to PLAN-AMENDMENTS.md
 #   verify <n>                 drift-check.sh <n>, then every mechanical Verifier command of the task; writes the result
+#   verify <n> --head <sha>    re-verify an earlier task: drift-check.sh <n> --head <sha> (base..<sha> only) and head: <sha>;
+#                              the Verifier commands still run on the current tree
 #   manual <n> "<text>"        the user's observation for the manual part of the Verifier
 #   note <n> "<text>"          the controller's own evidence (`by controller`; repeatable). Never `manual`, which stamps
 #                              `by user` (live: the controller signed the user's name on its own checks, obs. 0210)
@@ -20,13 +23,13 @@
 # ponytail: expected-output check covers exit code and bare numbers only; `→ passed`/`→ all passed` rely on the
 # command's exit code — mapping's Verifier convention asks for self-checking commands.
 skill=$(cd "$(dirname "$0")/.." && pwd -P); S=$skill/scripts
-usage() { echo "usage: task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; }
+usage() { echo "usage: task-record.sh start|verify|manual|note|ponytail|allow|skip|defer <n> [args] [.v2p]; start <n> --base <sha> \"<reason>\" [.v2p]; verify <n> --head <sha> [.v2p]" >&2; exit 2; }
 # a reason lands in PLAN-AMENDMENTS.md, which drift-check parses: one line, and none of the grant syntax; note/skip/defer
 # text uses the same check (a multi-line skip text was accepted and broke the record's one-line-per-key shape)
 reason() { case $1 in *"
 "*) echo "ERROR: text must be one line" >&2; exit 2 ;;
   *'files +='*|*'base :='*|*'`'*|*' · task '*) echo "ERROR: text must not contain 'files +=', 'base :=', a backtick or ' · task '" >&2; exit 2 ;; esac; }
-cmd=$1; n=$2; nb=
+cmd=$1; n=$2; nb=; hd=
 case $cmd in start|verify) dd=$3 ;; manual|note|ponytail|skip|defer) dd=$4 ;; allow) dd=$5 ;; *) usage ;; esac
 case $n in ''|*[!0-9]*) usage ;; esac
 if [ "$cmd" = start ] && [ "$3" = --base ]; then nb=$4; why=$5; dd=$6
@@ -34,6 +37,7 @@ if [ "$cmd" = start ] && [ "$3" = --base ]; then nb=$4; why=$5; dd=$6
   reason "$why"
   case $why in .v2p|*/.v2p) [ -d "$why" ] && { echo "ERROR: '$why' is the .v2p directory, not a reason: start <n> --base <sha> \"<reason>\" [.v2p]" >&2; exit 2; } ;; esac
 fi
+if [ "$cmd" = verify ] && [ "$3" = --head ]; then hd=$4; dd=$5; [ -n "$hd" ] || usage; fi
 d=${dd:-.v2p}; [ -d "$d" ] || { echo "ERROR: $d not found" >&2; exit 2; }
 d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 2
 plan=$d/PLAN.md; rec=$d/work/execute-task-$n.md; pass=$d/work/.execute-task-$n-pass; amend=$d/PLAN-AMENDMENTS.md
@@ -76,7 +80,9 @@ start)
   uigate; write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
 verify)
   need; k=$(sed -n 's/^verifier: .*attempts: \([0-9]*\).*/\1/p' "$rec"); k=$(( ${k:-0} + 1 ))
-  dc=$(sh "$S/drift-check.sh" "$n" "$d" 2>&1); rc=$?
+  if [ -n "$hd" ]; then dc=$(sh "$S/drift-check.sh" "$n" --head "$hd" "$d" 2>&1); else dc=$(sh "$S/drift-check.sh" "$n" "$d" 2>&1); fi; rc=$?
+  # exit 2 is a usage error (a bad --head, no record), not drift: nothing is written
+  [ "$rc" -eq 2 ] && { printf '%s\n' "$dc" >&2; exit 2; }
   if [ "$rc" -ne 0 ]; then printf '%s\n' "$dc" > "$tmp.o"; put verifier "blocked by drift · attempts: $k"; put drift "" "$tmp.o"; seal
     printf '%s\n' "$dc"; echo "FAIL: task $n blocked by drift"; exit 1; fi
   a=$(printf '%s\n' "$dc" | sed -n 's/.*(\([0-9]*\) allowed by amendments).*/\1/p'); [ "${a:-0}" -eq 0 ] && drift=none || drift="allowed $a"
@@ -102,7 +108,8 @@ verify)
   if [ ! -s "$tmp" ] && tline Verifier | grep -qE '^\*\*Verifier:\*\* *mechanical:'; then ok=0
     res=" · no backticked \`command\` → expected pair in a mechanical Verifier: nothing ran (fix the PLAN and re-run finalize-plan)"; fi
   [ "$ok" -eq 1 ] && v=pass || v=fail
-  put verifier "$v · attempts: $k${res}"; put head "$(git rev-parse HEAD)"; put drift "$drift"; put tidy-delta 0; put output "" "$tmp.o"; seal
+  [ -n "$hd" ] && h=$(git rev-parse "$hd^{commit}") || h=$(git rev-parse HEAD)
+  put verifier "$v · attempts: $k${res}"; put head "$h"; put drift "$drift"; put tidy-delta 0; put output "" "$tmp.o"; seal
   echo "verifier: $v · attempts: $k${res}"; [ "$ok" -eq 1 ] ;;
 manual)
   need; t=$3; [ -n "$t" ] && [ "$t" != none ] || { echo "ERROR: manual needs the user's observation (what, where, when)" >&2; exit 2; }
