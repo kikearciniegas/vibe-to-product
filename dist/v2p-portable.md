@@ -819,7 +819,7 @@ Each `kind` below has the action `quarantine`.
 - → `CHANGELOG.md`: `CHANGES*`, `HISTORY*`
 - → `README.md` (root only): `README_*`, `README-*`, `README.txt`, `README.old`, `readme*`, `Readme*`
 - Referenced files stay: a scattered file whose name (e.g. `BACKLOG.md`) appears in any other file gets action `keep:refs=<n>` (<n> = files that mention it) instead of `merge:<dest>`. The file itself and `## From <path>` merge headings do not count; `.git/`, `node_modules/` and `.v2p/` are not searched. `keep` rows are shown but are not violations, and the quarantine step skips them.
-- Exempt: `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, `docs/threat-model.md`, `CHANGELOG.md`, `README.md`, anything under `.v2p/`
+- Exempt: `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, `docs/threat-model.md`, `CHANGELOG.md`, `README.md`, the root `DESIGN.md` (brand's design file, or v2p's symlink to `.v2p/DESIGN.md`), anything under `.v2p/`
 - Merge rule: the destination gains `## From <path> (merged <YYYY-MM-DD>)` + the original content verbatim; the quarantine step refuses the original until that heading exists in the destination; the user sees the added sections before anything moves.
 
 ## 4. Never touch

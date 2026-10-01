@@ -78,6 +78,12 @@ for SH in sh zsh; do
     is "11 V22 docs/$h is the decisions home" "$(printf '%s\n' "$t" | grep -cE "^missing${T}docs/DECISIONS\.md|^scattered${T}docs/$h")" 0
     is "11 V22 control: debris inside docs/$h" "$(printf '%s\n' "$t" | grep -c "^debris${T}docs/$h/\.DS_Store")" 1
   done
+  # V5 follow-up: a root DESIGN.md (project-owned file or v2p's symlink) belongs to brand; never proposed for merge or quarantine
+  mkdir -p web; echo '# design' > DESIGN.md; echo '# web design' > web/DESIGN.md; t=$($SH "$S/tidy-check.sh" --tsv)
+  is "11 root DESIGN.md file not listed" "$(printf '%s\n' "$t" | cut -f2 | grep -cx DESIGN.md)" 0
+  is "11 control: nested DESIGN.md still merged" "$(printf '%s\n' "$t" | grep "${T}web/DESIGN.md${T}" | cut -f1,3)" "scattered${T}merge:docs/ARCHITECTURE.md"
+  rm DESIGN.md; ln -s .v2p/DESIGN.md DESIGN.md
+  is "11 root DESIGN.md symlink not listed" "$($SH "$S/tidy-check.sh" --tsv | cut -f2 | grep -cx DESIGN.md)" 0; rm -rf DESIGN.md web
   # V23: a read-only root, and files owned by another user (simulated: an `id` shim names another user, since chown needs sudo)
   has "11 V23 control: writable" "$($SH "$S/tidy-check.sh" --probe)" " writable:yes"
   mkdir -p "$base/shim-$SH"; printf '#!/bin/sh\necho nobody\n' > "$base/shim-$SH/id"; chmod +x "$base/shim-$SH/id"

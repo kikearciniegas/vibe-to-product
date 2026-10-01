@@ -67,7 +67,7 @@ find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name v
     *_old.*|*_old|*-old.*|*.old|*_copy.*|*\ copy.*|*\ copy|*_final*|*-final*|*final_v[0-9]*|*_v[0-9].*|*_v[0-9][0-9].*|*\ \([0-9]\).*) row duplicate "$p" quarantine; continue ;;
     *.log|npm-debug.log*|yarn-error.log*|lerna-debug.log*) row log "$p" quarantine; continue ;;
   esac
-  case $p in docs/DECISIONS.md|docs/ARCHITECTURE.md|docs/threat-model.md|CHANGELOG.md|README.md) continue ;; esac
+  case $p in docs/DECISIONS.md|docs/ARCHITECTURE.md|docs/threat-model.md|CHANGELOG.md|README.md|DESIGN.md) continue ;; esac  # root DESIGN.md belongs to brand
   [ -n "$dh" ] && case $p in "$dh"/*) continue ;; esac
   case $b in
     NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) scat docs/DECISIONS.md ;;
