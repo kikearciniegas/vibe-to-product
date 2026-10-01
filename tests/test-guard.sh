@@ -5,7 +5,9 @@
 # DESIGN.md symlink and a regular root DESIGN.md), removed at the end. Usage: sh tests/test-guard.sh
 here=$(cd "$(dirname "$0")/.." && pwd -P); G=$here/skills/v2p/hooks/guard-finals.sh
 fails=0
-esc() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+esc() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk 'NR > 1 { printf "%s", "\\n" } { printf "%s", $0 }'; }
+nl='
+'
 run() { out=$(printf '%s' "$1" | $SH "$G" 2>&1); rc=$?; }
 json() { printf '{"session_id":"s","transcript_path":"/Users/user/.claude/projects/x/s.jsonl","cwd":"/Users/user/tmp/v2p-exec/.worktrees/v2p-execute-2026-09-24","hook_event_name":"PreToolUse","tool_name":"%s","tool_input":%s}' "$1" "$2"; }
 check() { # <label> <want exit> <tool> <tool_input json>
@@ -59,6 +61,19 @@ for SH in sh zsh; do
   W 2 Write "$P/.v2p/DEPLOY.md"; W 2 Edit .v2p/DEPLOY.md; B "echo x > .v2p/DEPLOY.md"; B "cp /tmp/d.md $P/.v2p/DEPLOY.md"; B "echo x > .v2p/.deploy-pass"
   A "sh $S/finalize-deploy.sh .v2p"; A "cat .v2p/DEPLOY.md"; W 0 Write "$P/.v2p/DEPLOY.draft.md"; A "cp /tmp/d.md .v2p/DEPLOY.draft.md"
   check "allow Read tool" 0 Read "{\"file_path\":\"$P/.v2p/work/.execute-task-5-pass\"}"
+  # V29: write TARGETS are blocked, mentions are not (a JSON \n is a command separator, single-quoted text is inert)
+  A "cat >> notes.md <<EOF${nl}see .v2p/PLAN.md${nl}EOF"
+  A "cp .v2p/PLAN.md /tmp/x/PLAN.md"; A "cp .v2p/.plan-pass /tmp/x"; A "mv $P/.v2p/REVIEW.md /tmp/x/ 2>/dev/null"
+  A "printf 'the tee step reads .v2p/PLAN.md\n'"; A "git commit -m 'cp the draft over .v2p/PLAN.md'"
+  B "cp /tmp/x .v2p/PLAN.md"; B "mv /tmp/x $P/.v2p/REVIEW.md && echo ok"; B "cp -f /tmp/x '.v2p/PLAN.md' 2>&1"
+  B "tee .v2p/PLAN.md"; B "echo x | tee -a notes.md .v2p/PLAN.md >/dev/null"
+  B "sed -i '' 's/a/b/' .v2p/PLAN.md"; B "sed -i.bak -e 's/a/b/' $P/.v2p/PLAN.md"
+  B "echo ok${nl}echo x > .v2p/PLAN.md"; B "cat > .v2p/PLAN.md <<'EOF'${nl}x${nl}EOF"; B "cp /tmp/x \\${nl}  .v2p/PLAN.md"
+  B "echo x > '.v2p/PLAN.md'"; B "dd if=/tmp/x of=\".v2p/PLAN.md\""
+  B "f=.v2p/PLAN.md; echo x > \$f"; B "f=.v2p/PLAN.md; cp /tmp/x \"\${f}\""; A "f=.v2p/PLAN.md; cat \$f"
+  B "bash -c 'echo x > .v2p/PLAN.md'"; B "eval 'cp /tmp/x .v2p/PLAN.md'"; B "echo \"\$(echo x > .v2p/PLAN.md)\""
+  B "sudo cp /tmp/x .v2p/PLAN.md"; B "if true; then cp /tmp/x .v2p/PLAN.md; fi"; B "echo x 2>&1 >.v2p/PLAN.md"
+  A "echo hi # > .v2p/PLAN.md"; A "echo x > .v2p/PLAN.md.bak"; B "echo \"x\\\\\" > .v2p/PLAN.md"; A "echo \"x\\\" > .v2p/PLAN.md\""
 done
 rm -rf "$t"; echo "test-guard: $fails failures"
 [ "$fails" -eq 0 ]
