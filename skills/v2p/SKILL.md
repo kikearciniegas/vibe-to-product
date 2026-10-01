@@ -21,7 +21,7 @@ Optional argument: `handshake | adopt | scavenge | brand | mapping | execute | r
 
 No argument: probe the directory first. Portable: ask the user whether this folder has code and whether `.v2p/BRIEF.md` exists.
 <!-- claude-only -->
-Claude Code: run `sh <this skill's dir>/scripts/tidy-check.sh --probe` and print its one line (`root:… code:yes|no git:… branch:… brief:yes|none audit:yes|no`); decide from it, not by judgement.
+Claude Code: run `sh <this skill's dir>/scripts/tidy-check.sh --probe` and print its one line (`root:… code:yes|no git:… branch:… brief:yes|none audit:yes|no writable:yes|no`); decide from it, not by judgement.
 <!-- /claude-only -->
 - BRIEF exists → print its §1 Profile line and its "Next" line, then offer: resume, or re-run the handshake.
   - "Next" resolution: BRIEF exists and no `.v2p/SCAVENGE.md` → offer `scavenge`; SCAVENGE exists and no `.v2p/DESIGN.md` → offer `brand`; DESIGN exists and no `.v2p/PLAN.md` → offer `mapping`; PLAN exists and no `.v2p/EXECUTE.md` → offer `execute`; EXECUTE exists and no `.v2p/REVIEW.md` → offer `review`; REVIEW exists and no `.v2p/DEPLOY.md` → offer `deploy`; DEPLOY exists → print `live since <written date> at <target>` and offer: redeploy (`deploy`) or re-theme (`brand`).

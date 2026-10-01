@@ -7,7 +7,7 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 ## Preconditions
 - The router ran the probe. Portable: ask the user to paste `ls -a` and `git status --short`.
 <!-- claude-only -->
-  Claude Code: `sh <this skill's dir>/scripts/tidy-check.sh --probe` prints `root:<abs> code:yes|no git:none|empty|clean|dirty:<n> branch:<b> brief:yes|none audit:yes|no`.
+  Claude Code: `sh <this skill's dir>/scripts/tidy-check.sh --probe` prints `root:<abs> code:yes|no git:none|empty|clean|dirty:<n> branch:<b> brief:yes|none audit:yes|no writable:yes|no`.
 <!-- /claude-only -->
 - `.v2p/BRIEF.md` exists → say "BRIEF kept; running audit + tidy", run Step 0 and Step 1, then skip Steps 2–3. (This is also the manual re-tidy path.) Step 1 still runs because AUDIT §1 and §3 come from the scan.
 - `.v2p/AUDIT.md` exists and passed its check → offer resume (keep) or re-run.
@@ -17,6 +17,9 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 - Checkpoints: list `.v2p/work/adopt-*`. A file is reusable when its line-1 `written:` date is today and its `brief:` equals the current BRIEF's `written:` date (or `none` when there is no BRIEF yet); print "resuming from <files>" and skip the step that wrote it. Any other file is stale: overwrite it, never read it. `.v2p/work/` files are the only legitimate resume source; memory and prior-session summaries are leads to re-check, not evidence.
 
 ## Step 0 — Backup and git safety
+<!-- claude-only -->
+- Probe `writable:no` (the root is read-only, or something within 3 levels belongs to another user, e.g. a copy made with `sudo`) → stop before any write and tell the user: "Some files here are not writable by you, so adopt would fail with permission errors. Fix the ownership yourself (`sudo chown -R <you> <root>`, or copy the project again without `sudo`), then run `/v2p adopt` again." v2p never runs `sudo`.
+<!-- /claude-only -->
 - First, before any write: when the probe says `code:yes`, ask "Make a full backup of `<root>` (<size>) first, so you can go back to the original version? (Recommended) / Skip". Full = the whole folder: `.git`, uncommitted, untracked and ignored files included. On yes, print the archive path and its restore command; the restore extracts beside the project (`<root>.restored`) and never overwrites it. Record the outcome in the draft's §4: `backup: <archive path>`, `backup: declined`, or `backup: none` when the probe says `code:no`. With an existing BRIEF (re-tidy), ask again; the user may skip.
   Portable: ask the user to copy or zip the whole project folder to a place outside it, and wait for their confirmation.
 <!-- claude-only -->

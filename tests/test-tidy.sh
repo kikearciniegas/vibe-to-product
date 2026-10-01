@@ -78,6 +78,11 @@ for SH in sh zsh; do
     is "11 V22 docs/$h is the decisions home" "$(printf '%s\n' "$t" | grep -cE "^missing${T}docs/DECISIONS\.md|^scattered${T}docs/$h")" 0
     is "11 V22 control: debris inside docs/$h" "$(printf '%s\n' "$t" | grep -c "^debris${T}docs/$h/\.DS_Store")" 1
   done
+  # V23: a read-only root, and files owned by another user (simulated: an `id` shim names another user, since chown needs sudo)
+  has "11 V23 control: writable" "$($SH "$S/tidy-check.sh" --probe)" " writable:yes"
+  mkdir -p "$base/shim-$SH"; printf '#!/bin/sh\necho nobody\n' > "$base/shim-$SH/id"; chmod +x "$base/shim-$SH/id"
+  has "11 V23 files owned by another user" "$(PATH="$base/shim-$SH:$PATH" $SH "$S/tidy-check.sh" --probe)" " writable:no"
+  ro=$base/ro-$SH; mkdir -p "$ro"; chmod a-w "$ro"; has "11 V23 read-only root" "$($SH "$S/tidy-check.sh" --probe "$ro")" " writable:no"; chmod u+w "$ro"
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it

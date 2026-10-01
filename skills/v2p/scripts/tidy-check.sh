@@ -17,7 +17,9 @@ for m in package.json pyproject.toml requirements.txt go.mod Cargo.toml Package.
 [ "$code" = no ] && [ -n "$(find . -path ./.git -prune -o -path ./node_modules -prune -o -path ./.v2p -prune -o -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.py' -o -name '*.go' -o -name '*.rs' -o -name '*.swift' -o -name '*.kt' -o -name '*.java' -o -name '*.rb' -o -name '*.php' -o -name '*.dart' -o -name '*.vue' -o -name '*.svelte' \) -print -quit)" ] && code=yes
 brief=none; [ -f .v2p/BRIEF.md ] && brief=yes
 audit=no; [ -f .v2p/AUDIT.md ] && grep -q '^checked:' .v2p/AUDIT.md && audit=yes
-probe="root:$root code:$code git:$gp branch:$branch brief:$brief audit:$audit"
+# writable:no = the root is read-only or something within 3 levels belongs to another user (e.g. a copy made with sudo).
+w=no; [ -w . ] && [ -z "$(find . -maxdepth 3 ! -user "$(id -un)" -print -quit 2>/dev/null)" ] && w=yes
+probe="root:$root code:$code git:$gp branch:$branch brief:$brief audit:$audit writable:$w"
 [ "$mode" = probe ] && { echo "$probe"; exit 0; }
 
 # Without git, .gitignore is read directly: each entry is a name or path that hides itself and everything under it, at any depth.
