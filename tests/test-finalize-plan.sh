@@ -107,6 +107,18 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   has "10e unbackticked" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
   rep "$V2" '**Verifier:** mechanical: npm test → exit 0   |   manual: open `/es` and look'; has "10e manual backticks do not count" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
   rep "$V2" '**Verifier:** manual: the reviewer reads the branch diff'; is "10e manual without backticks passes" $rc 0
+  # 10h. the other Verifier lints read backticks from the mechanical part only, as 10e does (a `cmd` in the manual part
+  # is prose for a person, never run); each FAIL control puts the same command in the mechanical part
+  M1='**Verifier:** mechanical: `npm test` → exit 0   |   manual: check `test "$(ls out | wc -l)" = 3` by hand'
+  rep "$V2" "$M1"; is "10h wc -l in manual exit" $rc 0; hasnt "10h wc -l in manual" "$out" "raw wc -l"
+  rep "$V2" '**Verifier:** mechanical: `test "$(ls out | wc -l)" = 3` → exit 0   |   manual: open `/` and look'; has "10h wc -l in mechanical" "$out" "FAIL: Task 2 Verifier: raw wc -l"
+  rep "$V2" '**Verifier:** manual: fetch `curl http://x/` and read it; then mechanical: `npm test` → exit 0'; is "10h curl in manual-first exit" $rc 0; hasnt "10h curl in manual" "$out" "curl without -m"
+  rep "$V2" '**Verifier:** mechanical: `curl -s http://x/ | grep -q ok` → exit 0   |   manual: open `/` and look'; has "10h curl in mechanical" "$out" "curl without -m"
+  rep "$V2" '**Verifier:** manual: curl the preview and read the headers'; is "10h unbackticked manual-only exit" $rc 0
+  rep "$V2" '**Verifier:** mechanical: `npm test` → exit 0   |   manual: run `npm start & open http://x/` and look'; is "10h & in manual exit" $rc 0; hasnt "10h & in manual" "$out" "bare &"
+  rep "$V2" '**Verifier:** mechanical: `npm start & sleep 5` → exit 0   |   manual: open `/` and look'; has "10h & in mechanical" "$out" "bare & backgrounds"
+  rep "$V2" '**Verifier:** mechanical: `grep -q book src/booking.ts` → exit 0   |   manual: run `npm run dev` and book a slot
+**Files:** Create `src/booking.ts`'; has "10h runner word in manual does not count" "$out" "WARN: Task 2 Verifier: Files has code"
   # 10f. Files is one line (field test V27: the planner wrote bullet lists under **Files:**, which nothing reads)
   rep "$V1" "$V1
 **Files:**   "; is "10f empty Files exit" $rc 1; has "10f empty Files" "$out" "FAIL: Task 1 Files: empty after the label"

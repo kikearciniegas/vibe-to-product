@@ -42,7 +42,7 @@ fi
 awk '/^## 10/{f=1;next} /^## /{f=0} f && /^\| /' "$d/BRIEF.md" | cut -d'|' -f2 | tr -c 'A-Za-z0-9_\n' '\n' | grep -xE 'Q[0-9]+' > "$tmp.q"
 sed -E 's/SCAVENGE Q[0-9]+//g; s/Q[0-9]+ 20[0-9][0-9]//g' "$draft" | tr -c 'A-Za-z0-9_\n' '\n' | grep -xE 'Q[0-9]+' | sort -u | grep -vxF -f "$tmp.q" > "$tmp.qc"
 while IFS= read -r q; do echo "FAIL: PLAN cites $q, not a label in BRIEF §10 (cite a real BRIEF label or BRIEF §n:line, or write inferred)"; fail=1; done < "$tmp.qc"
-# Verifier lint (backticked text, single-quoted strings removed): a mechanical Verifier with no backticked `cmd` → x
+# Verifier lint (backticked text of the mechanical part, as execute extracts it; single-quoted strings removed): a mechanical Verifier with no backticked `cmd` → x
 # pair in its mechanical part (a pair in the manual: part is never run) (field test: 14 of 14 unbackticked, nothing ever ran and every record read pass); raw `wc -l` in a comparison (macOS pads it),
 # a bare `&` in a mechanical verifier (backgrounds the whole && chain), `curl` without -m/--max-time; and, on the raw
 # line, a backtick inside a command (live Task 19 `grep -c '^| \`src/'` was cut there and ran a fragment): each text
@@ -108,9 +108,10 @@ lint=$(awk -v q="'" '
     k = split(bt(f), tok, "\n"); for (i = 1; i <= k; i++) if (tok[i] ~ /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|rb|sh|swift|kt)$/) code = 1
     e = f; sub(/^\*\*Files:\*\*[ \t]*/, "", e); if (e == "") print "FAIL: Task " t " Files: empty after the label (one line: Create `a`; Modify `b`; or none)" }
   /^\*\*Interfaces:\*\*/ { addiface($0) }
-  /^\*\*Verifier:\*\*/ { mech = ($0 ~ /^\*\*Verifier:\*\* *mechanical:/); s = bt($0); if (s == "" && !mech) s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
-    vm = mech; if (s ~ /(^|[^A-Za-z0-9_.\/-])(npm|pnpm|yarn|bun|bunx|npx|node|deno|python3?|pytest|go|cargo|make|sh|bash|curl|vitest|jest|playwright)( |$)/) vrun = 1
+  /^\*\*Verifier:\*\*/ { mech = ($0 ~ /^\*\*Verifier:\*\* *mechanical:/)
     mp = $0; sub(/manual:.*mechanical:/, "mechanical:", mp); sub(/manual:.*/, "", mp)
+    s = bt(mp); if (s == "" && !mech) s = mp; gsub(q "[^" q "]*" q, "", s); r = ""
+    vm = mech; if (s ~ /(^|[^A-Za-z0-9_.\/-])(npm|pnpm|yarn|bun|bunx|npx|node|deno|python3?|pytest|go|cargo|make|sh|bash|curl|vitest|jest|playwright)( |$)/) vrun = 1
     if (mech && mp !~ /`[^`]+` *→/) r = r "; mechanical with no backticked `command` → expected pair (execute, review and deploy would run nothing)"
     c = s; gsub(/wc -l *\| *tr -d/, "", c)
     if (c ~ /wc -l/ && c ~ /\$\(|(^|[^A-Za-z])test |\[ /) r = r "; raw wc -l in a comparison (macOS pads it: use grep -c, or pipe to tr -d \" \")"
