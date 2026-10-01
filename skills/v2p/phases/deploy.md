@@ -83,7 +83,7 @@ Print the path, the `checked:` counts, `live: https://<host>`, then `Next: live 
 - `AskUserQuestion` for: the Strix offer, accepting a finding, the deferred credentials, the go-live, the rollback values, the post-launch rows. gstack skills ask their own; not duplicated.
 - Never `mcp__claude-in-chrome__*`; `/browse` for anything that needs a click. Never read `.env*`; never echo a value from a dashboard into the transcript.
 - Strix only through `installing-third-party-tools`, on the user's yes.
-- Hooks: `hooks/guard-finals.sh` (proposal) also blocks direct writes to `DEPLOY.md` and `.deploy-pass`.
+- Hooks: `hooks/guard-finals.sh` (installed in global settings when the user opted in) also blocks direct writes to `DEPLOY.md` and `.deploy-pass`.
 <!-- /claude-only -->
 
 ***

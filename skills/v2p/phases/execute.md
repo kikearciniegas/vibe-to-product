@@ -95,7 +95,7 @@ Print the path of `.v2p/EXECUTE.md`, tasks done/skipped, standards done/N-A/pend
 - Agents: implementer `builder` (code) or `quick` (docs-only Files); task reviewer `planner`. Invoke by name; never pass a model (`references/model-routing.md`).
 - `superpowers:test-driven-development` in every implementer dispatch.
 - context7 for any API contract a task relies on (core.md "API Contract Verification" evidence). `claude-mem:learn-codebase` is optional and never a source of findings.
-- Hooks: `hooks/guard-finals.sh` (proposal, not installed) also blocks direct writes to `EXECUTE.md`, `REVIEW.md`, `PLAN-AMENDMENTS.md`, the `.v2p/work/execute-task-*.md` records and every `.*-pass` seal.
+- Hooks: `hooks/guard-finals.sh` (installed in global settings when the user opted in) also blocks direct writes to `EXECUTE.md`, `REVIEW.md`, `PLAN-AMENDMENTS.md`, the `.v2p/work/execute-task-*.md` records and every `.*-pass` seal.
 <!-- /claude-only -->
 
 ***
