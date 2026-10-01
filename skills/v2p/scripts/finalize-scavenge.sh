@@ -4,7 +4,7 @@
 d=${1:-.v2p}; draft="$d/SCAVENGE.draft.md"; out="$d/SCAVENGE.md"
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 
-urls=$(grep -oE 'https?://[^ )|`>]+' "$draft" | sed 's/[.,;]$//' | sort -u)
+urls=$(grep -oE 'https?://[^] )|`>]+' "$draft" | sed 's/[.,;]$//' | sort -u)
 [ -n "$urls" ] || { echo "FAIL: no URLs in draft"; exit 1; }
 total=0; ok=0; fail=0
 # work/ checkpoints are a resume aid, not proof: requiring them made agents write them after the fact.

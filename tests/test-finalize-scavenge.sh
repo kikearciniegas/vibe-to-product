@@ -34,6 +34,8 @@ for SH in sh zsh; do
   fx=$base/fx-$SH; mkdir -p "$fx/.v2p"; cd "$fx" || exit 2; CURL_LOG=$base/curl-$SH.log; export CURL_LOG
   # 1. a 200 passes and stamps the count
   plant ''; FS; is "1 200 exit" $rc 0; has "1 stamped" "$(cat .v2p/SCAVENGE.md 2>/dev/null)" "links: 1/1 ok"
+  # 2. V25: `]` closing a CHECK marker is not part of the URL
+  plant '[CHECK: foo · https://e.test/ok]'; FS; is "2 ] exit" $rc 0; hasnt "2 ] not DEAD" "$out" "DEAD"
   # 3. a 404 is DEAD and blocks the write
   plant 'gone · https://e.test/404 · accessed 2026-10-01'; FS; is "3 404 exit" $rc 1; has "3 404 DEAD" "$out" "DEAD 404 https://e.test/404"
   is "3 not written" "$(test -f .v2p/SCAVENGE.md && echo yes)" ""; has "3 each URL checked" "$out" "links 1/2 ok"
