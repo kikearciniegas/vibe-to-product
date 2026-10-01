@@ -104,6 +104,16 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   has "10e unbackticked" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
   rep "$V2" '**Verifier:** mechanical: npm test → exit 0   |   manual: open `/es` and look'; has "10e manual backticks do not count" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
   rep "$V2" '**Verifier:** manual: the reviewer reads the branch diff'; is "10e manual without backticks passes" $rc 0
+  # 10f. Files is one line (field test V27: the planner wrote bullet lists under **Files:**, which nothing reads)
+  rep "$V1" "$V1
+**Files:**   "; is "10f empty Files exit" $rc 1; has "10f empty Files" "$out" "FAIL: Task 1 Files: empty after the label"
+  rep "$V2" "$V2
+**Files:** Create:
+- \`src/booking.ts\`"; is "10f bullet Files exit" $rc 1; has "10f bullet Files" "$out" "FAIL: Task 2 Files: a bullet list under **Files:** is not read"
+  rep "$V1" "$V1
+**Files:** none" "$V2" "$V2
+**Files:** Create \`src/booking.ts\`
+- [ ] Step 1: write the form"; is "10f none, one line and a following step pass" $rc 0
   # 10d. a Modify path exists now or is Created by this or an earlier task (live Task 17: bare `globals.css`)
   mf() { rep "$V1" "$V1
 **Files:** $1" "$V2" "$V2

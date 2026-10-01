@@ -42,6 +42,8 @@ fi
 # before a `→`, minus a backticked expected of the previous command, holds an even number of backticks (prose pairs
 # in a manual part are fine; an odd count makes the parser open the command at the inner backtick). Two inner
 # backticks keep the count even and pass: the rule catches the live shape, not every one.
+# Files is one line (field test V27: bullet lists under it were never read): empty after the label, or followed by a
+# `- ` line that is not a `- [ ]` step, fails.
 # Files completeness: a backticked Interfaces path (has `/` and an extension; not a URL or a route) must appear
 # in the Files of this task or an earlier one (`{a,b}` and `*` in Files are expanded / matched).
 # Modify paths (live Task 17 wrote bare `globals.css` for src/app/globals.css): a token after `Modify`, up to the next
@@ -83,7 +85,9 @@ lint=$(awk -v q="'" '
       for (j = 1; j <= a[0]; j++) if (a[j] ~ /\/[^\/]*\.[A-Za-z0-9]+$/) ip[++ni] = a[j] } }
   /^### Task / { flush(); t = $3; sub(/:$/, "", t) }
   /^## / { flush() }
-  /^\*\*Files:\*\*/ { f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f); modify(f) }
+  fl && NR == fl + 1 && /^- / && !/^- \[/ { print "FAIL: Task " t " Files: a bullet list under **Files:** is not read (one line: Create `a`, `b`; Modify `c`)" }
+  /^\*\*Files:\*\*/ { fl = NR; f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f); modify(f)
+    e = f; sub(/^\*\*Files:\*\*[ \t]*/, "", e); if (e == "") print "FAIL: Task " t " Files: empty after the label (one line: Create `a`; Modify `b`; or none)" }
   /^\*\*Interfaces:\*\*/ { addiface($0) }
   /^\*\*Verifier:\*\*/ { mech = ($0 ~ /^\*\*Verifier:\*\* *mechanical:/); s = bt($0); if (s == "" && !mech) s = $0; gsub(q "[^" q "]*" q, "", s); r = ""
     if (mech && $0 !~ /`[^`]+` *→/) r = r "; mechanical with no backticked `command` → expected pair (execute, review and deploy would run nothing)"
