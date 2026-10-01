@@ -668,7 +668,7 @@ Budget: read ≤40 files, never the whole tree; use search and symbol lookups. W
 ## Brand signals: theme/tokens/logo/tailwind config paths | none
 ## Country signals: legal pages (jurisdiction, company address) · currency codes/symbols · phone prefixes · locales, each with <path:line> | none
 ```
-Portable: ask the user to paste `git status --short`, `find . -path ./node_modules -prune -o -type f -print | head -300`, the manifest, README.md and any NOTES/TODO/ideas files; fill the headings from those.
+Portable: ask the user to paste `git status --short`, `find . \( -name .git -o -name node_modules \) -prune -o -type f -print | head -300`, the manifest, README.md and any NOTES/TODO/ideas files; fill the headings from those.
 
 ## Step 2 — Prefill the BRIEF
 | BRIEF field | From scan | Rule | §10 status |
