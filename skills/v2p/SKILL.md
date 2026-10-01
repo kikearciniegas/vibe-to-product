@@ -57,7 +57,7 @@ AI features, payments, webhooks, i18n, special-category data, GraphQL and file u
 | `handshake` | `phases/handshake.md` | `.v2p/BRIEF.md` | available |
 | `adopt` | `phases/adopt.md` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
 | `scavenge` | `phases/scavenge.md` | `.v2p/SCAVENGE.md` | available |
-| `brand` | `phases/brand.md` | `.v2p/DESIGN.md` (+ root `DESIGN.md` symlink) | available |
+| `brand` | `phases/brand.md` | `.v2p/DESIGN.md` (+ root `DESIGN.md` symlink, unless adopt keeps the project's own) | available |
 | `mapping` | `phases/mapping.md` | `.v2p/PLAN.md` | available |
 | `execute` | `phases/execute.md` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
 | `review` | `phases/review.md` | `.v2p/REVIEW.md` | available |
