@@ -11,7 +11,7 @@ skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/PLAN.draft.m
 [ -f "$d/BRIEF.md" ] || { echo "FAIL: $d/BRIEF.md missing"; exit 1; }
 tasks=$(grep -c '^### Task' "$draft"); ver=$(grep -c '^\*\*Verifier:\*\*' "$draft")
 [ "$tasks" -gt 0 ] && [ "$tasks" -eq "$ver" ] || { echo "FAIL: tasks $tasks / verifiers $ver"; fail=1; }
-expected=0; tmp=${TMPDIR:-/tmp}/fp.$$; trap 'rm -f "$tmp"' EXIT
+expected=0; tmp=${TMPDIR:-/tmp}/fp.$$; trap 'rm -f "$tmp" "$tmp.q" "$tmp.qc"' EXIT
 awk '/^## 9/{f=1;next} /^## /{f=0} f' "$d/BRIEF.md" | grep -oE '[a-z-]+\.md' | sort -u > "$tmp"
 while IFS= read -r n; do sf="$skill/references/standards/$n"; [ -f "$sf" ] && expected=$((expected + $(grep -c '^- \[ \]' "$sf"))); done < "$tmp"
 rows=$(awk '/^## 4\./{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/ && !/^\|---/' "$draft" | grep -c .)
@@ -37,6 +37,12 @@ grep -q '^## Threat Model' "$draft" || { echo "FAIL: no '## Threat Model' sectio
 if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b' "$draft"; then
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
 fi
+# Provenance (field test V3: PLAN recorded "Q2"/"Q5" as owner decisions nobody made): every `Qn` word the draft cites
+# is a label in BRIEF §10's item column. `Qn 20xx` (a quarter) and `SCAVENGE Qn` are not decision labels.
+# ponytail: existence only; a real label cited for the wrong decision still passes (read the row if that recurs).
+awk '/^## 10/{f=1;next} /^## /{f=0} f && /^\| /' "$d/BRIEF.md" | cut -d'|' -f2 | tr -c 'A-Za-z0-9_\n' '\n' | grep -xE 'Q[0-9]+' > "$tmp.q"
+sed -E 's/SCAVENGE Q[0-9]+//g; s/Q[0-9]+ 20[0-9][0-9]//g' "$draft" | tr -c 'A-Za-z0-9_\n' '\n' | grep -xE 'Q[0-9]+' | sort -u | grep -vxF -f "$tmp.q" > "$tmp.qc"
+while IFS= read -r q; do echo "FAIL: PLAN cites $q, not a label in BRIEF §10 (cite a real BRIEF label or BRIEF §n:line, or write inferred)"; fail=1; done < "$tmp.qc"
 # Verifier lint (backticked text, single-quoted strings removed): a mechanical Verifier with no backticked `cmd` → x
 # pair (field test: 14 of 14 unbackticked, nothing ever ran and every record read pass); raw `wc -l` in a comparison (macOS pads it),
 # a bare `&` in a mechanical verifier (backgrounds the whole && chain), `curl` without -m/--max-time; and, on the raw

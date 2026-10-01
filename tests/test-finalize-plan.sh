@@ -161,6 +161,22 @@ curl -m 5 -sI https://x | grep -cE 'hsts|csp'
   rep "$V1" "$V1
 **Files:** Create \`src/app/[locale]/page.tsx\`" "$V2" "$V2
 **Interfaces:** Consumes \`src/app/l/page.tsx\`"; has "10 [locale] is literal, not a class" "$out" "Task 2 Interfaces names \`src/app/l/page.tsx\`"
+  # 11. provenance (field test V3: PLAN recorded "Q2 (AC5' wins)" as an owner decision nobody made): a `Qn` the PLAN cites
+  # must be a label in BRIEF §10's item column; quarters (`Q4 2026`) and SCAVENGE's own Qn are not decision labels
+  b10() { R=$1 awk '/^## 11/ { print "## 10. Decisions log"; print "| item | status | value |"; print "|---|---|---|"; print ENVIRON["R"]; print "" } { print }' "$w/BRIEF.keep" > "$v/BRIEF.md"; }
+  rep "$V2" "$V2
+Decision: Q9 (owner chose 30-minute slots)"; is "11 Q9 without §10 exit" $rc 1; has "11 Q9 without §10" "$out" "FAIL: PLAN cites Q9, not a label in BRIEF §10"
+  b10 '| Q2 — who / how often | answered | cyclists, weekly |'
+  rep "$V2" "$V2
+Decision: Q2 (weekly riders first)"; is "11 Q2 in §10 passes" $rc 0
+  rep "$V2" "$V2
+Decision: Q2 and Q9 (owner chose 30-minute slots)"; is "11 Q9 not in §10 exit" $rc 1; has "11 Q9 named" "$out" "PLAN cites Q9"; hasnt "11 Q2 not named" "$out" "cites Q2"
+  R='| Q2 — who / how often | answered | cyclists, weekly |' awk '/^## 9/ { print "- Note: Q9 was never asked" } { print }' "$v/BRIEF.md" > "$v/BRIEF.new" && mv "$v/BRIEF.new" "$v/BRIEF.md"
+  rep "$V2" "$V2
+Decision: Q9 (owner chose 30-minute slots)"; has "11 Q9 in BRIEF prose only" "$out" "PLAN cites Q9"
+  rep "$V2" "$V2
+Launch in Q4 2026; providers per SCAVENGE Q3."; is "11 quarter and SCAVENGE Qn pass" $rc 0
+  cp "$w/BRIEF.keep" "$v/BRIEF.md"
 done
 # 9. the source was read only
 SH=all; is "9 source untouched" "$(cat "$src/BRIEF.md" "$src/PLAN.md" | shasum -a 256)" "$sum0"
