@@ -95,6 +95,7 @@ Run the tidy check (`references/tidy-rules.md`) and show its table. Create only 
 - `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing.
 
 For each `merge:<dest>` row, append to `<dest>` a section `## From <path> (merged <YYYY-MM-DD>)` with the original content verbatim. README duplicates: only the parts not already in README.md; say what was dropped. Show the added sections (`git diff -- <dest>` when tracked, or the section text) before anything moves, and list the pair in AUDIT §5.
+A `keep:refs=<n>` row is a notes file that <n> other files mention by name: it stays where it is, unmerged and unmoved; show it so the user sees why it was not proposed. It is not counted as a violation.
 Portable: print each new file in a code block.
 
 ## Step 6 — Quarantine

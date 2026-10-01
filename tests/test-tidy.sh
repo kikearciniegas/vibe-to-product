@@ -63,9 +63,15 @@ for SH in sh zsh; do
   has "11 V19 control: no .git" "$($SH "$S/tidy-check.sh" --probe src)" "git:none "
   mkdir -p src/x/.git; : > src/x/.git/junk; has "11 V19 control: non-empty broken .git" "$($SH "$S/tidy-check.sh" --probe src/x)" "git:none "; rm -rf src/x
   mkdir -p node_modules/x .next .cache pkg/coverage; : > node_modules/x/i.js; : > pkg/coverage/x; : > .next/b; : > .cache/c; printf '# deps\nnode_modules/\n/.next\ncoverage\n' > .gitignore
+  mkdir -p docs; echo '# BACKLOG.md' > BACKLOG.md; echo 'Open items: see BACKLOG.md' > README.md; echo '- x' > TODO.md
+  printf '## From BACKLOG.md (merged 2026-09-30)\n' > docs/ARCHITECTURE.md   # a merge heading is not a reference
   $SH "$S/tidy-check.sh" --tsv > "$base/nf-$SH"
   is "11 V20 .gitignore read without git" "$(cut -f2 "$base/nf-$SH" | grep -cxE 'node_modules|\.next|pkg/coverage')" 0
   is "11 V20 control: unlisted build dir" "$(grep -c "^orphan-build${T}\.cache${T}" "$base/nf-$SH")" 1
+  is "11 V21 referenced BACKLOG kept" "$(grep "${T}BACKLOG.md${T}" "$base/nf-$SH" | cut -f1,3)" "scattered${T}keep:refs=1"
+  is "11 V21 control: unreferenced TODO merged" "$(grep "${T}TODO.md${T}" "$base/nf-$SH" | cut -f3)" "merge:docs/DECISIONS.md"
+  is "11 V21 keep is not a violation" "$($SH "$S/tidy-check.sh" | sed -n 's/^tidy: //p')" "$(( $(grep -c . "$base/nf-$SH") - $(grep -c "${T}keep:" "$base/nf-$SH") )) violations"
+  is "11 V21 quarantine skips keep" "$($SH "$S/quarantine.sh" < "$base/nf-$SH" | grep -c BACKLOG)" 0
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it

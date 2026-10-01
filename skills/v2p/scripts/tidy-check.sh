@@ -32,6 +32,10 @@ EOF
 tracked() { [ "$git" != none ] && git ls-files --error-unmatch -- "$1" >/dev/null 2>&1 && echo yes || echo no; }
 age() { [ -e "$1" ] || { printf "%s\n" -; return; }; m=$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0); echo $(( ( $(date +%s) - m ) / 86400 )); }
 row() { printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(tracked "$2")" "$(age "$2")"; }
+# A scattered file other files mention by name (e.g. "see BACKLOG.md") is live, not stray: keep it and show how many files refer to it.
+# Not counted: the file itself and `## From <path>` merge headings. ponytail: exact basename match; .git, node_modules, .v2p not searched.
+scat() { n=$(grep -rIF --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.v2p -- "$b" . 2>/dev/null | grep -v '^[^:]*:## From ' | cut -d: -f1 | sort -u | grep -vxF "./$p" | grep -c .)
+  if [ "$n" -gt 0 ]; then row scattered "$p" "keep:refs=$n"; else row scattered "$p" "merge:$1"; fi; }
 
 {
 # 1. canonical files that must exist
@@ -60,14 +64,14 @@ find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name v
   esac
   case $p in docs/DECISIONS.md|docs/ARCHITECTURE.md|docs/threat-model.md|CHANGELOG.md|README.md) continue ;; esac
   case $b in
-    NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) row scattered "$p" merge:docs/DECISIONS.md ;;
-    ARCHITECTURE*|architecture*.md|DESIGN.md|design.md) row scattered "$p" merge:docs/ARCHITECTURE.md ;;
-    CHANGES*|HISTORY*) row scattered "$p" merge:CHANGELOG.md ;;
+    NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) scat docs/DECISIONS.md ;;
+    ARCHITECTURE*|architecture*.md|DESIGN.md|design.md) scat docs/ARCHITECTURE.md ;;
+    CHANGES*|HISTORY*) scat CHANGELOG.md ;;
   esac
   [ "$d" = . ] && case $b in README_*|README-*|README.txt|README.old|readme*|Readme*) row dup-readme "$p" merge:README.md ;; esac
 done
 } > "${TMPDIR:-/tmp}/tidy.$$"
-rows=$(grep -c . "${TMPDIR:-/tmp}/tidy.$$"); [ -n "$rows" ] || rows=0
+rows=$(grep -vc "	keep:" "${TMPDIR:-/tmp}/tidy.$$"); [ -n "$rows" ] || rows=0   # keep rows are shown, not violations
 if [ "$mode" = tsv ]; then cat "${TMPDIR:-/tmp}/tidy.$$"; else
   echo "$probe"; echo "kind	path	action	tracked	age_days"; cat "${TMPDIR:-/tmp}/tidy.$$"; echo "tidy: $rows violations"; fi
 rm -f "${TMPDIR:-/tmp}/tidy.$$"
