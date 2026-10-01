@@ -63,7 +63,7 @@ Claude Code: `AskUserQuestion` for the three values; the line is attributed to t
 <!-- /claude-only -->
 
 ## Step 5 — Standards
-Copy REVIEW §3 into draft §3. Every `deferred to deploy` row becomes `done` with evidence from this phase (a command and its output, a report path, a URL), `N/A` citing `BRIEF §`, or `pending | post-launch: <trigger and date>` for what only traffic produces (Core Web Vitals field data, a CSP Report-Only window). Confirm the post-launch set with the user.
+Copy REVIEW §3 into draft §3. Every `deferred to deploy` row becomes `done` with evidence from this phase (a command and its output, a report path, a URL), `N/A` citing `BRIEF §`, or `pending | post-launch: <trigger and date>` for what only traffic produces (Core Web Vitals field data, a CSP Report-Only window). `not adopted` and `gap` rows are carried unchanged (same path rule; a gap ships knowingly and is counted, not blocked). Confirm the post-launch set and the gap rows with the user.
 <!-- claude-only -->
 Claude Code: `planner` audits the table read-only and returns the rows whose evidence does not prove the item; the main thread fixes them. `AskUserQuestion` to confirm the post-launch rows.
 <!-- /claude-only -->

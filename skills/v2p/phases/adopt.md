@@ -74,7 +74,7 @@ Run `phases/handshake.md` §Confirmation gate and §Write step verbatim. Extra: 
 ## Step 4 — Audit draft
 Write `.v2p/AUDIT.draft.md` from `references/audit-template.md` (never `AUDIT.md`):
 - §1 from the scan.
-- §2 one row per `- [ ]` item of the BRIEF §9 standards files. `done` only with evidence gathered now (a command run in this session with its output, or a path from the scan); `N/A — BRIEF §n` for blocks OFF; else `pending`.
+- §2 one row per `- [ ]` item of the BRIEF §9 standards files. `done` only with evidence gathered now (a command run in this session with its output, or a path from the scan); `N/A — BRIEF §n` for blocks OFF; `not adopted — <path §/line>` where the project's own docs record an owner decision against the item; `gap — <path:line>` for a known gap the project's backlog tracks; else `pending`. An item met another way is `done` with that path.
 - §3 one row per core.md "Modularity" item, evidence from the scan's module map.
 - §4 left as the template placeholder; the finalize step fills it.
 - §5 filled in Step 5.

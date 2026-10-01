@@ -5,13 +5,16 @@ Loaded for every profile, first. Profile files add to this list; they never remo
 ## How to claim an item (evidence rule)
 One row per claimed item, in a table at the end of every delivery:
 
-| item | done / N/A / pending | evidence |
+| item | done / N/A / pending / not adopted / gap | evidence |
 |---|---|---|
 | Security headers | done | `curl -sI https://staging.x \| grep -cE 'strict-transport\|content-security'` → 2 |
 | RLS | N/A | landing has no database (BRIEF §8) |
 
 - Evidence is one of: a runnable command plus its observed output or exit code, an artefact path, or a URL.
 - `N/A` needs a reason that cites a BRIEF section.
+- `not adopted — <path §section or path:line>`: the owner decided otherwise, and that repo file records it (adopt: the project's own CLAUDE.md, decisions or backlog). Not `N/A`, which means the item does not apply.
+- `gap — <path:line>`: known and not built, tracked in that repo file (a backlog entry). An item met another way is `done` with the path as evidence.
+- The finalize steps check that the cited path exists in the repo, not what it says. Write the ref in the status cell: later phases copy statuses and empty the evidence.
 - A ticked box with no evidence is a defect, not a claim.
 - The delivery footer is named **Standards evidence**.
 

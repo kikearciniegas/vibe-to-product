@@ -54,9 +54,9 @@ Claude Code: fixes are implemented by `builder` (code) or `quick` (docs) under e
 <!-- /claude-only -->
 
 ## Step 3 — Standards evidence
-Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with evidence (a command and its output from this phase, a path or a URL) or `N/A` citing `BRIEF §`; `pending` only as `pending | deferred to deploy: <what production state it needs>`.
+Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with evidence (a command and its output from this phase, a path or a URL; met another way is `done | <path:line>`), `N/A` citing `BRIEF §`, `not adopted — <path §/line>` (an owner decision recorded in the repo) or `gap — <path:line>` (known, not built, tracked in the repo); `pending` only as `pending | deferred to deploy: <what production state it needs>`.
 <!-- claude-only -->
-Claude Code: `planner` audits the table read-only and returns the rows whose evidence does not prove the item; the main thread fixes them. `AskUserQuestion` to confirm the deferred rows.
+Claude Code: `planner` audits the table read-only and returns the rows whose evidence does not prove the item; the main thread fixes them. `AskUserQuestion` to confirm the deferred rows and any row newly marked `not adopted` or `gap`.
 <!-- /claude-only -->
 
 ## Step 4 — Threat model and docs

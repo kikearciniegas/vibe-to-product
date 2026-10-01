@@ -1,4 +1,4 @@
-# v2p portable pack (generated 2026-09-30; do not edit)
+# v2p portable pack (generated 2026-10-01; do not edit)
 
 <!-- source: SKILL.md -->
 
@@ -697,7 +697,7 @@ Run `phases/handshake.md` §Confirmation gate and §Write step verbatim. Extra: 
 ## Step 4 — Audit draft
 Write `.v2p/AUDIT.draft.md` from `references/audit-template.md` (never `AUDIT.md`):
 - §1 from the scan.
-- §2 one row per `- [ ]` item of the BRIEF §9 standards files. `done` only with evidence gathered now (a command run in this session with its output, or a path from the scan); `N/A — BRIEF §n` for blocks OFF; else `pending`.
+- §2 one row per `- [ ]` item of the BRIEF §9 standards files. `done` only with evidence gathered now (a command run in this session with its output, or a path from the scan); `N/A — BRIEF §n` for blocks OFF; `not adopted — <path §/line>` where the project's own docs record an owner decision against the item; `gap — <path:line>` for a known gap the project's backlog tracks; else `pending`. An item met another way is `done` with that path.
 - §3 one row per core.md "Modularity" item, evidence from the scan's module map.
 - §4 left as the template placeholder; the finalize step fills it.
 - §5 filled in Step 5.
@@ -732,7 +732,7 @@ Print the paths written, the quarantine restore command, "commit: `.v2p/ docs/ R
 
 Adopt writes this as `.v2p/AUDIT.draft.md`, never as `AUDIT.md`; the finalize step checks it and produces `AUDIT.md`. Replace every `<…>`.
 
-Statuses are exactly `done`, `pending`, `N/A`. `done` needs evidence: `cmd → output`, a path, or a URL. `N/A` needs `BRIEF §n` in the evidence cell.
+Statuses are exactly `done`, `pending`, `N/A`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `cmd → output`, a path, or a URL. `N/A` needs `BRIEF §n` in the evidence cell. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
 
 ````
 # AUDIT — <project name>
@@ -749,6 +749,7 @@ written: <YYYY-MM-DD> by v2p adopt · reads: .v2p/BRIEF.md (<written date>) · r
 | <label> | core.md | done | `<command>` → <output> |
 | <label> | web.md | pending | |
 | <label> | landing.md | N/A | BRIEF §9 block OFF |
+| <label> | core.md | not adopted — docs/DECISIONS.md §Sessions | |
 Rows: <n> = <core> + <web> + <profile> (the finalize step checks the sum against the standards files)
 
 ## 3. Modularity (one row per core.md "Modularity" item)
@@ -857,7 +858,7 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 
 ## Step 1 — Preflight (before Task 1)
 The scan executes; it is not skipped because the plan looks fine.
-1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses and N/A reasons kept, evidence empty).
+1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses, N/A reasons and `not adopted`/`gap` refs kept, evidence empty).
 2. Run the plan's empirical claims: every mechanical Verifier command that can run on the current tree is expected to FAIL now (red before green). A verifier that passes before its task exists is a plan defect: record a ruling in the execution ledger and tell the user.
 3. Scope sanity: a task whose steps `cd` into a new directory (for example a scaffold command that creates a subfolder), or whose Files are outside the project root, is a plan defect. Ruling: scaffold into `.` (adapt the command) or stop and ask.
 4. UI gate once now: if any task is a UI task, run the Preconditions' UI gate check before Task 1, so a stale or missing DESIGN.md stops the run here, not mid-plan.
@@ -925,7 +926,7 @@ Portable: run each check yourself, as a separate pass with its own list; the cod
 Every finding gets one row in REVIEW.draft.md §2 with a status: `fixed <sha>` (each fix its own commit, test first), `accepted: <reason>`, or `open: <reason>`. `open` is allowed only when the reason names the deploy task or a BRIEF §. A fix touches only the finding's paths; after each fix, check the branch scope again: a path outside every task's scope is itself a finding (its own §2 row, adjudicated like any other). Update the draft's `diff: <base>..<head>` after the last fix commit.
 
 ## Step 3 — Standards evidence
-Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with evidence (a command and its output from this phase, a path or a URL) or `N/A` citing `BRIEF §`; `pending` only as `pending | deferred to deploy: <what production state it needs>`.
+Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with evidence (a command and its output from this phase, a path or a URL; met another way is `done | <path:line>`), `N/A` citing `BRIEF §`, `not adopted — <path §/line>` (an owner decision recorded in the repo) or `gap — <path:line>` (known, not built, tracked in the repo); `pending` only as `pending | deferred to deploy: <what production state it needs>`.
 
 ## Step 4 — Threat model and docs
 `docs/threat-model.md` exists and names every entry point of PLAN `## Threat Model`; `docs/ARCHITECTURE.md` module map matches the tree (core.md Modularity item 1); the tidy check reports 0 violations, or each one is listed with a reason.
@@ -975,7 +976,7 @@ Portable: merge by hand, `curl -m 10 -sI https://<host>` and paste the output; t
 The user promotes the previous deployment and rolls forward again (Vercel: Deployments → Promote to Production; Cloudflare Workers: Deployments → Rollback, or `npx wrangler rollback`; Netlify: Deploys → Publish deploy). Ask for the timestamp, the elapsed seconds and the method, and write `rollback: rehearsed <ISO timestamp> · elapsed <n>s · method: <text> · by user`. Also write the same evidence into the log the PLAN names (e.g. `docs/slo.md`) as part of the deploy task's docs commit, before the merge.
 
 ## Step 5 — Standards
-Copy REVIEW §3 into draft §3. Every `deferred to deploy` row becomes `done` with evidence from this phase (a command and its output, a report path, a URL), `N/A` citing `BRIEF §`, or `pending | post-launch: <trigger and date>` for what only traffic produces (Core Web Vitals field data, a CSP Report-Only window). Confirm the post-launch set with the user.
+Copy REVIEW §3 into draft §3. Every `deferred to deploy` row becomes `done` with evidence from this phase (a command and its output, a report path, a URL), `N/A` citing `BRIEF §`, or `pending | post-launch: <trigger and date>` for what only traffic produces (Core Web Vitals field data, a CSP Report-Only window). `not adopted` and `gap` rows are carried unchanged (same path rule; a gap ships knowingly and is counted, not blocked). Confirm the post-launch set and the gap rows with the user.
 
 ## Step 6 — Finalize
 Portable: write `.v2p/DEPLOY.md` from the draft; there is no receipt without the scripts; say so.
@@ -991,12 +992,12 @@ Print the path, the `checked:` counts, `live: https://<host>`, then `Next: live 
 
 Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept, evidence empty); execute fills evidence as tasks earn it.
 
-Rules for §2: statuses are exactly `done`, `pending` or `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
+Rules for §2: statuses are exactly `done`, `pending`, `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`), `not adopted — <path>` or `gap — <path>` (the path exists in the repo); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
 Portable: fill §1 yourself, one row per PLAN task, from what was actually run; there is no receipt without the scripts, so say so under the table.
 
 ````
 # EXECUTE — <project name>
-checked: pending   ← the finalize step replaces this line: tasks <done>/<total> · skipped <k> · standards done <d> · N/A <a> · pending <p> · branch <b> · base <sha> · head <sha>
+checked: pending   ← the finalize step replaces this line: tasks <done>/<total> · skipped <k> · standards done <d> · N/A <a> · not adopted <x> · gap <g> · pending <p> · branch <b> · base <sha> · head <sha>
 written: <YYYY-MM-DD> by v2p execute · reads: .v2p/PLAN.md (<plan hash, first 12>) · mode: subagent-driven | inline · amendments: <n> (.v2p/PLAN-AMENDMENTS.md | none)
 
 ## 1. Tasks
@@ -1019,11 +1020,11 @@ Next: /v2p review
 
 Copy the block below into `.v2p/REVIEW.draft.md` at review Step 1 and replace every `<…>`. §3 starts as a copy of EXECUTE §2 and must end complete.
 
-Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit. The ux-laws run cell names `DESIGN.md` (the visual review ran against it).
+Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, `not adopted — <path §/line>` or `gap — <path:line>` (the path exists in the repo), or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit. The ux-laws run cell names `DESIGN.md` (the visual review ran against it).
 
 ````
 # REVIEW — <project name>
-checked: pending   ← the finalize step replaces: runs <r>/<required> · findings <f> (fixed <x> · accepted <a> · open <o>) · standards done <d> · N/A <n> · deferred <k> · verifiers <v>/<v> pass · branch <b> · head <sha>
+checked: pending   ← the finalize step replaces: runs <r>/<required> · findings <f> (fixed <x> · accepted <a> · open <o>) · standards done <d> · N/A <n> · not adopted <x> · gap <g> · deferred <k> · verifiers <v>/<v> pass · branch <b> · head <sha>
 written: <YYYY-MM-DD> by v2p review · reads: .v2p/EXECUTE.md (<hash, first 12>) · diff: <base>..<head>
 
 ## 1. Runs
@@ -1059,11 +1060,11 @@ Next: /v2p deploy
 
 Copy the block below into `.v2p/DEPLOY.draft.md` at deploy Step 0 and replace every `<…>`. §3 starts as a copy of REVIEW §3 and must end complete.
 
-Rules: §1 has the five rows. Results are `<n> findings` (security-full, strix; strix may read `unavailable: <reason>`) or a path (setup-deploy → the project `CLAUDE.md` `## Deploy Configuration` section, land-and-deploy → `.gstack/deploy-reports/<file>.md`, canary → `.gstack/canary-reports/<file>.json`). §2 has one row per security-full or strix finding, status `fixed <commit sha>` or `accepted: <reason>`, never `open`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, or `pending` only with evidence `post-launch: <trigger and date>`. §4 lines are literal shapes. `target:` is `https://` plus the bare production host, the same host as the project `CLAUDE.md` `Production URL`. No secret value anywhere: names only.
+Rules: §1 has the five rows. Results are `<n> findings` (security-full, strix; strix may read `unavailable: <reason>`) or a path (setup-deploy → the project `CLAUDE.md` `## Deploy Configuration` section, land-and-deploy → `.gstack/deploy-reports/<file>.md`, canary → `.gstack/canary-reports/<file>.json`). §2 has one row per security-full or strix finding, status `fixed <commit sha>` or `accepted: <reason>`, never `open`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, `not adopted`/`gap` carried from REVIEW §3 (the path exists in the repo), or `pending` only with evidence `post-launch: <trigger and date>`. §4 lines are literal shapes. `target:` is `https://` plus the bare production host, the same host as the project `CLAUDE.md` `Production URL`. No secret value anywhere: names only.
 
 ````
 # DEPLOY — <project name>
-checked: pending   ← the finalize step replaces: scan <effort> <sha12> · findings <f> (fixed <x> · accepted <a>) · verifiers <v>/<v> pass · placeholders left <k> · rulings <r> · standards done <d> · N/A <n> · post-launch <p> · live 2/2 · canary HEALTHY · rollback <s>s · branch <b> · head <sha>
+checked: pending   ← the finalize step replaces: scan <effort> <sha12> · findings <f> (fixed <x> · accepted <a>) · verifiers <v>/<v> pass · placeholders left <k> · rulings <r> · standards done <d> · N/A <n> · not adopted <x> · gap <g> · post-launch <p> · live 2/2 · canary HEALTHY · rollback <s>s · branch <b> · head <sha>
 written: <YYYY-MM-DD> by v2p deploy · reads: .v2p/REVIEW.md (<hash, first 12>) · target: https://<host> · scan: CLAUDE-SECURITY-<ts> · pr: #<n> · base: <base branch>
 
 ## 0. Target
@@ -1108,13 +1109,16 @@ Loaded for every profile, first. Profile files add to this list; they never remo
 ## How to claim an item (evidence rule)
 One row per claimed item, in a table at the end of every delivery:
 
-| item | done / N/A / pending | evidence |
+| item | done / N/A / pending / not adopted / gap | evidence |
 |---|---|---|
 | Security headers | done | `curl -sI https://staging.x \| grep -cE 'strict-transport\|content-security'` → 2 |
 | RLS | N/A | landing has no database (BRIEF §8) |
 
 - Evidence is one of: a runnable command plus its observed output or exit code, an artefact path, or a URL.
 - `N/A` needs a reason that cites a BRIEF section.
+- `not adopted — <path §section or path:line>`: the owner decided otherwise, and that repo file records it (adopt: the project's own CLAUDE.md, decisions or backlog). Not `N/A`, which means the item does not apply.
+- `gap — <path:line>`: known and not built, tracked in that repo file (a backlog entry). An item met another way is `done` with the path as evidence.
+- The finalize steps check that the cited path exists in the repo, not what it says. Write the ref in the status cell: later phases copy statuses and empty the evidence.
 - A ticked box with no evidence is a defect, not a claim.
 - The delivery footer is named **Standards evidence**.
 

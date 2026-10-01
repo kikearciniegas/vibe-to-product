@@ -2,7 +2,7 @@
 
 Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept, evidence empty); execute fills evidence as tasks earn it.
 
-Rules for §2: statuses are exactly `done`, `pending` or `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
+Rules for §2: statuses are exactly `done`, `pending`, `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`), `not adopted — <path>` or `gap — <path>` (the path exists in the repo); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
 <!-- claude-only -->
 In Claude Code, §1 and the `checked:` line are written by `scripts/finalize-execute.sh` from the task records; leave them as below.
 <!-- /claude-only -->
@@ -10,7 +10,7 @@ Portable: fill §1 yourself, one row per PLAN task, from what was actually run; 
 
 ````
 # EXECUTE — <project name>
-checked: pending   ← the finalize step replaces this line: tasks <done>/<total> · skipped <k> · standards done <d> · N/A <a> · pending <p> · branch <b> · base <sha> · head <sha>
+checked: pending   ← the finalize step replaces this line: tasks <done>/<total> · skipped <k> · standards done <d> · N/A <a> · not adopted <x> · gap <g> · pending <p> · branch <b> · base <sha> · head <sha>
 written: <YYYY-MM-DD> by v2p execute · reads: .v2p/PLAN.md (<plan hash, first 12>) · mode: subagent-driven | inline · amendments: <n> (.v2p/PLAN-AMENDMENTS.md | none)
 
 ## 1. Tasks

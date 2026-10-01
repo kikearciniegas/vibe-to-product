@@ -31,7 +31,7 @@ Claude Code: the worktree is created through `superpowers:using-git-worktrees` (
 
 ## Step 1 — Preflight (before Task 1)
 The scan executes; it is not skipped because the plan looks fine.
-1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses and N/A reasons kept, evidence empty).
+1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses, N/A reasons and `not adopted`/`gap` refs kept, evidence empty).
 2. Run the plan's empirical claims: every mechanical Verifier command that can run on the current tree is expected to FAIL now (red before green). A verifier that passes before its task exists is a plan defect: record a ruling in the execution ledger and tell the user.
 3. Scope sanity: a task whose steps `cd` into a new directory (for example a scaffold command that creates a subfolder), or whose Files are outside the project root, is a plan defect. Ruling: scaffold into `.` (adapt the command) or stop and ask.
 4. UI gate once now: if any task is a UI task, run the Preconditions' UI gate check before Task 1, so a stale or missing DESIGN.md stops the run here, not mid-plan.
