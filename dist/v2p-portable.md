@@ -729,7 +729,7 @@ A `keep:refs=<n>` row is a notes file that <n> other files mention by name: it s
 Portable: print each new file in a code block.
 
 ## Step 6 — Quarantine
-Always dry-run first and show every `MOVE` / `REFUSE` line. Then ask: "Quarantine these <n> items to `~/.v2p-backups/<project>/<ts>/` (restore command provided)? (Recommended) / Skip (record `quarantine: declined`)". Rows the user excludes are removed from the list before applying. Refused rows stay listed in AUDIT §4 as they are: they are the safety net, not failures. Write `quarantine: <manifest path>` or `quarantine: declined` into the draft's §4.
+Always dry-run first and show every `MOVE` / `REFUSE` / `EMPTIES` line. Then ask: "Quarantine these <n> items to `~/.v2p-backups/<project>/<ts>/` (restore command provided)? (Recommended) / Skip (record `quarantine: declined`)". Rows the user excludes are removed from the list before applying. Refused rows stay listed in AUDIT §4 as they are: they are the safety net, not failures. Write `quarantine: <manifest path>` or `quarantine: declined` into the draft's §4.
 Portable: move approved items by hand as described in `references/tidy-rules.md` §6; no receipts.
 
 ## Step 7 — Finalize
@@ -846,7 +846,7 @@ Neither step lists or moves these; the quarantine step prints `REFUSE never-touc
 Tracked files are moved like any other; git then shows ` D <path>` and the user commits the removal (or restores). A tracked file with uncommitted modifications is refused (`REFUSE uncommitted-changes`): commit or discard first; v2p never does it for you. Untracked files are moved; ignored files are never touched. The `tracked` and `age_days` columns are shown so recent, human-authored files stand out before approval. v2p never stashes, commits, resets or switches branches on a dirty tree.
 
 ## 6. Quarantine layout
-`~/.v2p-backups/<project>/<YYYY-MM-DD-HHMMSS>/` mirrors the relative paths. `MANIFEST.tsv` has one row per item (`path sha256 tracked reason restore`; a header comment names the root, the time and the restore command). `restore.sh` has one `mkdir -p … && mv …` per file and one `mkdir -p` per emptied directory. Each move is verified by sha256. v2p never empties the quarantine; the user does.
+`~/.v2p-backups/<project>/<YYYY-MM-DD-HHMMSS>/` mirrors the relative paths. `MANIFEST.tsv` has one row per item (`path sha256 tracked reason restore`; a header comment names the root, the time and the restore command). `restore.sh` has one `mkdir -p … && mv …` per file and one `mkdir -p` per emptied directory. Each move is verified by sha256. A directory the moves leave with no entries stays in place (only approved rows move; the script prints `EMPTIES <dir>`, in dry-run too); the next tidy check lists it as `empty-dir`. v2p never empties the quarantine; the user does.
 
 Portable (no scripts): list the rows as a table with the columns `kind path action tracked age_days`, and the user moves approved items by hand with `mkdir -p ~/.v2p-backups/<project>/<ts>/<dir> && mv <path> ~/.v2p-backups/<project>/<ts>/<path>`; AUDIT §4 then records `quarantine: by hand to ~/.v2p-backups/<project>/<ts>`. There is no receipt without the scripts; say so.
 

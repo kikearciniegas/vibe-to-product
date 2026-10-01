@@ -23,7 +23,7 @@ EOF
 sha() { shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1 || sha256sum "$1" | cut -d' ' -f1; }
 ts=$(date +%Y-%m-%d-%H%M%S); q="$HOME/.v2p-backups/${root##*/}/$ts"; [ -e "$q" ] && q="$q-$$"   # same-second rerun must not truncate a manifest
 man="$q/MANIFEST.tsv"; res="$q/restore.sh"
-bad=0; moved=0; tmp=${TMPDIR:-/tmp}/q.$$; trap 'rm -f "$tmp"' EXIT
+bad=0; moved=0; tmp=${TMPDIR:-/tmp}/q.$$; trap 'rm -f "$tmp" "$tmp.g" "$tmp.c" "$tmp.n" "$tmp.e"' EXIT; : > "$tmp.g"
 refuse() { echo "REFUSE $1	$2"; bad=$((bad+1)); }
 # one file: returns 0 if allowed
 check() { p=$1
@@ -45,7 +45,7 @@ check() { p=$1
 move() { m=$1; reason=$2   # file or empty dir, already checked
   if [ -d "$m" ]; then
     [ $apply = yes ] && { rmdir "$m" || { echo "FAIL rmdir $m"; bad=$((bad+1)); return; }; mkdir -p "$q/$m"; printf '%s\t-\t%s\t%s\tmkdir -p "%s"\n' "$m" "$tr" "$reason" "$root/$m" >> "$man"; printf 'mkdir -p "%s"\n' "$root/$m" >> "$res"; }
-    echo "MOVE dir	$m"; moved=$((moved+1)); return; fi
+    echo "MOVE dir	$m"; echo "$m" >> "$tmp.g"; moved=$((moved+1)); return; fi
   s1=$(sha "$m")
   if [ $apply = yes ]; then
     mkdir -p "$q/$(dirname "$m")" && mv "$m" "$q/$m" || { echo "FAIL mv $m"; bad=$((bad+1)); return; }
@@ -53,7 +53,7 @@ move() { m=$1; reason=$2   # file or empty dir, already checked
     printf '%s\t%s\t%s\t%s\tmkdir -p "%s" && mv "%s" "%s"\n' "$m" "$s1" "$tr" "$reason" "$root/$(dirname "$m")" "$q/$m" "$root/$m" >> "$man"
     printf 'mkdir -p "%s" && mv "%s" "%s"\n' "$root/$(dirname "$m")" "$q/$m" "$root/$m" >> "$res"
   fi
-  echo "MOVE $s1	$m"; moved=$((moved+1))
+  echo "MOVE $s1	$m"; echo "$m" >> "$tmp.g"; moved=$((moved+1))
 }
 [ $apply = yes ] && { mkdir -p "$q" && printf '# root=%s created=%s restore: sh %s\n# path\tsha256\ttracked\treason\trestore\n' "$root" "$ts" "$res" > "$man" && printf '#!/bin/sh\n# restore everything quarantined on %s from %s\nset -e\n' "$ts" "$root" > "$res"; }
 while IFS='	' read -r kind p action rest; do
@@ -70,9 +70,19 @@ while IFS='	' read -r kind p action rest; do
     find "$p" -type f -print | sort > "$tmp"
     while IFS= read -r f; do move "$f" "$action"; done < "$tmp"
     find "$p" -depth -type d -print > "$tmp"      # every dir under (and including) p, deepest first
-    while IFS= read -r f; do [ -z "$(find "$f" -mindepth 1 -print -quit)" ] && move "$f" "$action"; done < "$tmp"
+    # dry-run: nothing moved yet, but apply empties every one of them (all files under p move)
+    while IFS= read -r f; do { [ $apply = no ] || [ -z "$(find "$f" -mindepth 1 -print -quit)" ]; } && move "$f" "$action"; done < "$tmp"
   else move "$p" "$action"; fi
 done
+# EMPTIES: a directory whose every entry was moved above (repeated upward). It stays where it is, in dry-run and
+# apply alike: only approved rows move. The next tidy-check lists it as an empty-dir row.
+sed -n 's|/[^/]*$||p' "$tmp.g" | sort -u > "$tmp.c"; : > "$tmp.e"
+while [ -s "$tmp.c" ]; do : > "$tmp.n"
+  while IFS= read -r e; do grep -qxF -- "$e" "$tmp.g" && continue; [ -d "$e" ] || continue
+    find "$e" -mindepth 1 -maxdepth 1 | grep -vxF -f "$tmp.g" | grep -q . && continue
+    echo "$e" >> "$tmp.e"; echo "$e" >> "$tmp.g"; case $e in */*) echo "${e%/*}" >> "$tmp.n" ;; esac
+  done < "$tmp.c"; sort -u "$tmp.n" > "$tmp.c"; done
+sort "$tmp.e" | sed 's/^/EMPTIES	/'
 [ $apply = yes ] && echo "manifest: $man" && echo "restore: sh $res" || echo "dry-run: nothing moved; add --apply to move to $q"
 echo "moved: $moved refused/failed: $bad"
 [ "$bad" -eq 0 ]

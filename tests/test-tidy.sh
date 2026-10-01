@@ -28,7 +28,7 @@ for SH in sh zsh; do
   cd "$fx"
   # 4. dry-run moves nothing
   before=$(files); dry=$($SH "$S/tidy-check.sh" --tsv | $SH "$S/quarantine.sh"); is "4 dry exit" $? 1
-  is "4 MOVE" "$(printf '%s\n' "$dry" | grep '^MOVE' | cut -f2 | tr '\n' ' ')" ".DS_Store build/out.js debug.log empty-dir README_final_v2.md src/app.ts.bak src/index_old.ts "
+  is "4 MOVE" "$(printf '%s\n' "$dry" | grep '^MOVE' | cut -f2 | tr '\n' ' ')" ".DS_Store build/out.js build debug.log empty-dir README_final_v2.md src/app.ts.bak src/index_old.ts "
   is "4 REFUSE" "$(printf '%s\n' "$dry" | grep -c '^REFUSE not-merged-into-docs/DECISIONS.md')" 2
   has "4 dry" "$dry" "dry-run: nothing moved"; is "4 untouched" "$(files)" "$before"
   # 5. every guard refuses
@@ -37,6 +37,7 @@ for SH in sh zsh; do
   # 6. apply after merging
   mkdir -p docs; printf '## From TODO.md (merged 2026-09-23)\n- ship v1\n## From notes (merged 2026-09-23)\nidea: dark mode\n' > docs/DECISIONS.md
   $SH "$S/tidy-check.sh" --tsv > "$base/list-$SH"; before=$(files)
+  has "6 dry-run counts what apply moves" "$($SH "$S/quarantine.sh" < "$base/list-$SH")" "moved: 11 refused/failed: 0"
   a=$($SH "$S/quarantine.sh" --apply < "$base/list-$SH"); is "6 apply exit" $? 0; has "6 apply" "$a" "moved: 11 refused/failed: 0"
   man=$(printf '%s\n' "$a" | sed -n 's/^manifest: //p'); q=${man%/MANIFEST.tsv}
   is "6 sha rows" "$(grep -v '^#' "$man" | awk -F'\t' '$2!="-"' | grep -c .)" 8
@@ -120,6 +121,18 @@ for SH in sh zsh; do
   git -C "$ub" add a.txt; has "13 unborn, staged file" "$($SH "$S/tidy-check.sh" --probe "$ub")" " git:dirty:1 "; git -C "$ub" rm -q --cached a.txt; rm "$ub/a.txt"
   git -C "$ub" -c user.email=t@t -c user.name=t commit -q --allow-empty -m c; git -C "$ub" checkout -q --detach
   p=$($SH "$S/tidy-check.sh" --probe "$ub"); is "13 detached probe is one line" "$(printf '%s\n' "$p" | grep -c .)" 1; has "13 detached" "$p" " branch:detached "; has "13 control: a commit makes it clean" "$p" " git:clean "
+  # 15. a directory the moves leave with no entries prints EMPTIES (dry-run and apply alike) and stays in place
+  # (only approved rows move); a directory row is itself moved (MOVE dir), so its parent can be the one left empty
+  em=$base/em-$SH; mkdir -p "$em/lone" "$em/deep/x" "$em/keep" "$em/pk/coverage"; cd "$em"; git init -q
+  : > lone/a.bak; : > deep/x/b.bak; : > keep/c.bak; : > keep/main.ts; : > pk/coverage/c
+  L=$(printf 'debris\tlone/a.bak\tquarantine\ndebris\tdeep/x/b.bak\tquarantine\ndebris\tkeep/c.bak\tquarantine\norphan-build\tpk/coverage\tquarantine\n')
+  r=$(printf '%s\n' "$L" | $SH "$S/quarantine.sh" "$em")
+  is "15 dry EMPTIES" "$(printf '%s\n' "$r" | grep '^EMPTIES' | cut -f2 | tr '\n' ' ')" "deep deep/x lone pk "
+  has "15 dry MOVE dir row" "$r" "MOVE dir${T}pk/coverage"; is "15 dry moved nothing" "$(test -f lone/a.bak && echo yes)" yes
+  r=$(printf '%s\n' "$L" | $SH "$S/quarantine.sh" --apply "$em"); is "15 apply exit" $? 0
+  is "15 apply EMPTIES" "$(printf '%s\n' "$r" | grep '^EMPTIES' | cut -f2 | tr '\n' ' ')" "deep deep/x lone pk "
+  is "15 left in place" "$(find lone deep pk | sort | tr '\n' ' ')" "deep deep/x lone pk "
+  has "15 next tidy lists it" "$($SH "$S/tidy-check.sh" --tsv "$em")" "empty-dir${T}lone${T}"
   # 14. age_days: a tracked file's age is its last commit, not its mtime (a fresh clone sets every mtime to now);
   # an untracked file keeps its mtime
   ag=$base/age-$SH; mkdir -p "$ag"; cd "$ag"; git init -q; now=$(date +%s)
