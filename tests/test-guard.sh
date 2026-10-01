@@ -77,6 +77,30 @@ for SH in sh zsh; do
   A "cat >> notes.md <<EOF${nl}echo x > .v2p/PLAN.md${nl}EOF"; B "cat >> notes.md <<'EOF'${nl}don't${nl}EOF${nl}echo x > .v2p/PLAN.md"
   A "echo x > \"\\.v2p/PLAN.md\""; B "cat <<-EOF > /tmp/y${nl}	x${nl}	EOF${nl}cp /tmp/y .v2p/PLAN.md"
   A "echo hi # > .v2p/PLAN.md"; A "echo x > .v2p/PLAN.md.bak"; B "echo \"x\\\\\" > .v2p/PLAN.md"; A "echo \"x\\\" > .v2p/PLAN.md\""
+  # G1: touch, ln, truncate, rsync, install write their target; a link created outside pointing at a final is a read
+  B "touch .v2p/PLAN.md"; B "touch -c .v2p/work/.execute-task-5-pass"; B "ln -s /tmp/x .v2p/PLAN.md"; B "ln -f /tmp/x .v2p/.plan-pass"
+  B "ln -sf /tmp/x $P/.v2p/REVIEW.md"; B "truncate -s 0 .v2p/PLAN.md"; B "rsync -a /tmp/x .v2p/PLAN.md"; B "install /tmp/x .v2p/DEPLOY.md"
+  A "touch notes.md"; A "ln -s .v2p/PLAN.md /tmp/plan-link"; A "truncate -s 0 /tmp/x"; A "rsync -a .v2p/PLAN.md /tmp/x"
+  # G2: a .v2p directory destination writes <dir>/<source basename>
+  B "cp /tmp/PLAN.md .v2p/"; B "mv /tmp/PLAN.md .v2p"; B "cp -t .v2p /tmp/PLAN.md"; B "rsync /tmp/PLAN.md .v2p/"
+  B "cp /tmp/a /tmp/REVIEW.md $P/.v2p/"; B "mv /tmp/.execute-task-5-pass .v2p/work/"; B "cp --target-directory=.v2p /tmp/PLAN.md"
+  B "ln /tmp/PLAN.md .v2p/"; B "install -m 644 /tmp/.plan-pass .v2p"
+  A "cp x docs/"; A "cp /tmp/notes.md .v2p/"; A "cp /tmp/PLAN.md docs/"; A "mv /tmp/PLAN.draft.md .v2p/"; A "cp /tmp/execute-task-5.md .v2p/"
+  # G3: inline interpreter scripts (and awk -i inplace) are blocked on a MENTION of a final
+  B "python3 -c 'open(\".v2p/PLAN.md\", \"w\").write(\"x\")'"; B "python -c \"import os; os.remove('.v2p/.plan-pass')\""
+  B "perl -e 'open F, \">.v2p/PLAN.md\"'"; B "perl -pi -e 's/a/b/' .v2p/PLAN.md"; B "node -e \"require('fs').writeFileSync('.v2p/PLAN.md','x')\""
+  B "ruby -e 'File.write(\".v2p/PLAN.md\", \"x\")'"; B "awk -i inplace '{print}' .v2p/PLAN.md"; B "gawk -i inplace 1 $P/.v2p/work/execute-task-5.md"
+  A "python3 -c 'print(1)'"; A "perl -e 'print 1'"; A "node -e 'console.log(1)'"; A "awk '{print}' .v2p/PLAN.md"; A "ruby -e 'puts 1' notes.md"
+  # G4: sudo -u/-g take an argument; the command after it is the real one
+  B "sudo -u user cp /tmp/x .v2p/PLAN.md"; B "sudo -g staff tee .v2p/PLAN.md"; B "sudo -u root -g wheel mv /tmp/x .v2p/PLAN.md"
+  A "sudo -u user cp .v2p/PLAN.md /tmp/x"
+  # G5: fail closed: an unresolvable \$var target blocks when the command mentions a final anywhere
+  B "f=\$(echo .v2p/PLAN.md); echo x > \$f"; B "for f in .v2p/PLAN.md; do cp /tmp/x \$f; done"
+  B "export f=\$(printf .v2p/PLAN.md); tee \"\$f\" </tmp/x"; B "f=\`echo .v2p/PLAN.md\`; sed -i '' s/a/b/ \$f"
+  A "for f in a b; do echo \$f; done"; A "for f in a b; do echo x > \$f; done"; A "f=\$(date); echo x > /tmp/\$f"
+  A "for f in .v2p/PLAN.md; do cat \$f; done"; A "cat .v2p/PLAN.md > /tmp/x"
+  # G6: with -t the final is a SOURCE
+  A "cp -t /tmp .v2p/PLAN.md"; A "mv -t /tmp/x .v2p/REVIEW.md"
 done
 rm -rf "$t"; echo "test-guard: $fails failures"
 [ "$fails" -eq 0 ]
