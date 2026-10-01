@@ -50,7 +50,7 @@ Each skill's output is written to its checkpoint by the main thread on receipt.
 ## Step 2 — Adjudicate and fix
 Every finding gets one row in REVIEW.draft.md §2 with a status: `fixed <sha>` (each fix its own commit, test first), `accepted: <reason>`, or `open: <reason>`. `open` is allowed only when the reason names the deploy task or a BRIEF §. A fix touches only the finding's paths; after each fix, check the branch scope again: a path outside every task's scope is itself a finding (its own §2 row, adjudicated like any other). Update the draft's `diff: <base>..<head>` after the last fix commit.
 <!-- claude-only -->
-Claude Code: fixes are implemented by `builder` (code) or `quick` (docs) under execute's dispatch rules, with the Files list = the finding's paths; `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` after each fix. `AskUserQuestion` before accepting any `open` finding.
+Claude Code: fixes are implemented by `builder` (code) or `quick` (docs) under execute's dispatch rules, with the Files list = the finding's paths; `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` after each fix. `AskUserQuestion` before accepting any `open` finding. Execute is finalized, so `task-record.sh allow` no longer grants scope: a fix outside every task's scope is a §2 scope finding row, never a PLAN amendment.
 <!-- /claude-only -->
 
 ## Step 3 — Standards evidence

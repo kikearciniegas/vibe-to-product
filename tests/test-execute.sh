@@ -110,6 +110,11 @@ for SH in sh zsh; do
   has "10 checked" "$(grep '^checked: ' $E)" "checked: tasks 2/3 · skipped 1 · standards done 1 · N/A 0 · not adopted 0 · gap 0 · pending 192 · branch $main"
   is "10 receipt" "$(cat .v2p/.execute-pass)" "$(sha $E)"; is "10 draft gone" "$(test -f $D && echo yes)" ""
   is "10 records gone" "$(find .v2p/work -name '*execute-task-*' | grep -c .)" 0; is "10 amendments kept" "$(test -f .v2p/PLAN-AMENDMENTS.md && echo yes)" yes
+  # 10a. field test V9: after finalize the records are gone, so a review fix cannot be granted scope; the refusal names the route
+  a0=$(sha .v2p/PLAN-AMENDMENTS.md); TR allow 1 docs/review-fix.md "review asked for it"; is "10a allow after finalize exit" $rc 2
+  has "10a names finalize" "$out" "execute is finalized"; has "10a names the route" "$out" "REVIEW §2 scope finding row, not an amendment"
+  is "10a amendments unchanged" "$(sha .v2p/PLAN-AMENDMENTS.md)" "$a0"
+  TR verify 2; has "10a verify after finalize" "$out" "execute is finalized"; TR start 1; has "10a start after finalize" "$out" "execute is finalized"
   # 10b. branch mode (review): the union of task scopes + amendments is OK; a stray file is not
   DC --branch .v2p; is "10b branch exit" $rc 0; has "10b branch OK" "$out" "OK: 7 changed paths within the union of PLAN task scopes (1 allowed by amendments)"
   echo x > stray.txt; DC --branch .v2p; is "10b stray exit" $rc 1; has "10b stray" "$out" "DRIFT file stray.txt"; rm stray.txt
@@ -140,6 +145,8 @@ for SH in sh zsh; do
   TR allow 1 'a;b' r; is "15 unsafe char exit" $rc 2; has "15 unsafe char msg" "$out" "ERROR: unsafe path"
   is "15 amendments untouched" "$(test -f .v2p/PLAN-AMENDMENTS.md && echo yes)" ""
   TR allow 1 docs/note.md "reviewer asked"; is "15 legit path still allowed" $rc 0
+  TR allow 2 docs/note.md "no record yet"; is "15 no record exit" $rc 2; has "15 no record msg" "$out" "no current record for task 2"
+  hasnt "15 not finalized: no review route" "$out" "execute is finalized"
   cd "$base"
   # 16. task-record's <n> check (already `case $n in ''|*[!0-9]*)`) applies ahead of every subcommand's file writes
   f16=$base/f16-$SH; sh "$here/tests/fixture-execute.sh" "$f16" >/dev/null 2>&1; cd "$f16"

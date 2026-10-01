@@ -58,8 +58,11 @@ ftoks() { tline Files | sed 's/\*\*Interfaces:\*\*.*//' | grep -o '`[^`]*`' | tr
 uigate() { ui=$(ftoks | grep -E '\.(tsx|jsx|vue|svelte|css|scss|html|swift|kt|dart)$|(^|/)tailwind\.config\.' | head -n 1)
   [ -z "$ui" ] || sh "$S/check-pass.sh" "$d/DESIGN.md" "$d/.brand-pass" >/dev/null ||
     { echo "ERROR: task $n touches UI files ($ui) and .v2p/DESIGN.md has no valid receipt: run /v2p brand" >&2; exit 2; }; }
+# finalize-execute deletes the records (field test V9: `allow` during review then failed with no route): name the route
+fin() { [ -f "$d/EXECUTE.md" ] && [ -f "$d/.execute-pass" ] &&
+  echo "  execute is finalized (.v2p/EXECUTE.md has its receipt): a scope change during review is a REVIEW §2 scope finding row, not an amendment" >&2; }
 # Step 1 copies PLAN §4 into EXECUTE.draft.md before any task (field test V12: skipped, caught only at finalize)
-drafted() { [ -f "$d/EXECUTE.draft.md" ] || { echo "ERROR: $d/EXECUTE.draft.md missing: execute Step 1 copies PLAN §4 into it (references/execute-template.md) before any task record" >&2; exit 2; }; }
+drafted() { [ -f "$d/EXECUTE.draft.md" ] || { echo "ERROR: $d/EXECUTE.draft.md missing: execute Step 1 copies PLAN §4 into it (references/execute-template.md) before any task record" >&2; fin; exit 2; }; }
 write_start() { drafted; b=${1:-$(git rev-parse HEAD)}
   title=$(sed -n "s/^### Task $n: //p" "$plan" | head -n 1)
   files=$(ftoks | tr '\n' ' ' | sed 's/ $//')
@@ -69,7 +72,7 @@ write_start() { drafted; b=${1:-$(git rev-parse HEAD)}
 amend_line() { [ -f "$amend" ] || echo '# PLAN amendments — scope granted during execute (PLAN.md itself is never edited)' > "$amend"
   printf -- '- %s · task %s · %s\n' "$(now)" "$n" "$1" >> "$amend"; }
 fresh() { [ -f "$rec" ] && [ "$(sed -n 's/.* · plan: //p' "$rec" | head -n 1)" = "$planpass" ]; }
-need() { fresh || { echo "ERROR: no current record for task $n (run: task-record.sh start $n)" >&2; exit 2; }
+need() { fresh || { echo "ERROR: no current record for task $n (run: task-record.sh start $n)" >&2; fin; exit 2; }
   sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }; }
 case $cmd in
 start)
