@@ -560,6 +560,8 @@ Next: /v2p brand
 
 Copy the block below into `.v2p/PLAN.md` and replace every `<…>`. §2–§6 are v2p's additions around the plan method's own task structure.
 
+Shell commands go in fenced blocks, never in table cells: a cell needs `\|` for each pipe, a copied `\|` is a literal pipe in ERE, and finalize-plan fails a table row with `\|` inside backticks.
+
 ````
 # <project name> Implementation Plan
 

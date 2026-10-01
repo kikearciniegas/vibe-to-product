@@ -42,6 +42,8 @@ fi
 # before a `→`, minus a backticked expected of the previous command, holds an even number of backticks (prose pairs
 # in a manual part are fine; an odd count makes the parser open the command at the inner backtick). Two inner
 # backticks keep the count even and pass: the rule catches the live shape, not every one.
+# A table row (`^|`) with `\|` inside a backticked span fails (field test V30: the copied command kept the backslash,
+# a literal pipe in ERE, and silently printed 0): commands go in fenced blocks.
 # Files is one line (field test V27: bullet lists under it were never read): empty after the label, or followed by a
 # `- ` line that is not a `- [ ]` step, fails.
 # Files completeness: a backticked Interfaces path (has `/` and an extension; not a URL or a route) must appear
@@ -85,6 +87,9 @@ lint=$(awk -v q="'" '
       for (j = 1; j <= a[0]; j++) if (a[j] ~ /\/[^\/]*\.[A-Za-z0-9]+$/) ip[++ni] = a[j] } }
   /^### Task / { flush(); t = $3; sub(/:$/, "", t) }
   /^## / { flush() }
+  /^\|/ { c = $0; while (match(c, /`[^`]*`/)) { if (index(substr(c, RSTART, RLENGTH), "\\|")) {
+        print "FAIL: line " NR ": table row has `\\|` inside backticks (a copied command keeps the backslash: put commands in a fenced block)"; break }
+      c = substr(c, RSTART + RLENGTH) } }
   fl && NR == fl + 1 && /^- / && !/^- \[/ { print "FAIL: Task " t " Files: a bullet list under **Files:** is not read (one line: Create `a`, `b`; Modify `c`)" }
   /^\*\*Files:\*\*/ { fl = NR; f = $0; i = index(f, "**Interfaces:**"); if (i) { addiface(substr(f, i)); f = substr(f, 1, i - 1) } addfiles(f); modify(f)
     e = f; sub(/^\*\*Files:\*\*[ \t]*/, "", e); if (e == "") print "FAIL: Task " t " Files: empty after the label (one line: Create `a`; Modify `b`; or none)" }

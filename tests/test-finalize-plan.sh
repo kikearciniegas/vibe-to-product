@@ -114,6 +114,23 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
 **Files:** none" "$V2" "$V2
 **Files:** Create \`src/booking.ts\`
 - [ ] Step 1: write the form"; is "10f none, one line and a following step pass" $rc 0
+  # 10g. a command in a table cell needs `\|` for its pipes, and a copied `\|` is a literal pipe in ERE (field test V30:
+  # the copied check silently printed 0): a table row with `\|` inside backticks fails; prose `\|` and fenced blocks pass
+  rep "$V2" "$V2
+
+| check | command |
+|---|---|
+| headers | \`curl -m 5 -sI https://x \\| grep -cE 'hsts\\|csp'\` |"; is "10g escaped pipe in a cell exit" $rc 1
+  has "10g escaped pipe in a cell" "$out" "FAIL: line $(grep -n '^| headers |' "$P" | cut -d: -f1): table row has \`\\|\` inside backticks"
+  rep "$V2" "$V2
+
+| check | note |
+|---|---|
+| headers | a \\| b, run \`grep -c x f\` |
+
+\`\`\`sh
+curl -m 5 -sI https://x | grep -cE 'hsts|csp'
+\`\`\`"; is "10g prose pipe and fenced block pass" $rc 0
   # 10d. a Modify path exists now or is Created by this or an earlier task (live Task 17: bare `globals.css`)
   mf() { rep "$V1" "$V1
 **Files:** $1" "$V2" "$V2
