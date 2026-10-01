@@ -28,6 +28,15 @@ if [ -n "$q7" ] && [ -n "$unsearched" ]; then
   printf '%s\n' "$unsearched" | cut -c1-100; fail=1
 fi
 grep -qE 'links: [^ ]+ ok' "$draft" || { echo "FAIL: §7 has no 'links: <ok>/<total> ok' field to stamp"; fail=1; }
+# Rule 8: §7's marker counts equal the markers in the file outside §7 (§1–§6 and §8's [OPEN: …] lines; §7's own
+# counts line names each marker once and is not counted).
+s7=$(awk '/^## 7\./{f=1; next} /^## /{f=0} f' "$draft"); rest=$(awk '/^## 7\./{f=1; next} /^## /{f=0} !f' "$draft")
+for m in CONFLICT CHECK OPEN; do
+  want=$(printf '%s\n' "$s7" | sed -n "s/.*\[$m\] rows: \([0-9][0-9]*\).*/\1/p" | head -n 1)
+  [ -n "$want" ] || { echo "FAIL: §7 has no '[CONFLICT] rows: <n> · [CHECK] rows: <n> · [OPEN] rows: <n>' line"; fail=1; break; }
+  have=$(printf '%s\n' "$rest" | grep -oE "\\[${m}[]:]" | grep -c .)
+  [ "$want" -eq "$have" ] || { echo "FAIL: §7 says [$m] rows: $want, the file has $have [$m] markers outside §7"; fail=1; }
+done
 
 [ "$fail" -eq 0 ] || { echo "FAIL: links $ok/$total ok; $out not written"; exit 1; }
 sed -E "s|links: [^ ]+ ok|links: $ok/$total ok|" "$draft" > "$out" && rm "$draft"

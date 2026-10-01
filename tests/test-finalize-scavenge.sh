@@ -24,18 +24,21 @@ case $u in
 esac
 EOF
 chmod +x "$base/bin/curl"; PATH=$base/bin:$PATH; export PATH
-# plant <line>: a valid draft (one 200 URL in §1 and §6) plus <line> in §1
-plant() { rm -f .v2p/SCAVENGE.md .v2p/.scavenge-pass "$CURL_LOG" "$CURL_LOG.flaky"
+# plant <line> [§7 marker counts line] [§8 line]: a valid draft (one 200 URL in §1 and §6) plus <line> in §1;
+# the counts line defaults to all zero ('-' leaves it out)
+Z='[CONFLICT] rows: 0 · [CHECK] rows: 0 · [OPEN] rows: 0'
+plant() { rm -f .v2p/SCAVENGE.md .v2p/.scavenge-pass "$CURL_LOG" "$CURL_LOG.flaky"; c=${2:-$Z}; [ "$c" = - ] && c=
   printf '%s\n' '# SCAVENGE' '' '## 1. Reference architecture (Q1)' 'starter · https://e.test/ok · accessed 2026-10-01' "$1" '' \
     '## 6. Recent changes, last 30 days (Q7)' '| subject | changes |' '|---|---|' '| next | no entries in window · https://e.test/ok |' '' \
-    '## 7. Budget and tools' 'fetches: Q1–Q5 1/20 · Q7 1/5 · links: <ok>/<total> ok · time: 1 · tools: none' > .v2p/SCAVENGE.draft.md; }
+    '## 7. Budget and tools' 'fetches: Q1–Q5 1/20 · Q7 1/5 · links: <ok>/<total> ok · time: 1 · tools: none' "$c" '' \
+    '## 8. Open' "${3:-none}" > .v2p/SCAVENGE.draft.md; }
 FS() { out=$($SH "$S/finalize-scavenge.sh" .v2p 2>&1); rc=$?; }
 for SH in sh zsh; do
   fx=$base/fx-$SH; mkdir -p "$fx/.v2p"; cd "$fx" || exit 2; CURL_LOG=$base/curl-$SH.log; export CURL_LOG
   # 1. a 200 passes and stamps the count
   plant ''; FS; is "1 200 exit" $rc 0; has "1 stamped" "$(cat .v2p/SCAVENGE.md 2>/dev/null)" "links: 1/1 ok"
   # 2. V25: `]` closing a CHECK marker is not part of the URL
-  plant '[CHECK: foo · https://e.test/ok]'; FS; is "2 ] exit" $rc 0; hasnt "2 ] not DEAD" "$out" "DEAD"
+  plant '[CHECK: foo · https://e.test/ok]' '[CONFLICT] rows: 0 · [CHECK] rows: 1 · [OPEN] rows: 0'; FS; is "2 ] exit" $rc 0; hasnt "2 ] not DEAD" "$out" "DEAD"
   # 3. a 404 is DEAD and blocks the write
   plant 'gone · https://e.test/404 · accessed 2026-10-01'; FS; is "3 404 exit" $rc 1; has "3 404 DEAD" "$out" "DEAD 404 https://e.test/404"
   is "3 not written" "$(test -f .v2p/SCAVENGE.md && echo yes)" ""; has "3 each URL checked" "$out" "links 1/2 ok"
@@ -51,6 +54,14 @@ for SH in sh zsh; do
   # 6. DNS failure (curl exit 6) is DEAD, not UNREACHABLE, and is not retried
   plant 'typo · https://e.test/dns · accessed 2026-10-01'; FS; is "6 dns exit" $rc 1; has "6 dns DEAD" "$out" "DEAD 000 https://e.test/dns"
   hasnt "6 not UNREACHABLE" "$out" "UNREACHABLE"; is "6 no retry" "$(grep -c 'e.test/dns' "$CURL_LOG")" 1
+  # 7. rule 8: §7's marker counts equal the markers outside §7 (§1–§6 and §8; the counts line itself is not counted)
+  plant '' -; FS; is "7 no counts line exit" $rc 1; has "7 no counts line" "$out" "FAIL: §7 has no '[CONFLICT] rows: <n>"
+  plant '[CHECK: foo · https://e.test/ok]'; FS; is "7 CHECK uncounted exit" $rc 1; has "7 CHECK uncounted" "$out" "FAIL: §7 says [CHECK] rows: 0, the file has 1"
+  is "7 not written" "$(test -f .v2p/SCAVENGE.md && echo yes)" ""
+  plant 'a [CONFLICT] b [CONFLICT]' '[CONFLICT] rows: 2 · [CHECK] rows: 0 · [OPEN] rows: 0'; FS; is "7 two CONFLICT on one line exit" $rc 0
+  plant 'a [CONFLICT]' '[CONFLICT] rows: 2 · [CHECK] rows: 0 · [OPEN] rows: 0'; FS; is "7 CONFLICT overcounted exit" $rc 1; has "7 CONFLICT overcounted" "$out" "[CONFLICT] rows: 2, the file has 1"
+  plant '' '' '- [OPEN: which plan tier — answer needed by Task 3]'; FS; is "7 §8 OPEN uncounted exit" $rc 1; has "7 §8 OPEN uncounted" "$out" "[OPEN] rows: 0, the file has 1"
+  plant 'Q5: [OPEN]' '[CONFLICT] rows: 0 · [CHECK] rows: 0 · [OPEN] rows: 2' '- [OPEN: which plan tier — answer needed by Task 3]'; FS; is "7 §5 + §8 OPEN counted exit" $rc 0
   cd "$base"
 done
 SH=all; echo "test-finalize-scavenge: $fails failures (scratch: $base)"
