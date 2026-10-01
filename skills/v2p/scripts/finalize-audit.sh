@@ -18,11 +18,14 @@ while IFS= read -r n; do sf="$skill/references/standards/$n"; [ -f "$sf" ] && ex
 modexp=$(awk '/^## Modularity/{f=1;next} /^## /{f=0} f' "$skill/references/standards/core.md" | grep -c '^- \[ \]')
 
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/ && !/^\|---/' "$draft"; }
-# $1 rows, $2 status field number: statuses exactly done/pending/N/A; done needs evidence; N/A cites BRIEF §
+# $1 rows, $2 status field number: statuses exactly done/pending/N/A/not adopted/gap; done needs evidence; N/A cites
+# BRIEF §; not adopted (owner decision) and gap (known, not built) cite an existing repo path, in the status or evidence
 check() { printf '%s\n' "$1" | awk -F'|' -v s="$2" 'NF {st=$s; gsub(/^ +| +$/,"",st); ev=$(s+1)
   if (st=="done" && ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100)
   else if (st=="N/A" && index(ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100)
-  else if (st!="done" && st!="pending" && st!="N/A") print "status not done/pending/N/A: " substr($0,1,100) }'; }
+  else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
+  else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *(— *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }
+  else if (st!="done" && st!="pending" && st!="N/A") print "status not done/pending/N/A/not adopted/gap: " substr($0,1,100) }' | sh "$skill/scripts/check-refs.sh" "$root"; }
 r2=$(rows '## 2.'); rows2=$(printf '%s\n' "$r2" | grep -c .)
 [ "$rows2" -eq "$expected" ] || { echo "FAIL: §2 rows $rows2/$expected"; fail=1; }
 bad=$(check "$r2" 4); [ -z "$bad" ] || { echo "FAIL: §2"; printf '%s\n' "$bad"; fail=1; }
