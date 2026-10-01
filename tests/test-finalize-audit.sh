@@ -7,6 +7,7 @@ base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-fa.$$; mkdir -p "$base/home"; HOME=$b
 fails=0
 is() { if [ "$2" = "$3" ]; then echo "PASS [$SH] $1"; else echo "FAIL [$SH] $1: got '$2' want '$3'"; fails=$((fails+1)); fi; }
 has() { case $2 in *"$3"*) echo "PASS [$SH] $1" ;; *) echo "FAIL [$SH] $1: missing '$3' in: $(printf '%s' "$2" | head -c 300)"; fails=$((fails+1)) ;; esac; }
+hasnt() { case $2 in *"$3"*) echo "FAIL [$SH] $1: still has '$3'"; fails=$((fails+1)) ;; *) echo "PASS [$SH] $1" ;; esac; }
 FA() { out=$($SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?; }
 # plant <row 1 replacement>: the good draft with §2 row 1 (std1) replaced; any earlier AUDIT.md removed
 plant() { rm -f .v2p/AUDIT.md .v2p/.audit-pass; R=$1 awk '!done && $0 == "| std1 | core.md | pending | |" { print ENVIRON["R"]; done = 1; next } { print }' "$G" > .v2p/AUDIT.draft.md; }
@@ -38,6 +39,25 @@ for SH in sh zsh; do
   # 7. §3 (modularity) shares the rules
   rm -f .v2p/AUDIT.md .v2p/.audit-pass; sed 's/^| mod1 | pending | |$/| mod1 | gap — nowhere.md | |/' "$G" > .v2p/AUDIT.draft.md
   FA; is "7 §3 bogus gap exit" $rc 1; has "7 §3 bogus gap" "$out" "gap cites no existing path"
+  # 8. a §2 done row's `cmd` → expected pair runs here (field test V2: slash-literal patterns "→ 0" proved nothing):
+  # same parser and comparison as task-record.sh, run in the repo root; an arrow with nothing run fails
+  plant '| std1 | core.md | done | `grep -c fixture README.md` → 1 |'; FA; is "8 matching output exit" $rc 0
+  has "8 runs counted" "$(grep '^checked: ' .v2p/AUDIT.md 2>/dev/null)" "evidence runs 1/1"
+  plant '| std1 | core.md | done | `grep -c fixture README.md` → 2 |'; FA; is "8 differing output exit" $rc 1
+  has "8 differing output" "$out" 'FAIL: §2 std1: `grep -c fixture README.md` → 1 (expected 2)'
+  plant '| std1 | core.md | done | `test -f nowhere.md` → exit 0 |'; FA; is "8 failing command exit" $rc 1; has "8 failing command" "$out" '`test -f nowhere.md` exit 1'
+  plant "| std1 | core.md | done | rg 'queryRawUnsafe/executeRawUnsafe' → 0 |"; FA; is "8 unbackticked arrow exit" $rc 1; has "8 unbackticked arrow" "$out" "nothing ran"
+  plant '| std1 | core.md | done | `<command>` → <output> |'; FA; is "8 placeholder only exit" $rc 1; has "8 placeholder only" "$out" "nothing ran"
+  plant '| std1 | core.md | done | `test -f README.md` → exit 0 |'; out=$(cd / && $SH "$S/finalize-audit.sh" "$fx/.v2p" 2>&1); rc=$?; is "8 runs in the repo root exit" $rc 0
+  # 8b. lint: a done evidence accepted only as a path whose slash word holds a quote, pipe or regex character
+  plant "| std1 | core.md | done | rg 'queryRawUnsafe/sql\\.unsafe' 0 hits |"; FA; is "8b pattern as path exit" $rc 1; has "8b pattern as path" "$out" "a pattern, not a path"
+  plant '| std1 | core.md | done | src/app/[locale]/(shop)/page.tsx:3 sets it |'; FA; is "8b route-group path passes" $rc 0
+  # 8c. an absence claim without a positive control is a WARN, not a FAIL
+  plant '| std1 | core.md | done | `! grep -q lorem README.md` → exit 0 |'; FA; is "8c absence exit" $rc 0; has "8c absence warns" "$out" "WARN: §2 std1: absence claim"
+  plant '| std1 | core.md | done | `! grep -q lorem README.md` → exit 0 · control: `grep -c fixture README.md` → 1 |'; FA; is "8c control exit" $rc 0; hasnt "8c control no warn" "$out" "WARN"
+  # 8d. trust boundary: a draft tracked by git came from the repo, not this session; its commands never run
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git init -q; git add -f .v2p/AUDIT.draft.md; FA; rm -rf .git
+  is "8d tracked draft exit" $rc 1; has "8d tracked draft" "$out" "tracked by git"; is "8d nothing ran" "$(test -f pwned && echo yes)" ""
   cd "$base"
 done
 SH=all; echo "test-finalize-audit: $fails failures (scratch: $base)"

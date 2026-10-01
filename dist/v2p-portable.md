@@ -732,7 +732,7 @@ Print the paths written, the quarantine restore command, "commit: `.v2p/ docs/ R
 
 Adopt writes this as `.v2p/AUDIT.draft.md`, never as `AUDIT.md`; the finalize step checks it and produces `AUDIT.md`. Replace every `<…>`.
 
-Statuses are exactly `done`, `pending`, `N/A`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `cmd → output`, a path, or a URL. `N/A` needs `BRIEF §n` in the evidence cell. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
+Statuses are exactly `done`, `pending`, `N/A`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `` `cmd` → expected `` (any `→` makes it a command claim, so a path is written without one), a path, or a URL. A cell command has no pipe (a cell needs `\|`, which is copied into PLAN §4 and reads there as a literal pipe): use `grep -c`, `rg -e a -e b`. An absence claim (`→ 0`, `` `! …` ``) carries a positive control in the same cell: `` control: `cmd` → n ``. `N/A` needs `BRIEF §n` in the evidence cell. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
 
 ````
 # AUDIT — <project name>
