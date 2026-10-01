@@ -348,6 +348,17 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   is "31 no record" "$(find .v2p/work -type f 2>/dev/null | grep -c .)" 0; is "31 no amendment" "$(test -f .v2p/PLAN-AMENDMENTS.md && echo yes)" ""
   cp "$base/d31" .v2p/EXECUTE.draft.md 2>/dev/null || echo draft > .v2p/EXECUTE.draft.md; TR start 1; is "31 draft back → start" $rc 0
   cd "$base"
+  # 32. finalize-execute: HEAD must be the newest recorded head (a commit after the last verify was never checked);
+  # a later commit touching only .v2p/ is accepted, as the clean-tree check ignores .v2p/
+  f32=$base/f32-$SH; sh "$here/tests/fixture-execute.sh" "$f32" >/dev/null 2>&1; cd "$f32"; b0=$(git rev-parse HEAD)
+  TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
+  git add -A; git commit -qm 'feat: greet'; c1=$(git rev-parse HEAD); TR verify 1; TR ponytail 1 none; TR skip 2 "not in this test"; TR skip 3 "not in this test"
+  echo late >> README.md; git commit -qam 'late: after verify'
+  FE; is "32 commit after last head exit" $rc 1; has "32 commit after last head" "$out" "commits after the newest recorded head $c1 touch README.md"
+  git reset -q --hard "$b0"; FE; is "32 HEAD behind a recorded head exit" $rc 1; has "32 HEAD behind a recorded head" "$out" "task 1 head $c1 is not an ancestor of HEAD"
+  git reset -q --hard "$c1"; mkdir -p .v2p; echo n > .v2p/notes.md; git add .v2p/notes.md; git commit -qm 'v2p: notes'
+  FE; is "32 .v2p-only commit after last head exit" $rc 0; has "32 .v2p-only PASS" "$out" "PASS: 1/3 tasks (2 skipped)"
+  cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)
 SH=all; norm() { grep -v '^checked: \|^written: ' "$1" | sed 's/[0-9a-f]\{7\}\.\.[0-9a-f]\{7\}/SHA..SHA/; s/by user · [0-9-]*/by user · DATE/'; }

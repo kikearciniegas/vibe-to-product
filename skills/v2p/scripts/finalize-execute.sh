@@ -2,7 +2,8 @@
 # Promote .v2p/EXECUTE.draft.md to .v2p/EXECUTE.md only if PLAN still matches its receipt, every PLAN task has a
 # sealed record from task-record.sh (pass, skipped with a reason, or deferred with the missing credential; manual and
 # ponytail-review lines where due),
-# all records share the current branch, the tree is clean outside .v2p/, and §2 has the same items as PLAN §4 with
+# all records share the current branch, HEAD is the newest recorded head (later commits may touch only .v2p/), the tree
+# is clean outside .v2p/, and §2 has the same items as PLAN §4 with
 # valid statuses. §1 is generated here from the records, never typed. Usage: sh finalize-execute.sh [.v2p dir]
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; fail=0
 [ -d "$d" ] || { echo "FAIL: $d not found"; exit 1; }
@@ -40,6 +41,15 @@ dirty=$(git status --porcelain --untracked-files=all -- . | grep -v "^.. ${pre}\
 # 6. base..head
 first=$(head -n 1 "$tmp.t"); base=$(sed -n 's/.* · base: \([^ ]*\) .*/\1/p' "$d/work/execute-task-$first.md" 2>/dev/null); head=$(git rev-parse HEAD)
 [ -n "$base" ] && git merge-base --is-ancestor "$base" HEAD 2>/dev/null || { echo "FAIL: task $first base '${base}' is not an ancestor of HEAD"; fail=1; }
+# 6b. HEAD is the newest recorded head: a commit after the last verify was never checked. A later commit touching only
+# .v2p/ passes, as step 5 ignores .v2p/ (with merges the newest is either side: fails closed)
+nh=
+while IFS= read -r n; do h=$(sed -n 's/^head: //p' "$d/work/execute-task-$n.md" 2>/dev/null); [ -n "$h" ] || continue
+  git merge-base --is-ancestor "$h" HEAD 2>/dev/null || { echo "FAIL: task $n head $h is not an ancestor of HEAD (reset or rebased after verify?)"; fail=1; continue; }
+  if [ -z "$nh" ] || git merge-base --is-ancestor "$nh" "$h"; then nh=$h; fi
+done < "$tmp.t"
+if [ -n "$nh" ]; then late=$(git diff --name-only --relative "$nh" HEAD -- . | grep -v '^\.v2p/' | tr '\n' ' ')
+  [ -z "$late" ] || { echo "FAIL: commits after the newest recorded head $nh touch ${late% } (re-run task-record.sh verify <n> for the task they belong to)"; fail=1; }; fi
 # 7. §2 = PLAN §4 items; statuses done/pending/N/A/not adopted/gap (cells split from the left: item | file | status | evidence…)
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/ && !/^\|---/' "$2"; }
 items() { awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' | sort; }
