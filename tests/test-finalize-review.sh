@@ -56,6 +56,9 @@ for SH in sh zsh; do
   cp .v2p/REVIEW.md "$base/review-$SH"; rm .v2p/REVIEW.md .v2p/.review-pass; sed 's/^checked: .*/checked: pending/' "$base/review-$SH" > "$P"; cp "$P" "$base/good-$SH"
   # 7. falsifier: no .execute-pass → refuse
   mv .v2p/.execute-pass "$base/xp"; FR; is "7 no receipt exit" $rc 1; has "7 no receipt" "$out" "EXECUTE.md does not match its receipt"; mv "$base/xp" .v2p/.execute-pass
+  # 7b. falsifier: PLAN.md edited after finalize-plan → refuse (its verifier commands run here via sh -c)
+  cp .v2p/PLAN.md "$base/pl7"; echo x >> .v2p/PLAN.md; FR; is "7b plan receipt exit" $rc 1; has "7b plan receipt" "$out" "PLAN.md does not match its receipt"
+  cat "$base/pl7" > .v2p/PLAN.md; rm -f .v2p/REVIEW.md .v2p/.review-pass; cp "$base/good-$SH" "$P"
   # 8. falsifier: a committed break in src/greet.sh → the verifier re-run refuses (head updated so only that fails)
   printf 'echo bye\n' > src/greet.sh; git commit -qam 'break'; sub "..$H" "..$(git rev-parse HEAD)"
   FR; is "8 exit" $rc 1; has "8 verifier re-run" "$out" "FAIL: verifier of task 1 fails after review fixes: sh tests/greet.test.sh exit 1"

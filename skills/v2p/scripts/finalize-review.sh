@@ -1,6 +1,6 @@
 #!/bin/sh
-# Promote .v2p/REVIEW.draft.md to .v2p/REVIEW.md only if EXECUTE.md matches its receipt, §1 has every required run,
-# §2 accounts for every finding (fix commits exist), §3 completes PLAN §4 (pending only as deferred to deploy),
+# Promote .v2p/REVIEW.draft.md to .v2p/REVIEW.md only if EXECUTE.md and PLAN.md match their receipts, §1 has every
+# required run, §2 accounts for every finding (fix commits exist), §3 completes PLAN §4 (pending only as deferred to deploy),
 # the draft covers the current HEAD, the tree is clean on the execute branch, every mechanical PLAN verifier
 # still passes when re-run here (expect minutes), and (post-brand plans) DESIGN.md matches its receipt.
 # Usage: sh finalize-review.sh [.v2p dir]
@@ -10,6 +10,7 @@ d=$(cd "$d" && pwd -P); root=$(dirname "$d"); cd "$root" || exit 1
 draft=$d/REVIEW.draft.md; out=$d/REVIEW.md; plan=$d/PLAN.md; ex=$d/EXECUTE.md; tmp=${TMPDIR:-/tmp}/fr.$$
 trap 'rm -f "$tmp.r" "$tmp.f" "$tmp.s" "$tmp.p" "$tmp.pi" "$tmp.si" "$tmp.t" "$tmp.c" "$tmp.run"' EXIT
 sh "$skill/scripts/check-pass.sh" "$ex" "$d/.execute-pass" >/dev/null || { echo "FAIL: EXECUTE.md does not match its receipt (run /v2p execute first)"; exit 1; }
+sh "$skill/scripts/check-pass.sh" "$plan" "$d/.plan-pass" >/dev/null || { echo "FAIL: PLAN.md does not match its receipt (its verifiers run here)"; exit 1; }
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| (check|item|#) / && !/^\|---/' "$2"; }
