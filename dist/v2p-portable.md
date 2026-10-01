@@ -711,7 +711,7 @@ Run the tidy check (`references/tidy-rules.md`) and show its table. Create only 
 - `README.md`: BRIEF §1 vision + how to run, from the manifest.
 - `CHANGELOG.md`: `## Unreleased` + one line "adopted by v2p <YYYY-MM-DD>".
 - `docs/ARCHITECTURE.md`: module map from the scan + one data-flow line.
-- `docs/DECISIONS.md`: merged notes, or `none yet`.
+- `docs/DECISIONS.md`: merged notes, or `none yet`. Not created when `docs/decisions/` or `docs/adr*/` exists: that folder is the decisions home.
 - `.env.example`: env var names with empty values, only if a `.env*` file exists.
 - `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing.
 
@@ -798,7 +798,7 @@ Required rows are what the tidy check reports as `missing`.
 | `.v2p/AUDIT.md` | brownfield | all | adopt's finalize step |
 | `.v2p/work/` | transient | all | checkpoints; cleared by the finalize step; gitignored |
 | `docs/ARCHITECTURE.md` | yes | all | module map + data flow |
-| `docs/DECISIONS.md` | yes | all | merged notes/ADRs; `## From <path>` sections |
+| `docs/DECISIONS.md` | yes, unless `docs/decisions/` or `docs/adr*/` exists (that folder is the decisions home) | all | merged notes/ADRs; `## From <path>` sections |
 | `docs/threat-model.md` | before the review phase | all with a backend | reported as `pending (review)`, never `missing` |
 | `src/` or the framework's own roots (`app/`, `pages/`, `lib/`, `ios/`, `android/`, `public/`, `migrations/`) | — | framework-owned | never flagged |
 
@@ -814,7 +814,7 @@ Each `kind` below has the action `quarantine`.
 
 ## 3. Scattered notes
 `kind` `scattered` or `dup-readme`, action `merge:<dest>`.
-- → `docs/DECISIONS.md`: files `NOTES*`, `notes*.md`, `TODO*`, `todo*.md`, `IDEAS*`, `ideas*.md`, `ROADMAP*`, `BACKLOG*`, `SCRATCH*`, `PLAN*`, `plan*.md`, `DECISIONS*`, `ADR*`, `*.notes.md`, `*.notes.txt`; directories `notes`, `ideas`, `adr`, `adrs`, `decisions`
+- → `docs/DECISIONS.md`: files `NOTES*`, `notes*.md`, `TODO*`, `todo*.md`, `IDEAS*`, `ideas*.md`, `ROADMAP*`, `BACKLOG*`, `SCRATCH*`, `PLAN*`, `plan*.md`, `DECISIONS*`, `ADR*`, `*.notes.md`, `*.notes.txt`; directories `notes`, `ideas`, `adr`, `adrs`, `decisions` (never the decisions home `docs/decisions/` or `docs/adr*/`, nor notes files inside it)
 - → `docs/ARCHITECTURE.md`: `ARCHITECTURE*`, `architecture*.md`, `DESIGN.md`, `design.md`
 - → `CHANGELOG.md`: `CHANGES*`, `HISTORY*`
 - → `README.md` (root only): `README_*`, `README-*`, `README.txt`, `README.old`, `readme*`, `Readme*`

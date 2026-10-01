@@ -90,7 +90,7 @@ Run the tidy check (`references/tidy-rules.md`) and show its table. Create only 
 - `README.md`: BRIEF §1 vision + how to run, from the manifest.
 - `CHANGELOG.md`: `## Unreleased` + one line "adopted by v2p <YYYY-MM-DD>".
 - `docs/ARCHITECTURE.md`: module map from the scan + one data-flow line.
-- `docs/DECISIONS.md`: merged notes, or `none yet`.
+- `docs/DECISIONS.md`: merged notes, or `none yet`. Not created when `docs/decisions/` or `docs/adr*/` exists: that folder is the decisions home.
 - `.env.example`: env var names with empty values, only if a `.env*` file exists.
 - `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing.
 

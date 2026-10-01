@@ -39,7 +39,9 @@ scat() { n=$(grep -rIF --exclude-dir=.git --exclude-dir=node_modules --exclude-d
 
 {
 # 1. canonical files that must exist
-for f in README.md .gitignore CHANGELOG.md .v2p/BRIEF.md docs/ARCHITECTURE.md docs/DECISIONS.md; do [ -e "$f" ] || row missing "$f" create; done
+# An existing docs/decisions/ or docs/adr*/ folder is the decisions home: no flat docs/DECISIONS.md is required, and the folder is not scattered.
+dh=$(find docs -maxdepth 1 -type d \( -name decisions -o -name 'adr*' \) -print -quit 2>/dev/null)
+for f in README.md .gitignore CHANGELOG.md .v2p/BRIEF.md docs/ARCHITECTURE.md docs/DECISIONS.md; do [ -e "$f" ] || { [ "$f" = docs/DECISIONS.md ] && [ -n "$dh" ]; } || row missing "$f" create; done
 [ -n "$(find . -maxdepth 1 -name '.env*' ! -name '.env.example' -print -quit)" ] && [ ! -f .env.example ] && row missing .env.example create
 [ -d node_modules ] && ! ignored node_modules && row gitignore node_modules gitignore
 [ "$git" != none ] && [ -f .gitignore ] && ! grep -q '^\.v2p/work/' .gitignore && row gitignore .v2p/work/ gitignore
@@ -49,6 +51,7 @@ find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name v
   ignored "$p" && continue
   b=${p##*/}; d=${p%/*}; [ "$d" = "$p" ] && d=.
   if [ -d "$p" ]; then
+    [ "$p" = "$dh" ] && continue
     case $b in
       dist|build|out|.next|.nuxt|.output|.turbo|coverage|__pycache__|.pytest_cache|.mypy_cache|.parcel-cache|.cache) row orphan-build "$p" quarantine; continue ;;
       notes|ideas|adr|adrs|decisions) row scattered "$p" merge:docs/DECISIONS.md; continue ;;
@@ -63,6 +66,7 @@ find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv -o -name v
     *.log|npm-debug.log*|yarn-error.log*|lerna-debug.log*) row log "$p" quarantine; continue ;;
   esac
   case $p in docs/DECISIONS.md|docs/ARCHITECTURE.md|docs/threat-model.md|CHANGELOG.md|README.md) continue ;; esac
+  [ -n "$dh" ] && case $p in "$dh"/*) continue ;; esac
   case $b in
     NOTES*|notes*.md|TODO*|todo*.md|IDEAS*|ideas*.md|ROADMAP*|BACKLOG*|SCRATCH*|PLAN*|plan*.md|DECISIONS*|ADR*|*.notes.md|*.notes.txt) scat docs/DECISIONS.md ;;
     ARCHITECTURE*|architecture*.md|DESIGN.md|design.md) scat docs/ARCHITECTURE.md ;;

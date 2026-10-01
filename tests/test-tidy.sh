@@ -72,6 +72,12 @@ for SH in sh zsh; do
   is "11 V21 control: unreferenced TODO merged" "$(grep "${T}TODO.md${T}" "$base/nf-$SH" | cut -f3)" "merge:docs/DECISIONS.md"
   is "11 V21 keep is not a violation" "$($SH "$S/tidy-check.sh" | sed -n 's/^tidy: //p')" "$(( $(grep -c . "$base/nf-$SH") - $(grep -c "${T}keep:" "$base/nf-$SH") )) violations"
   is "11 V21 quarantine skips keep" "$($SH "$S/quarantine.sh" < "$base/nf-$SH" | grep -c BACKLOG)" 0
+  mkdir -p docs/decisions; echo 'use x' > docs/decisions/0001-use-x.md; echo 'use y' > docs/decisions/ADR-0002.md; : > docs/decisions/.DS_Store
+  for h in decisions adr; do [ -d docs/$h ] || mv docs/decisions docs/$h
+    t=$($SH "$S/tidy-check.sh" --tsv)
+    is "11 V22 docs/$h is the decisions home" "$(printf '%s\n' "$t" | grep -cE "^missing${T}docs/DECISIONS\.md|^scattered${T}docs/$h")" 0
+    is "11 V22 control: debris inside docs/$h" "$(printf '%s\n' "$t" | grep -c "^debris${T}docs/$h/\.DS_Store")" 1
+  done
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it
