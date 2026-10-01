@@ -119,6 +119,13 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   rep "$V2" '**Verifier:** mechanical: `npm start & sleep 5` → exit 0   |   manual: open `/` and look'; has "10h & in mechanical" "$out" "bare & backgrounds"
   rep "$V2" '**Verifier:** mechanical: `grep -q book src/booking.ts` → exit 0   |   manual: run `npm run dev` and book a slot
 **Files:** Create `src/booking.ts`'; has "10h runner word in manual does not count" "$out" "WARN: Task 2 Verifier: Files has code"
+  # 10i. manual-first Verifier (`manual: …; then mechanical: …`): mechanical-ness was read from the line start only, so
+  # its mechanical part skipped the no-command and bare-& checks; both now apply to the mechanical part wherever it is
+  rep "$V2" '**Verifier:** manual: open `/` and look; then mechanical: npm test → exit 0'; is "10i manual-first no command exit" $rc 1
+  has "10i manual-first no command" "$out" "FAIL: Task 2 Verifier: mechanical with no backticked"
+  rep "$V2" '**Verifier:** manual: open `/` and look; then mechanical: `npm start & sleep 5` → exit 0'; is "10i manual-first bare & exit" $rc 1
+  has "10i manual-first bare &" "$out" "FAIL: Task 2 Verifier: bare & backgrounds"
+  rep "$V2" '**Verifier:** manual: open `/` and look; then mechanical: `npm test && npm run build 2>&1` → exit 0'; is "10i manual-first valid pair exit" $rc 0
   # 10f. Files is one line (field test V27: the planner wrote bullet lists under **Files:**, which nothing reads)
   rep "$V1" "$V1
 **Files:**   "; is "10f empty Files exit" $rc 1; has "10f empty Files" "$out" "FAIL: Task 1 Files: empty after the label"

@@ -108,14 +108,14 @@ lint=$(awk -v q="'" '
     k = split(bt(f), tok, "\n"); for (i = 1; i <= k; i++) if (tok[i] ~ /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|rb|sh|swift|kt)$/) code = 1
     e = f; sub(/^\*\*Files:\*\*[ \t]*/, "", e); if (e == "") print "FAIL: Task " t " Files: empty after the label (one line: Create `a`; Modify `b`; or none)" }
   /^\*\*Interfaces:\*\*/ { addiface($0) }
-  /^\*\*Verifier:\*\*/ { mech = ($0 ~ /^\*\*Verifier:\*\* *mechanical:/)
-    mp = $0; sub(/manual:.*mechanical:/, "mechanical:", mp); sub(/manual:.*/, "", mp)
+  /^\*\*Verifier:\*\*/ { mp = $0; sub(/manual:.*mechanical:/, "mechanical:", mp); sub(/manual:.*/, "", mp)
+    mech = (mp ~ /mechanical:/)
     s = bt(mp); if (s == "" && !mech) s = mp; gsub(q "[^" q "]*" q, "", s); r = ""
     vm = mech; if (s ~ /(^|[^A-Za-z0-9_.\/-])(npm|pnpm|yarn|bun|bunx|npx|node|deno|python3?|pytest|go|cargo|make|sh|bash|curl|vitest|jest|playwright)( |$)/) vrun = 1
     if (mech && mp !~ /`[^`]+` *→/) r = r "; mechanical with no backticked `command` → expected pair (execute, review and deploy would run nothing)"
     c = s; gsub(/wc -l *\| *tr -d/, "", c)
     if (c ~ /wc -l/ && c ~ /\$\(|(^|[^A-Za-z])test |\[ /) r = r "; raw wc -l in a comparison (macOS pads it: use grep -c, or pipe to tr -d \" \")"
-    if ($0 ~ /^\*\*Verifier:\*\* *mechanical:/) { c = s; gsub(/&&|>&|&>/, "", c)
+    if (mech) { c = s; gsub(/&&|>&|&>/, "", c)
       if (c ~ /&/) r = r "; bare & backgrounds the chain (start servers from the test runner or a wait-for-port script)" }
     c = s; while (match(c, /(^|[^A-Za-z0-9_-])curl( |$)/)) { c = substr(c, RSTART + RLENGTH); a1 = c; sub(/[|;&)\n].*/, "", a1)
       if (a1 !~ /(^| )-[A-Za-z]*m( |[0-9]|$)|--max-time/) { r = r "; curl without -m/--max-time"; break } }
