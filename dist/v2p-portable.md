@@ -497,7 +497,7 @@ When `.v2p/cycles/*/REVIEW.md` exists and `.v2p/PLAN.md` does not (brand's re-th
 - §2 Providers is copied from the archived PLAN unless BRIEF §7 or §8 changed since (no re-asking); `## Architecture`, `## Threat Model` and §4b are copied.
 - §4 Standards = the archived REVIEW §3 verbatim; the rows the new tasks touch go back to `pending` with the evidence cell emptied (the row count is unchanged).
 - §5 holds only the tasks for the delta (re-theme: tokens, fonts, logo, imagery, copy/voice). Planner instruction: "scope: the DESIGN.md delta against `.v2p/work/brand-incumbent.md`; do not re-plan finished work."
-- Execute and review then run unchanged on a new branch.
+- Execute and review then run unchanged on a new branch (execute's Step 0 suffixes `-2`, `-3`, … when cycle 1's `v2p/execute-<YYYY-MM-DD>` has the same date).
 
 ## Step 5 — Write and hand off
 Write `.v2p/PLAN.md` (or print it in one code block if you cannot write files), print the path, the count of tasks (mechanical / manual), and `Next: /v2p execute`.
@@ -646,7 +646,8 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 - No git → continue, no branch.
 - Empty `.git/` (probe `git:empty`: the folder was copied without its history) → tell the user before continuing as no git: "History is missing. To restore it, copy the original project's `.git/` folder over this empty one, or `git clone` the remote elsewhere and move its `.git/` here; then run `/v2p adopt` again."
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
-- Clean tree → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c v2p/adopt-<YYYY-MM-DD>`.
+- Clean tree, already on today's adopt branch (`v2p/adopt-<YYYY-MM-DD>` or `v2p/adopt-<YYYY-MM-DD>-<n>`: a same-day re-run) → stay on it, no question.
+- Clean tree otherwise → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c <name>`, where `<name>` is `v2p/adopt-<YYYY-MM-DD>`, or, when that branch exists, the first free of `v2p/adopt-<YYYY-MM-DD>-2`, `-3`, … (free = `git rev-parse --verify --quiet refs/heads/<name>` fails).
 - v2p never commits, stashes, resets or switches on a dirty tree. The closing message tells the user what to commit.
 
 ## Step 1 — Scan
@@ -860,7 +861,7 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 ## Step 0 — Git safety
 - Tracked changes outside `.v2p/` (`git status --porcelain`, ignoring `??` lines and `.v2p/` paths) → print the paths and "Commit or discard these yourself; v2p never stashes or commits another session's changes." Stop.
 - Untracked files outside `.v2p/` (`??` lines) in the tree execute will work in → print them and stop until the user has committed, removed or listed each in `.git/info/exclude`. The task commit runs the scope check first, and the check counts every untracked file: one left here blocks every task commit.
-- Clean tree → choose where to work. `.v2p/PLAN.md` tracked in git (`git ls-files --error-unmatch .v2p/PLAN.md` succeeds) → a new worktree on a new branch, so the handoff files travel with the branch. Not tracked → a new branch in place: `git switch -c v2p/execute-<YYYY-MM-DD>`. Never work on the default branch.
+- Clean tree → choose where to work. `.v2p/PLAN.md` tracked in git (`git ls-files --error-unmatch .v2p/PLAN.md` succeeds) → a new worktree on a new branch, so the handoff files travel with the branch. Not tracked → a new branch in place: `git switch -c <name>`. `<name>` is `v2p/execute-<YYYY-MM-DD>`, or, when that branch exists (a same-day re-run, or cycle 2 on cycle 1's day), the first free of `v2p/execute-<YYYY-MM-DD>-2`, `-3`, … (free = `git rev-parse --verify --quiet refs/heads/<name>` fails). Already on this plan's execute branch (resuming it) → stay there; no new branch. Never work on the default branch.
 - Do not rebase the execute branch while execute runs: each task's scope is measured from its recorded base commit.
 - Portable: tell the user to create the branch and confirm before Step 1.
 

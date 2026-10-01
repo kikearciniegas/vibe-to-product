@@ -28,7 +28,8 @@ Nothing is refactored here. Writes `.v2p/BRIEF.md` and `.v2p/AUDIT.md`.
 - No git → continue, no branch.
 - Empty `.git/` (probe `git:empty`: the folder was copied without its history) → tell the user before continuing as no git: "History is missing. To restore it, copy the original project's `.git/` folder over this empty one, or `git clone` the remote elsewhere and move its `.git/` here; then run `/v2p adopt` again."
 - Dirty tree → print the changed tracked paths (`git status --porcelain | grep -v '^??'`), then: "Uncommitted changes stay untouched: no stash, no commit, no branch switch; quarantine will refuse these paths." Continue.
-- Clean tree → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c v2p/adopt-<YYYY-MM-DD>`.
+- Clean tree, already on today's adopt branch (`v2p/adopt-<YYYY-MM-DD>` or `v2p/adopt-<YYYY-MM-DD>-<n>`: a same-day re-run) → stay on it, no question.
+- Clean tree otherwise → ask: "Create branch `v2p/adopt-<YYYY-MM-DD>` for adopt's files? (Recommended: one commit to review or drop) / Stay on `<branch>`". Only on yes: `git switch -c <name>`, where `<name>` is `v2p/adopt-<YYYY-MM-DD>`, or, when that branch exists, the first free of `v2p/adopt-<YYYY-MM-DD>-2`, `-3`, … (free = `git rev-parse --verify --quiet refs/heads/<name>` fails).
 - v2p never commits, stashes, resets or switches on a dirty tree. The closing message tells the user what to commit.
 
 ## Step 1 — Scan
