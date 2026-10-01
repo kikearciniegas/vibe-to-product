@@ -4,7 +4,8 @@
 # Usage: sh backup.sh [root]
 # Exit 0 = archive written and readable, 1 = failed (partial archive removed), 2 = usage/refused root.
 [ $# -le 1 ] || { echo "usage: backup.sh [root]" >&2; exit 2; }
-root=${1:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}
+# Default root = nearest dir holding a .git entry. Not git rev-parse: git skips an invalid (e.g. empty) .git and resolves a parent repo.
+root=$1; [ -n "$root" ] || { r=$PWD; while [ -n "$r" ] && [ ! -e "$r/.git" ]; do r=${r%/*}; done; root=${r:-$PWD}; }
 root=$(cd "$root" 2>/dev/null && pwd -P) || { echo "REFUSE no such directory: $1" >&2; exit 2; }
 h=$(cd "$HOME" && pwd -P) || exit 2
 case $root in /|"$h") echo "REFUSE root is $root" >&2; exit 2 ;; esac

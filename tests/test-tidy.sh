@@ -89,6 +89,13 @@ for SH in sh zsh; do
   mkdir -p "$base/shim-$SH"; printf '#!/bin/sh\necho nobody\n' > "$base/shim-$SH/id"; chmod +x "$base/shim-$SH/id"
   has "11 V23 files owned by another user" "$(PATH="$base/shim-$SH:$PATH" $SH "$S/tidy-check.sh" --probe)" " writable:no"
   ro=$base/ro-$SH; mkdir -p "$ro"; chmod a-w "$ro"; has "11 V23 read-only root" "$($SH "$S/tidy-check.sh" --probe "$ro")" " writable:no"; chmod u+w "$ro"
+  # 12. an empty .git/ inside an initialized parent repo: git skips the invalid .git, so the probe must not read the parent
+  par=$base/par-$SH; mkdir -p "$par/sub/.git"; git -C "$par" init -q; printf 'secret.md\n' > "$par/.gitignore"; cd "$par/sub"
+  has "12 default root = subdir, git:empty" "$($SH "$S/tidy-check.sh" --probe)" "root:$par/sub code:no git:empty "
+  has "12 explicit root, git:empty" "$($SH "$S/tidy-check.sh" --probe .)" "root:$par/sub code:no git:empty "
+  has "12 control: valid parent repo" "$($SH "$S/tidy-check.sh" --probe "$par")" "root:$par code:no git:clean "
+  has "12 quarantine default root = subdir" "$(printf 'x\tnone\tquarantine\n' | $SH "$S/quarantine.sh")" "/.v2p-backups/sub/"
+  echo s > secret.md; is "12 quarantine ignores the parent's .gitignore" "$(printf 'x\tsecret.md\tquarantine\n' | $SH "$S/quarantine.sh" | grep -c '^MOVE')" 1
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it

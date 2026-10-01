@@ -3,9 +3,11 @@
 # Exit 0 = clean, 1 = violations, 2 = usage. Runs under sh and zsh (no unquoted word-splitting).
 mode=human; root=
 for a in "$@"; do case $a in --tsv) mode=tsv ;; --probe) mode=probe ;; -*) echo "usage: tidy-check.sh [--tsv|--probe] [root]" >&2; exit 2 ;; *) root=$a ;; esac; done
-[ -n "$root" ] || root=$(git rev-parse --show-toplevel 2>/dev/null) || root=$PWD
+# Default root = nearest dir holding a .git entry. Not git rev-parse: git skips an invalid (e.g. empty) .git and resolves a parent repo.
+[ -n "$root" ] || { r=$PWD; while [ -n "$r" ] && [ ! -e "$r/.git" ]; do r=${r%/*}; done; root=${r:-$PWD}; }
 root=$(cd "$root" && pwd -P) || exit 2
 cd "$root" || exit 2
+[ -e .git ] && GIT_CEILING_DIRECTORIES=${root%/*} && export GIT_CEILING_DIRECTORIES   # an invalid .git here never falls through to a parent repo
 git=none; branch=-; dirty=0
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)

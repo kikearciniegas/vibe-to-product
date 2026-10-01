@@ -5,10 +5,12 @@
 # Exit 0 = all rows moved (or dry-run plan printed), 1 = at least one row refused/failed, 2 = usage.
 apply=no; root=
 for a in "$@"; do case $a in --apply) apply=yes ;; -*) echo "usage: quarantine.sh [--apply] [root]" >&2; exit 2 ;; *) root=$a ;; esac; done
-[ -n "$root" ] || root=$(git rev-parse --show-toplevel 2>/dev/null) || root=$PWD
+# Default root = nearest dir holding a .git entry. Not git rev-parse: git skips an invalid (e.g. empty) .git and resolves a parent repo.
+[ -n "$root" ] || { r=$PWD; while [ -n "$r" ] && [ ! -e "$r/.git" ]; do r=${r%/*}; done; root=${r:-$PWD}; }
 root=$(cd "$root" && pwd -P) || exit 2
 case $root in /|"$HOME") echo "REFUSE root is $root" >&2; exit 2 ;; esac
 cd "$root" || exit 2
+[ -e .git ] && GIT_CEILING_DIRECTORIES=${root%/*} && export GIT_CEILING_DIRECTORIES   # an invalid .git here never falls through to a parent repo
 git=no; git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git=yes
 sha() { shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1 || sha256sum "$1" | cut -d' ' -f1; }
 ts=$(date +%Y-%m-%d-%H%M%S); q="$HOME/.v2p-backups/${root##*/}/$ts"; [ -e "$q" ] && q="$q-$$"   # same-second rerun must not truncate a manifest

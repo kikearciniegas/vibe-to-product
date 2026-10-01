@@ -40,6 +40,9 @@ for SH in sh zsh; do
   $SH "$S/backup.sh" "$u" >/dev/null 2>&1; is "7 unreadable exit" $? 1
   is "7 no partial archive" "$(find "$HOME/.v2p-backups/unread-$SH" -type f 2>/dev/null | grep -c .)" 0
   chmod 600 "$u/secret"
+  # 8. default root: an empty .git/ inside an initialized parent repo is the root, not the parent git falls through to
+  par=$base/par-$SH; mkdir -p "$par/sub/.git"; git -C "$par" init -q
+  has "8 default root = subdir" "$(cd "$par/sub" && $SH "$S/backup.sh")" "BACKUP $HOME/.v2p-backups/sub/"
   rm -rf "$fx.restored"
 done
 echo "test-backup: $fails failures (scratch: $base)"
