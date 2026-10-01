@@ -73,8 +73,9 @@ if [ -n "$hd" ]; then git diff --name-only --relative --no-renames "$base" "$h" 
 else git diff --name-only --relative --no-renames "$base" -- . 2>/dev/null; git ls-files --others --exclude-standard; fi | sort -u > "$tmp"
 k=0
 while IFS= read -r f; do
-  [ -n "$f" ] || continue; k=$((k + 1))
-  case $f in .v2p/*) continue ;; esac
+  [ -n "$f" ] || continue
+  case $f in .v2p/*) continue ;; esac   # not checked, so not counted
+  k=$((k + 1))
   case ${f##*/} in package-lock.json|pnpm-lock.yaml|yarn.lock|bun.lockb|bun.lock|Cargo.lock|poetry.lock|uv.lock|Gemfile.lock|composer.lock|Podfile.lock|go.sum) continue ;; esac
   ok=0
   while IFS= read -r p; do

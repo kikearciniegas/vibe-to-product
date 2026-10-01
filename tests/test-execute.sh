@@ -28,6 +28,8 @@ for SH in sh zsh; do
   TR start 1; has "1 resume" "$out" "resume: task 1"
   # 2. clean tree → OK
   DC 1; is "2 exit" $rc 0; has "2 OK" "$out" "OK: 0 changed paths"
+  # a changed .v2p/ file is never checked, so it is not counted either
+  echo x > .v2p/scratch.md; DC 1; is "2 .v2p exit" $rc 0; has "2 .v2p not counted" "$out" "OK: 0 changed paths"; rm .v2p/scratch.md
   # 3. in-scope files OK; stray file → DRIFT file; verify blocked by drift
   mkdir -p src tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   DC 1; is "3 in-scope exit" $rc 0; has "3 in-scope" "$out" "OK: 2 changed paths within Task 1 scope"
@@ -116,7 +118,7 @@ for SH in sh zsh; do
   is "10a amendments unchanged" "$(sha .v2p/PLAN-AMENDMENTS.md)" "$a0"
   TR verify 2; has "10a verify after finalize" "$out" "execute is finalized"; TR start 1; has "10a start after finalize" "$out" "execute is finalized"
   # 10b. branch mode (review): the union of task scopes + amendments is OK; a stray file is not
-  DC --branch .v2p; is "10b branch exit" $rc 0; has "10b branch OK" "$out" "OK: 7 changed paths within the union of PLAN task scopes (1 allowed by amendments)"
+  DC --branch .v2p; is "10b branch exit" $rc 0; has "10b branch OK" "$out" "OK: 4 changed paths within the union of PLAN task scopes (1 allowed by amendments)"
   echo x > stray.txt; DC --branch .v2p; is "10b stray exit" $rc 1; has "10b stray" "$out" "DRIFT file stray.txt"; rm stray.txt
   # 11. EXECUTE.md edited after finalize → check-pass refuses
   cp $E "$base/E-$SH"; echo x >> $E; out=$(sh "$S/check-pass.sh" $E .v2p/.execute-pass); has "11 tamper" "$out" "changed after finalize"; cp "$base/E-$SH" $E
