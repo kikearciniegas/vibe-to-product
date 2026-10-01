@@ -62,6 +62,10 @@ for SH in sh zsh; do
   p=$($SH "$S/tidy-check.sh" --probe); has "11 V19 empty .git" "$p" "git:empty "
   has "11 V19 control: no .git" "$($SH "$S/tidy-check.sh" --probe src)" "git:none "
   mkdir -p src/x/.git; : > src/x/.git/junk; has "11 V19 control: non-empty broken .git" "$($SH "$S/tidy-check.sh" --probe src/x)" "git:none "; rm -rf src/x
+  mkdir -p node_modules/x .next .cache pkg/coverage; : > node_modules/x/i.js; : > pkg/coverage/x; : > .next/b; : > .cache/c; printf '# deps\nnode_modules/\n/.next\ncoverage\n' > .gitignore
+  $SH "$S/tidy-check.sh" --tsv > "$base/nf-$SH"
+  is "11 V20 .gitignore read without git" "$(cut -f2 "$base/nf-$SH" | grep -cxE 'node_modules|\.next|pkg/coverage')" 0
+  is "11 V20 control: unlisted build dir" "$(grep -c "^orphan-build${T}\.cache${T}" "$base/nf-$SH")" 1
   cd "$base"
 done
 # 10. zsh does not word-split unquoted expansions; new scripts must not rely on it

@@ -20,7 +20,15 @@ audit=no; [ -f .v2p/AUDIT.md ] && grep -q '^checked:' .v2p/AUDIT.md && audit=yes
 probe="root:$root code:$code git:$gp branch:$branch brief:$brief audit:$audit"
 [ "$mode" = probe ] && { echo "$probe"; exit 0; }
 
-ignored() { [ "$git" != none ] && git check-ignore -q -- "$1"; }
+# Without git, .gitignore is read directly: each entry is a name or path that hides itself and everything under it, at any depth.
+# ponytail: exact names only (leading and trailing / dropped); glob (*) and negation (!) entries are skipped. git check-ignore when git exists.
+gi=; [ "$git" = none ] && [ -f .gitignore ] && gi=$(sed -e 's/[[:space:]]*$//' -e 's|^/||' -e 's|/$||' .gitignore | grep -v -e '^#' -e '^!' -e '^$' -e '\*')
+ignored() { [ "$git" != none ] && { git check-ignore -q -- "$1"; return; }
+  [ -n "$gi" ] || return 1
+  while IFS= read -r e; do case /$1/ in */"$e"/*) return 0 ;; esac; done <<EOF
+$gi
+EOF
+  return 1; }
 tracked() { [ "$git" != none ] && git ls-files --error-unmatch -- "$1" >/dev/null 2>&1 && echo yes || echo no; }
 age() { [ -e "$1" ] || { printf "%s\n" -; return; }; m=$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0); echo $(( ( $(date +%s) - m ) / 86400 )); }
 row() { printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(tracked "$2")" "$(age "$2")"; }

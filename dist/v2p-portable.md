@@ -826,7 +826,7 @@ Neither step lists or moves these; the quarantine step prints `REFUSE never-touc
 - The canonical files of §1; `.env` and `.env.*` (except `.env.example`, which is canonical)
 - Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, `bun.lock`, `Cargo.lock`, `poetry.lock`, `uv.lock`, `Gemfile.lock`, `composer.lock`, `Podfile.lock`, `go.sum`
 - Databases: `*.sqlite`, `*.sqlite3`, `*.db`
-- Anything git ignores (`REFUSE gitignored`)
+- Anything git ignores (`REFUSE gitignored`). Without git, the tidy check reads `.gitignore` itself: each entry hides that name or path and everything under it, at any depth; glob (`*`) and negation (`!`) entries are skipped.
 - Symlinks: never followed, never moved, refused anywhere in the path (`REFUSE symlink`)
 - Anything outside the project root (realpath prefix check; `REFUSE outside-or-relative`)
 - The quarantine directory itself: it lives in the home directory, and the step refuses to run with the project root set to `/` or the home directory.
