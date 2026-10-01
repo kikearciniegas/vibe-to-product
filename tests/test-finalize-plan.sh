@@ -183,7 +183,7 @@ curl -m 5 -sI https://x | grep -cE 'hsts|csp'
   rep "$V1" "$V1
 **Files:** Create \`src/app/[locale]/page.tsx\`" "$V2" "$V2
 **Interfaces:** Consumes \`src/app/l/page.tsx\`"; has "10 [locale] is literal, not a class" "$out" "Task 2 Interfaces names \`src/app/l/page.tsx\`"
-  # 11. provenance (field test V3: PLAN recorded "Q2 (AC5' wins)" as an owner decision nobody made): a `Qn` the PLAN cites
+  # 11. provenance (field test V3: PLAN recorded a Qn as an owner decision nobody made): a `Qn` the PLAN cites
   # must be a label in BRIEF §10's item column; quarters (`Q4 2026`) and SCAVENGE's own Qn are not decision labels
   b10() { R=$1 awk '/^## 11/ { print "## 10. Decisions log"; print "| item | status | value |"; print "|---|---|---|"; print ENVIRON["R"]; print "" } { print }' "$w/BRIEF.keep" > "$v/BRIEF.md"; }
   rep "$V2" "$V2
@@ -200,7 +200,7 @@ Decision: Q9 (owner chose 30-minute slots)"; has "11 Q9 in BRIEF prose only" "$o
 Launch in Q4 2026; providers per SCAVENGE Q3."; is "11 quarter and SCAVENGE Qn pass" $rc 0
   cp "$w/BRIEF.keep" "$v/BRIEF.md"
   # 12. a code task whose mechanical Verifier only greps/tests files is a WARN, not a FAIL (field test V4: a grep for the
-  # renamed cookie passed while sign-out broke; only the e2e suite caught it)
+  # renamed identifier passed while the behaviour broke; only the project's own test suite caught it)
   M_V4="WARN: Task 2 Verifier: Files has code"
   rep "$V2" '**Verifier:** mechanical: `grep -q book src/booking.ts` → exit 0
 **Files:** Create `src/booking.ts`'; is "12 grep-only code task exit" $rc 0; has "12 grep-only code task warns" "$out" "$M_V4"

@@ -59,7 +59,7 @@ while IFS= read -r q; do echo "FAIL: PLAN cites $q, not a label in BRIEF §10 (c
 # `Create`/`;`/end, must exist in the repo now or be matched by a Create of Tasks 1-t (any Files text outside a Modify
 # segment counts as Create). A code token is skipped: a character drift-check would ignore, or neither `/` nor an
 # extension (`withSentryConfig`, `legal.*`). Braces expand; a glob must match one existing or created path.
-# WARN only (field test V4: a grep for a renamed cookie passed while sign-out broke): a task whose Files name a code file
+# WARN only (field test V4: a grep for a renamed identifier passed while the behaviour broke): a task whose Files name a code file
 # (.ts .tsx .js .jsx .mjs .cjs .py .go .rs .rb .sh .swift .kt) and whose mechanical Verifier names no runner word
 # (npm pnpm yarn bun bunx npx node deno python python3 pytest go cargo make sh bash curl vitest jest playwright).
 # ponytail: word list, not a parse; a grep wrapped in `sh -c` passes it.
