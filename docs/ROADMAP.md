@@ -55,10 +55,9 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
   - **P2 review** V13 named skills disabled for model invocation · V14 claude-security low scan needs a typed command + 60 s confirm · V15 preview URL assumed, never declared
   - **P2 research** V16 official legal sites block fetches · V17 scavenged numeric obligations never checked · V18 link check deletes unreachable evidence
   - **P3** V19 empty `.git` · V20 tidy-check without git · V21 merge proposals for heavily referenced files · V22 ignores existing decision/changelog homes · V23 probe skips writability · V24 last30days overflows subagent · V25 `]` swallowed by URL regex · V26 source cap vs jurisdictions · V27 Files as bullets · V28 finalize-plan dry-run needs repo tree · V29 guard hook blocks any command that mentions a `.v2p/` final · V30 commands in table cells
-- Slice 6: brand (built 2026-09-25): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`); the test project's guide is still pending, so it re-themes when `brand.pdf` arrives. Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
+- Slice 6: brand (built 2026-09-25): `/v2p brand` between scavenge and mapping writes `.v2p/DESIGN.md` (sealed by `finalize-brand.sh`); Post-review iteration: `archive-cycle.sh` moves a reviewed cycle into `.v2p/cycles/<date>/` and mapping writes a short cycle-2 plan (no script parameters, nothing edited under a hash lock).
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
 - Slice 5 live: a Strix run (needs Docker) and the first real deploy of the fixture (needs a GitHub remote; use a throwaway copy).
-- The duplicate `agent-reach` in `~/.agents/skills` (managed by `npx skills`), not cleaned up.
 - `finalize-review.sh` should check PLAN.md against its receipt, as `finalize-deploy.sh` does: both re-run PLAN verifiers through `sh -c`.
 - `finalize-execute.sh` has no check that the recorded head keeps up with the branch head.
 - Implementer routing (`builder` vs `quick`) is prose in execute.md, not scripted.
