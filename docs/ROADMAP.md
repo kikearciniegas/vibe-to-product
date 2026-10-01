@@ -59,6 +59,8 @@ Also available: context7 and `claude-mem:learn-codebase`. There is no `/verify` 
 - A first test of the portable pack in ChatGPT or Gemini (slice-1 check 12).
 - Slice 5 live: a Strix run (needs Docker) and the first real deploy of the fixture (needs a GitHub remote; use a throwaway copy).
 - **Done 2026-10-01 (951c00d..75e3b46):** V0, V27, V28, V30, and finalize-review now checks the PLAN.md receipt. Live runs recorded before this have vacuous `verifier: pass` lines.
+- **Done 2026-10-01 (aca5da7..79492e1):** V1. Audit, execute, review and deploy accept `not adopted — <path>` (owner decided otherwise) and `gap — <path>` (known, not built), each checked by `check-refs.sh` for an existing repo path; deploy counts gaps without blocking. Older receipts keep the old `checked:` format; nothing parses it.
+- V1 loose ends: finalize-audit rejects `N/A — BRIEF §n` in the status cell although adopt.md prescribes it (the other gates accept it); audit-template puts the N/A reason in the evidence cell, which execute empties, so finalize-execute fails; mapping does not tell the planner to skip or re-check `gap` rows; `check-refs.sh` checks existence only, not the cited § or line; a hyphen instead of the em dash gives a misleading error.
 - Verifier loose ends from that fix: a mechanical Verifier whose commands are all `<placeholder>`s still passes in task-record and finalize-review with nothing run; backticked text before a `→` inside a `manual:` part is extracted and run; the V30 lint may fail §4 rows that copy a standards item containing `\|`.
 - `finalize-execute.sh` has no check that the recorded head keeps up with the branch head.
 - Implementer routing (`builder` vs `quick`) is prose in execute.md, not scripted.
