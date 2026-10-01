@@ -62,7 +62,7 @@ for SH in sh zsh; do
   base0=$(sed -n 's/^checked: .* · base \([^ ]*\) .*/\1/p' .v2p/EXECUTE.md)
   # review, the short way (test-finalize-review.sh covers its refusals)
   mkdir -p docs; echo '# Threat model: no entry points' > docs/threat-model.md; git add -A; git commit -qm 'docs: threat model'
-  { printf '%s\n' '# REVIEW — fixture' 'checked: pending' "written: 2026-09-25 by v2p review · reads: .v2p/EXECUTE.md · diff: $base0..$(git rev-parse HEAD)" '' \
+  { printf '%s\n' '# REVIEW — fixture' 'checked: pending' "written: 2026-09-25 by v2p review · reads: .v2p/EXECUTE.md · diff: $base0..$(git rev-parse HEAD)" 'preview: http://localhost:8787 · started by npm run dev' '' \
       '## 1. Runs' '| check | run (exact command or skill invocation) | findings |' '|---|---|---|'
     for c in code-review simplify security verification ux-laws codex qa; do printf '| %s | /%s | 0 findings |\n' "$c" "$c"; done
     printf '%s\n' '' '## 2. Findings' '| # | check | path:line | severity | status |' '|---|---|---|---|---|' '' '## 3. Standards evidence (complete)' '| item | file | status | evidence |' '|---|---|---|---|'

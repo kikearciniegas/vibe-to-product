@@ -913,7 +913,7 @@ Review the whole execute branch once with the phase-level checks, fix what they 
 
 ## Step 0 — Scope
 `base` and `branch` come from the EXECUTE `checked:` line; the diff under review is `git diff <base>..HEAD`. A file changed on the branch that no PLAN task names (and no amendment grants) is finding #1.
-Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start.
+Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start. No preview running → suggest how to create one, first that works: the project's documented dev or preview command (README/CLAUDE.md Commands, `package.json` scripts such as `dev`, `preview`, `start`), including any services it needs first; a production build served locally (`build` then `start`/`preview`); a preview deploy on the PLAN's host (e.g. a Vercel preview URL). Ask before starting anything that needs credentials or costs money. If none can be created (native app with no web build, a missing secret the user cannot supply now), write `preview: none — <reason>`, set the ux-laws and qa findings cells to `unavailable: <reason>`, record the gap as a §2 `open:` finding naming the deploy task, and move on.
 
 ## Step 1 — Runs
 Each check writes a checkpoint first (line 1: `head: <sha> · check: <name> · run: <exact invocation>`, then one finding per line: `- <path:line> · <severity> · <one line>`), then one row in REVIEW.draft.md §1 (`references/review-template.md`).
@@ -1029,13 +1029,13 @@ Next: /v2p review
 
 Copy the block below into `.v2p/REVIEW.draft.md` at review Step 1 and replace every `<…>`. §3 starts as a copy of EXECUTE §2 and must end complete.
 
-Rules: §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, `not adopted — <path §/line>` or `gap — <path:line>` (the path exists in the repo), or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit. The ux-laws run cell names `DESIGN.md` (the visual review ran against it).
+Rules: The header has one `preview:` line: `<URL> · started by <cmd>`, or `none — <reason>` when no preview can be created. §1 has one row per required check, findings cell `<n> findings` (the codex row may read `unavailable: <reason>`; ux-laws and qa may too, only with `preview: none`). §2 has one row per finding, status `fixed <commit sha>`, `accepted: <reason>` or `open: <reason naming the deploy task or a BRIEF §>`. §3 statuses: `done` with evidence (`<command> → <output>`, a path or a URL), `N/A` citing `BRIEF §`, `not adopted — <path §/line>` or `gap — <path:line>` (the path exists in the repo), or `pending` only with evidence `deferred to deploy: <what production state it needs>`. Update the `diff:` head after the last fix commit. The ux-laws run cell names `DESIGN.md` (the visual review ran against it).
 
 ````
 # REVIEW — <project name>
 checked: pending   ← the finalize step replaces: runs <r>/<required> · findings <f> (fixed <x> · accepted <a> · open <o>) · standards done <d> · N/A <n> · not adopted <x> · gap <g> · deferred <k> · verifiers <v>/<v> pass · branch <b> · head <sha>
 written: <YYYY-MM-DD> by v2p review · reads: .v2p/EXECUTE.md (<hash, first 12>) · diff: <base>..<head>
-preview: <URL> · started by <cmd>
+preview: <URL> · started by <cmd>   ← or: none — <reason>
 
 ## 1. Runs
 | check | run (exact command or skill invocation) | findings |

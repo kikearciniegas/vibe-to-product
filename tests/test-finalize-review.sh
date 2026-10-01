@@ -15,7 +15,7 @@ q() { sh "$S/task-record.sh" "$@" >/dev/null 2>&1 || { echo "ERROR: task-record.
 sub() { A=$1 B=$2 awk 'index($0, ENVIRON["A"]) { i = index($0, ENVIRON["A"]); $0 = substr($0, 1, i-1) ENVIRON["B"] substr($0, i+length(ENVIRON["A"])) } { print }' "$P" > "$P.new" && mv "$P.new" "$P"; }
 ins() { RE=$1 T=$2 awk '!done && $0 ~ ENVIRON["RE"] { print ENVIRON["T"]; done = 1 } { print }' "$P" > "$P.new" && mv "$P.new" "$P"; }
 M1="§1 missing security row"; M2="§1 missing qa row"; M3="§1 codex findings cell 'some'"; M4="§2 fix commit deadbeef not found"
-M5="pending without deferred to deploy"; M6="no 'pre-deploy: pending"; M7="'---' rule"
+M5="pending without deferred to deploy"; M6="no 'pre-deploy: pending"; M7="'---' rule"; M8="no valid 'preview:' line"
 for SH in sh zsh; do
   fx=$base/fx-$SH; sh "$here/tests/fixture-execute.sh" "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
   # execute, the short way (test-execute.sh covers each step's refusals)
@@ -33,7 +33,7 @@ for SH in sh zsh; do
   awk '/^## 2\./{f=1;next} /^## /{f=0} f && /^\| / && !/^\| item/' .v2p/EXECUTE.md | awk -F'|' 'NR==1 {print "|" $2 "| " "core.md | pending | |"; next} {print "|" $2 "|" $3 "| done | src/greet.sh |"}' > "$base/rows-$SH"
   R=$base/rows-$SH awk '$0 == "{{STANDARDS_ROWS}}" { while ((getline l < ENVIRON["R"]) > 0) print l; next } { print }' "$src" | sed "s/{{BASE}}/$base0/; s/{{HEAD}}/$H/" > "$P"
   # 0. the bad draft fails every check and writes nothing
-  FR; is "0 exit" $rc 1; for m in "$M1" "$M2" "$M3" "$M4" "$M5" "$M6" "$M7"; do has "0 $m" "$out" "$m"; done
+  FR; is "0 exit" $rc 1; for m in "$M1" "$M2" "$M3" "$M4" "$M5" "$M6" "$M7" "$M8"; do has "0 $m" "$out" "$m"; done
   is "0 no REVIEW.md" "$(test -f .v2p/REVIEW.md && echo yes)" ""
   # 1. required rows
   ins '^\| codex ' '| security | /security-review; /claude-security scan changes --base '"$base0"' --effort low | 0 findings |'
@@ -50,6 +50,10 @@ for SH in sh zsh; do
   ins '^Next: /v2p deploy' 'pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)
 '
   FR; hasnt "5 pre-deploy" "$out" "$M6"
+  # 5b. preview line: the running preview ux-laws and qa checked
+  ins '^## 1\. Runs' 'preview: http://localhost:8787 · started by sh src/greet.sh
+'
+  FR; hasnt "5b preview" "$out" "$M8"
   # 6. --- → ***
   sed 's/^---$/***/' "$P" > "$P.new" && mv "$P.new" "$P"; FR; hasnt "6 rule" "$out" "$M7"; is "6 exit (verifiers ran, all good)" $rc 0
   # the draft was consumed by that PASS; restore it for the falsifiers below
@@ -87,6 +91,19 @@ for SH in sh zsh; do
   st3 '| not adopted - README.md §Auth | |'; is "17 not adopted hyphen exit" $rc 0
   st3 '| gap - docs/DECISIONS.md:1 | |'; is "17 gap hyphen exit" $rc 0
   st3 '| not adopted — README.md §Auth | |'; is "17 not adopted exit" $rc 0; has "17 not adopted counted" "$(grep '^checked: ' .v2p/REVIEW.md)" "· not adopted 1 · gap 0 ·"
+  # 18. preview: none with a reason lets ux-laws and qa read unavailable; a URL preview does not; malformed or doubled lines fail
+  pv() { rm -f .v2p/REVIEW.md .v2p/.review-pass; sed "s#^preview: .*#$1#" "$base/good-$SH" > "$P"; }
+  ux0='| ux-laws | references/ux-laws.md + /design-review | 0 findings |'; qa0='| qa | /qa on http://localhost:8787 | 0 findings |'
+  pv 'preview: none — native app, no web build'; sub "$ux0" '| ux-laws | references/ux-laws.md | unavailable: no preview |'; sub "$qa0" '| qa | manual: tester on device | unavailable: no preview |'
+  FR; is "18 none + unavailable exit" $rc 0; has "18 runs counted" "$out" "PASS: runs 7/7"
+  pv 'preview: none - native app'; FR; is "18 none hyphen exit" $rc 0
+  pv 'preview: http://localhost:8787 · started by npm run dev'; sub "$qa0" '| qa | /qa | unavailable: no preview |'
+  FR; is "18 url + unavailable exit" $rc 1; has "18 url + unavailable" "$out" "§1 qa findings cell"
+  pv 'preview: localhost'; FR; is "18 malformed exit" $rc 1; has "18 malformed" "$out" "$M8"
+  pv 'preview: none — '; FR; is "18 no reason exit" $rc 1; has "18 no reason" "$out" "$M8"
+  pv 'preview: http://localhost:8787'; FR; is "18 no started-by exit" $rc 1; has "18 no started-by" "$out" "$M8"
+  rm -f .v2p/REVIEW.md .v2p/.review-pass; awk '{print} /^preview: /{print}' "$base/good-$SH" > "$P"; FR; is "18 two lines exit" $rc 1; has "18 two lines" "$out" "$M8"
+  rm -f .v2p/REVIEW.md .v2p/.review-pass
   # 13. a deferred task's verifier is not re-run (live: it needs a credential that does not exist until deploy).
   # EXECUTE §1 row 1 re-written as deferred and re-sealed; a committed change breaks task 1's verifier only.
   rm .v2p/REVIEW.md .v2p/.review-pass; cp "$base/good-$SH" "$P"

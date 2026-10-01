@@ -18,7 +18,7 @@ Review the whole execute branch once with the phase-level checks, fix what they 
 
 ## Step 0 — Scope
 `base` and `branch` come from the EXECUTE `checked:` line; the diff under review is `git diff <base>..HEAD`. A file changed on the branch that no PLAN task names (and no amendment grants) is finding #1.
-Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start.
+Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start. No preview running → suggest how to create one, first that works: the project's documented dev or preview command (README/CLAUDE.md Commands, `package.json` scripts such as `dev`, `preview`, `start`), including any services it needs first; a production build served locally (`build` then `start`/`preview`); a preview deploy on the PLAN's host (e.g. a Vercel preview URL). Ask before starting anything that needs credentials or costs money. If none can be created (native app with no web build, a missing secret the user cannot supply now), write `preview: none — <reason>`, set the ux-laws and qa findings cells to `unavailable: <reason>`, record the gap as a §2 `open:` finding naming the deploy task, and move on.
 <!-- claude-only -->
 Claude Code: `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` (changed set against the union of every task's Files list plus `.v2p/PLAN-AMENDMENTS.md`).
 <!-- /claude-only -->

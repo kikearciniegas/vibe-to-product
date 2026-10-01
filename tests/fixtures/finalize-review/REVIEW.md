@@ -1,6 +1,6 @@
 # REVIEW — fixture
 
-Deliberately BAD draft for tests/test-finalize-review.sh: §1 lacks the security and qa rows and the codex
+Deliberately BAD draft for tests/test-finalize-review.sh: no preview line, §1 lacks the security and qa rows and the codex
 findings cell is not a count, §2 cites a fix commit that does not exist, §3 has a pending row without
 "deferred to deploy:", there is no pre-deploy line, and a `---` rule. The HEAD and BASE placeholders of the
 written: line are filled at test time; the STANDARDS_ROWS placeholder becomes EXECUTE §2 with every row done

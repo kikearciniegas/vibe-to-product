@@ -15,9 +15,15 @@ sh "$skill/scripts/check-pass.sh" "$plan" "$d/.plan-pass" >/dev/null || { echo "
 grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| (check|item|#) / && !/^\|---/' "$2"; }
 trim() { sed 's/^ *//; s/ *$//'; }
-# 3. §1 runs: required checks, findings cell "<n> findings" (codex may be "unavailable: <reason>"), run cell non-empty
+# 3. §1 runs: required checks, findings cell "<n> findings" (codex, and ux-laws/qa under `preview: none`, may be "unavailable: <reason>"), run cell non-empty
 printf '%s\n' code-review simplify security verification ux-laws codex qa > "$tmp.c"
 awk '/^## 9/{f=1;next} /^## /{f=0} f' "$d/BRIEF.md" | grep 'Conditional blocks ON' | grep -q 'i18n' && echo i18n >> "$tmp.c"
+# 3a. preview: exactly one line, `<URL> · started by <cmd>`, or `none — <reason>` when none can be created;
+# only with `none` may ux-laws and qa read "unavailable: <reason>"
+pl=$(grep '^preview: ' "$draft"); nopv=no
+if [ "$(grep -c '^preview: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$pl" | grep -qE '^preview: (https?://[^ ]+ · started by [^ ].*|none (—|-) [^ ].*)$'; then
+  echo "FAIL: no valid 'preview:' line (want exactly one 'preview: <URL> · started by <cmd>' or 'preview: none — <reason>')"; fail=1
+else case $pl in "preview: none"*) nopv=yes ;; esac; fi
 rows '## 1.' "$draft" > "$tmp.r"; nreq=0; runs=0; fsum=0
 while IFS= read -r c; do nreq=$((nreq + 1))
   row=$(awk -F'|' -v c="$c" '{s=$2; gsub(/^ +| +$/,"",s); if (s==c) {print; exit}}' "$tmp.r")
@@ -26,7 +32,7 @@ while IFS= read -r c; do nreq=$((nreq + 1))
   fc=$(printf '%s\n' "$row" | awk -F'|' '{print $(NF-1)}' | trim)
   [ -n "$run" ] || { echo "FAIL: §1 $c row has no run invocation"; fail=1; continue; }
   if printf '%s\n' "$fc" | grep -qE '^[0-9]+ findings?$'; then fsum=$((fsum + ${fc%% *})); runs=$((runs + 1))
-  elif [ "$c" = codex ] && printf '%s\n' "$fc" | grep -qE '^unavailable: .+'; then runs=$((runs + 1))
+  elif { [ "$c" = codex ] || { [ "$nopv" = yes ] && { [ "$c" = ux-laws ] || [ "$c" = qa ]; }; }; } && printf '%s\n' "$fc" | grep -qE '^unavailable: .+'; then runs=$((runs + 1))
   else echo "FAIL: §1 $c findings cell '$fc' (want '<n> findings'$( [ "$c" = codex ] && echo " or 'unavailable: <reason>'"))"; fail=1; fi
 done < "$tmp.c"
 # 3b. brand: a PLAN whose Spec line names .v2p/DESIGN.md (mapped after /v2p brand; hash-locked, so the mention cannot be
