@@ -87,6 +87,11 @@ for SH in sh zsh; do
   D=.v2p/EXECUTE.draft.md; row1=$(grep -m1 '| core.md | pending | |' "$base/draft"); it1=$(printf '%s\n' "$row1" | cut -d'|' -f2)
   plant() { R1=$row1 R2=$1 awk '$0 == ENVIRON["R1"] { print ENVIRON["R2"]; next } { print }' "$base/draft" > $D; }
   plant "|$it1| core.md | done | |"; FE; is "10 done-no-evidence exit" $rc 1; has "10 done without evidence" "$out" "done without evidence"
+  # live re-test: a root-level file (`README.md:15`) has no `/`, so a done row citing it was refused; prose still is.
+  # A `[x]` row is appended so finalize still fails and keeps the records the tests below use.
+  plant "|$it1| core.md | done | README.md:15 |"; echo "| x | core.md | [x] | |" >> $D; FE; hasnt "10 root file evidence" "$out" "done without evidence"
+  plant "|$it1| core.md | done | \`CHANGELOG.md\` |"; echo "| x | core.md | [x] | |" >> $D; FE; hasnt "10 backticked root file evidence" "$out" "done without evidence"
+  plant "|$it1| core.md | done | looks fine e.g. ok |"; echo "| x | core.md | [x] | |" >> $D; FE; has "10 prose is not evidence" "$out" "done without evidence"
   plant "|$it1| core.md | N/A | nothing |"; FE; has "10 N/A without BRIEF" "$out" "N/A without BRIEF §"
   plant "|$it1| core.md | [x] | |"; FE; has "10 [x]" "$out" "status not done/pending/N/A"
   grep -vF "$row1" "$base/draft" > $D; FE; has "10 row deleted" "$out" "§2 rows 192/193"

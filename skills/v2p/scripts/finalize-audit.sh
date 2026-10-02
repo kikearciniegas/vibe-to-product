@@ -23,7 +23,7 @@ rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\
 # BRIEF § (status or evidence cell: `N/A — BRIEF §n`); not adopted (owner decision) and gap (known, not built) cite an
 # existing repo path, in the status or evidence, after `—` or `-`
 check() { printf '%s\n' "$1" | awk -F'|' -v s="$2" 'NF {st=$s; gsub(/^ +| +$/,"",st); ev=$(s+1)
-  if (st=="done" && ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100)
+  if (st=="done" && ev !~ /→|\/|https?:\/\/|(^|[ `])[A-Za-z0-9_-][A-Za-z0-9_.-]*\.[A-Za-z][A-Za-z0-9]*(:[0-9]+)?([ `]|$)/) print "done without evidence: " substr($0,1,100)
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
   else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
   else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }

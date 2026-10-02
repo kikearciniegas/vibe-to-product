@@ -73,7 +73,7 @@ rows '## 4.' "$plan" > "$tmp.p"; rows '## 2.' "$draft" > "$tmp.e"; np=$(grep -c 
 items < "$tmp.p" > "$tmp.pi"; items < "$tmp.e" > "$tmp.ei"; diff_items=$(comm -3 "$tmp.pi" "$tmp.ei")
 [ -z "$diff_items" ] || { echo "FAIL: §2 items differ from PLAN §4 (<TAB> = only in draft):"; printf '%s\n' "$diff_items" | head -n 10; fail=1; }
 bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev (i>5?"|":"") $i; gsub(/^ +| +$/,"",ev)
-  if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
+  if (st=="done") { if (ev !~ /→|\/|https?:\/\/|(^|[ `])[A-Za-z0-9_-][A-Za-z0-9_.-]*\.[A-Za-z][A-Za-z0-9]*(:[0-9]+)?([ `]|$)/) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
   else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
   else if (st ~ /^gap( |$)/) { r=st; sub(/^gap *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tgap cites no existing path: " substr($0,1,100) }

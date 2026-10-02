@@ -64,7 +64,7 @@ rows '## 4.' "$plan" > "$tmp.p"; rows '## 3.' "$draft" > "$tmp.t"; np=$(grep -c 
 awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' "$tmp.p" | sort > "$tmp.pi"; awk -F'|' '{s=$2; gsub(/^ +| +$/,"",s); print s}' "$tmp.t" | sort > "$tmp.si"
 [ -z "$(comm -3 "$tmp.pi" "$tmp.si")" ] || { echo "FAIL: §3 items differ from PLAN §4"; comm -3 "$tmp.pi" "$tmp.si" | head -n 10; fail=1; }
 bad=$(awk -F'|' '{st=$4; gsub(/^ +| +$/,"",st); ev=""; for (i=5;i<NF;i++) ev=ev (i>5?"|":"") $i; gsub(/^ +| +$/,"",ev)
-  if (st=="done") { if (ev !~ /→|\/|https?:\/\//) print "done without evidence: " substr($0,1,100) }
+  if (st=="done") { if (ev !~ /→|\/|https?:\/\/|(^|[ `])[A-Za-z0-9_-][A-Za-z0-9_.-]*\.[A-Za-z][A-Za-z0-9]*(:[0-9]+)?([ `]|$)/) print "done without evidence: " substr($0,1,100) }
   else if (st ~ /^N\/A/) { if (index(st ev,"BRIEF §")==0) print "N/A without BRIEF §: " substr($0,1,100) }
   else if (st=="pending") { if (index(ev,"deferred to deploy: ")!=1) print "pending without deferred to deploy: " substr($0,1,100) }
   else if (st ~ /^not adopted( |$)/) { r=st; sub(/^not adopted *((—|-) *)?/,"",r); print "ref\t" (r=="" ? ev : r) "\tnot adopted cites no existing path: " substr($0,1,100) }
