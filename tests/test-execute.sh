@@ -424,6 +424,13 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   t35 v2p; is "35 .v2p-only commit between tasks exit" $rc 0; has "35 .v2p-only PASS" "$out" "PASS: 2/3 tasks (1 skipped)"
   t35 skip; is "35 skipped task has no range exit" $rc 1; has "35 skipped task's commit named" "$out" "commit $cp touches"
   t35 none; is "35 control: sequential tasks exit" $rc 0; has "35 control PASS" "$out" "PASS: 2/3 tasks (1 skipped)"
+  # 36. live re-test: start outside git, or before the first commit, wrote `branch:  · base: ` and later gates
+  # failed on the empty record; start now refuses and writes nothing
+  f36=$base/f36-$SH; sh "$here/tests/fixture-execute.sh" "$f36" >/dev/null 2>&1; cd "$f36"; rm -rf .git
+  TR start 1; is "36 no git exit" $rc 2; has "36 no git" "$out" "no commit to record as the task's base"
+  is "36 no git: no record" "$(test -f .v2p/work/execute-task-1.md && echo yes)" ""
+  git init -q; TR start 1; is "36 unborn exit" $rc 2; has "36 unborn" "$out" "no commit to record as the task's base"
+  git add -A; git commit -qm base; TR start 1; is "36 control: first commit exit" $rc 0
   cd "$base"
 done
 # 12. sh and zsh produce the same EXECUTE.md body (dates, shas and branch-free lines compared)

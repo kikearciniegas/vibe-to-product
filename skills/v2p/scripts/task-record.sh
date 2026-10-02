@@ -81,6 +81,8 @@ need() { fresh || { fin; echo "ERROR: no current record for task $n (run: task-r
   sealed || { echo "ERROR: $rec changed outside task-record.sh (receipt mismatch)" >&2; exit 2; }; }
 case $cmd in
 start)
+  # outside git or before the first commit the record got an empty base/branch and every later gate failed on it
+  git rev-parse -q --verify HEAD >/dev/null 2>&1 || { echo "ERROR: no commit to record as the task's base: execute needs a git repo with at least one commit (git init, then commit the project)" >&2; exit 2; }
   if [ -n "$nb" ]; then
     b=$(git rev-parse -q --verify "$nb^{commit}") || { echo "ERROR: --base $nb does not resolve to a commit" >&2; exit 2; }
     git merge-base --is-ancestor "$b" HEAD || { echo "ERROR: --base $nb is not an ancestor of HEAD" >&2; exit 2; }
