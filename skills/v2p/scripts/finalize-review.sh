@@ -24,7 +24,7 @@ pl=$(grep '^preview: ' "$draft"); nopv=no
 if [ "$(grep -c '^preview: ' "$draft")" -ne 1 ] || ! printf '%s\n' "$pl" | grep -qE '^preview: (https?://[^ ]+ · started by [^ ].*|none (—|-) [^ ].*)$'; then
   echo "FAIL: no valid 'preview:' line (want exactly one 'preview: <URL> · started by <cmd>' or 'preview: none — <reason>')"; fail=1
 else case $pl in "preview: none"*) nopv=yes ;; esac; fi
-rows '## 1.' "$draft" > "$tmp.r"; nreq=0; runs=0; fsum=0
+rows '## 1.' "$draft" > "$tmp.r"; nreq=0; runs=0; fsum=0; pvgap=0
 while IFS= read -r c; do nreq=$((nreq + 1))
   row=$(awk -F'|' -v c="$c" '{s=$2; gsub(/^ +| +$/,"",s); if (s==c) {print; exit}}' "$tmp.r")
   [ -n "$row" ] || { echo "FAIL: §1 missing $c row"; fail=1; continue; }
@@ -32,7 +32,7 @@ while IFS= read -r c; do nreq=$((nreq + 1))
   fc=$(printf '%s\n' "$row" | awk -F'|' '{print $(NF-1)}' | trim)
   [ -n "$run" ] || { echo "FAIL: §1 $c row has no run invocation"; fail=1; continue; }
   if printf '%s\n' "$fc" | grep -qE '^[0-9]+ findings?$'; then fsum=$((fsum + ${fc%% *})); runs=$((runs + 1))
-  elif { [ "$c" = codex ] || { [ "$nopv" = yes ] && { [ "$c" = ux-laws ] || [ "$c" = qa ]; }; }; } && printf '%s\n' "$fc" | grep -qE '^unavailable: .+'; then runs=$((runs + 1))
+  elif { [ "$c" = codex ] || { [ "$nopv" = yes ] && { [ "$c" = ux-laws ] || [ "$c" = qa ]; }; }; } && printf '%s\n' "$fc" | grep -qE '^unavailable: .+'; then runs=$((runs + 1)); case $c in ux-laws|qa) pvgap=1 ;; esac
   else echo "FAIL: §1 $c findings cell '$fc' (want '<n> findings'$( [ "$c" = codex ] && echo " or 'unavailable: <reason>'"))"; fail=1; fi
 done < "$tmp.c"
 # 3b. brand: a PLAN whose Spec line names .v2p/DESIGN.md (mapped after /v2p brand; hash-locked, so the mention cannot be
@@ -44,7 +44,8 @@ if grep -q '\.v2p/DESIGN\.md' "$plan"; then
 fi
 # 4. §2 findings: one row per finding; status fixed <sha> | accepted: … | open: <deploy or BRIEF §>
 rows '## 2.' "$draft" > "$tmp.f"; nf=$(grep -c . "$tmp.f")
-[ "$nf" -eq "$fsum" ] || { echo "FAIL: §2 rows $nf, §1 findings sum $fsum"; fail=1; }
+# preview: none → review.md records the missing preview as one §2 `open:` row that no §1 count includes (live re-test D7)
+[ "$nf" -eq $((fsum + pvgap)) ] || { echo "FAIL: §2 rows $nf, §1 findings sum $fsum$( [ "$pvgap" -eq 1 ] && echo " + 1 preview gap")"; fail=1; }
 awk -F'|' '{s=$(NF-1); gsub(/^ +| +$/,"",s); print s}' "$tmp.f" > "$tmp.s"; fx=0; fa=0; fo=0
 while IFS= read -r s; do
   case $s in

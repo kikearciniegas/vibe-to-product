@@ -95,6 +95,9 @@ for SH in sh zsh; do
   pv() { rm -f .v2p/REVIEW.md .v2p/.review-pass; sed "s#^preview: .*#$1#" "$base/good-$SH" > "$P"; }
   ux0='| ux-laws | references/ux-laws.md + /design-review | 0 findings |'; qa0='| qa | /qa on http://localhost:8787 | 0 findings |'
   pv 'preview: none — native app, no web build'; sub "$ux0" '| ux-laws | references/ux-laws.md | unavailable: no preview |'; sub "$qa0" '| qa | manual: tester on device | unavailable: no preview |'
+  FR; is "18 none + unavailable, no gap row exit" $rc 1; has "18 gap row required" "$out" "§2 rows 3, §1 findings sum 3 + 1 preview gap"
+  # live re-test D7: review.md records the missing preview as a §2 open: row, which no §1 count included
+  awk '{ print } /^\| 3 \| codex /{ print "| 4 | preview | - | med | open: no preview, handled by the deploy task |" }' "$P" > "$P.new" && mv "$P.new" "$P"
   FR; is "18 none + unavailable exit" $rc 0; has "18 runs counted" "$out" "PASS: runs 7/7"
   pv 'preview: none - native app'; FR; is "18 none hyphen exit" $rc 0
   pv 'preview: http://localhost:8787 · started by npm run dev'; sub "$qa0" '| qa | /qa | unavailable: no preview |'
