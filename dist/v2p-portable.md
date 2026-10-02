@@ -1,4 +1,4 @@
-# v2p portable pack (generated 2026-10-01; do not edit)
+# v2p portable pack (generated 2026-10-02; do not edit)
 
 <!-- source: SKILL.md -->
 
@@ -292,7 +292,7 @@ Print the case and the BRIEF §1 profile. The case comes from BRIEF §6 `Status:
 | `none` (internal tool, org UI kit) | **none** (document the kit) | the organisation's kit, or the stack default |
 | any, in re-theme mode | **re-theme** | first record the tokens in use now, then the row above that matches |
 
-Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed first (`rm DESIGN.md`, the link only), so no skill writes through it. The finalize step lists the link in `.git/info/exclude` (local, never committed), so it never counts as an untracked file at execute Step 0, and keeps `.v2p/work/brand-incumbent.md` for mapping cycle 2.
+Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed first (`rm DESIGN.md`, the link only), so no skill writes through it. The finalize step lists the link in `.git/info/exclude` (local, never committed), so it never counts as an untracked file at execute Step 0, and keeps `.v2p/work/brand-incumbent.md` for mapping cycle 2 (finalize-plan clears it once that plan passes).
 
 ## Step 1 — Draft per case
 Portable: follow the case below by hand; the user pastes what a tool would have produced (the guide's palette, type, voice and logo rules; candidate palettes). Take BRIEF answers as given and say "taking X from the BRIEF".
@@ -868,9 +868,9 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 - Model guard (router §2).
 
 ## Step 0 — Git safety
-- No repo, or no commit yet (`git rev-parse -q --verify HEAD` fails; greenfield) → say so, then `git init` when there is no repo, add the `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing, and commit the project as it stands as the base (`chore: v2p base`). Every task records its base commit; `task-record.sh start` refuses without one.
+- No repo, or no commit yet (`git rev-parse -q --verify HEAD` fails; greenfield) → say so, then `git init` when there is no repo, add the `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing, add `/DESIGN.md` to `.git/info/exclude` when the root `DESIGN.md` is v2p's symlink to `.v2p/DESIGN.md` (brand ran before the repo existed, so its finalize step could not), and commit the project as it stands as the base (`chore: v2p base`). Every task records its base commit; `task-record.sh start` refuses without one.
 - Tracked changes outside `.v2p/` (`git status --porcelain`, ignoring `??` lines and `.v2p/` paths) → print the paths and "Commit or discard these yourself; v2p never stashes or commits another session's changes." Stop.
-- Untracked files outside `.v2p/` (`??` lines) in the tree execute will work in → print them and stop until the user has committed, removed or listed each in `.git/info/exclude`. The task commit runs the scope check first, and the check counts every untracked file: one left here blocks every task commit.
+- Untracked files outside `.v2p/` (`??` lines of `git status --porcelain -uall`, which lists files, not a collapsed `?? <dir>/`) in the tree execute will work in → print them and stop until the user has committed, removed or listed each in `.git/info/exclude`. The task commit runs the scope check first, and the check counts every untracked file: one left here blocks every task commit.
 - Clean tree → choose where to work. `.v2p/PLAN.md` tracked in git (`git ls-files --error-unmatch .v2p/PLAN.md` succeeds) → a new worktree on a new branch, so the handoff files travel with the branch. Not tracked → a new branch in place: `git switch -c <name>`. `<name>` is `v2p/execute-<YYYY-MM-DD>`, or, when that branch exists (a same-day re-run, or cycle 2 on cycle 1's day), the first free of `v2p/execute-<YYYY-MM-DD>-2`, `-3`, … (free = `git rev-parse --verify --quiet refs/heads/<name>` fails). Already on this plan's execute branch (resuming it) → stay there; no new branch. Never work on the default branch.
 - Do not rebase the execute branch while execute runs: each task's scope is measured from its recorded base commit.
 - Portable: tell the user to create the branch and confirm before Step 1.

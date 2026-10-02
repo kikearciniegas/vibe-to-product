@@ -80,7 +80,10 @@ flowchart LR
   # 8. Threat Model → PASS
   ins '^## 2\.' '## Threat Model
 Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
+  # live re-run D4: brand-incumbent.md (a re-theme's input to this plan) was kept forever; the PASS that consumed it clears it
+  mkdir -p "$v/work"; echo inc > "$v/work/brand-incumbent.md"
   run; is "8 exit" $rc 0; has "8 PASS" "$out" "PASS: $ntasks tasks, $nrows standards rows, total \$0/month"
+  is "8 incumbent cleared" "$(test -f "$v/work/brand-incumbent.md" && echo yes)" ""
   is "8 draft gone" "$(test -f "$P" && echo yes)" ""
   is "8 receipt" "$(cat "$v/.plan-pass")" "$(shasum -a 256 "$v/PLAN.md" | cut -d' ' -f1)"
   # 10. Verifier lint and Files completeness: each case replaces one line of the passing plan (always the original)

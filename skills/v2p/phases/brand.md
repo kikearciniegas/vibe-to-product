@@ -31,7 +31,7 @@ Print the case and the BRIEF §1 profile. The case comes from BRIEF §6 `Status:
 | `none` (internal tool, org UI kit) | **none** (document the kit) | the organisation's kit, or the stack default |
 | any, in re-theme mode | **re-theme** | first record the tokens in use now, then the row above that matches |
 
-Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed first (`rm DESIGN.md`, the link only), so no skill writes through it. The finalize step lists the link in `.git/info/exclude` (local, never committed), so it never counts as an untracked file at execute Step 0, and keeps `.v2p/work/brand-incumbent.md` for mapping cycle 2.
+Re-theme: a root `DESIGN.md` that is a symlink to `.v2p/DESIGN.md` is removed first (`rm DESIGN.md`, the link only), so no skill writes through it. The finalize step lists the link in `.git/info/exclude` (local, never committed), so it never counts as an untracked file at execute Step 0, and keeps `.v2p/work/brand-incumbent.md` for mapping cycle 2 (finalize-plan clears it once that plan passes).
 
 ## Step 1 — Draft per case
 Portable: follow the case below by hand; the user pastes what a tool would have produced (the guide's palette, type, voice and logo rules; candidate palettes). Take BRIEF answers as given and say "taking X from the BRIEF".

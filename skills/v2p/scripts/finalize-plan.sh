@@ -147,5 +147,6 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.plan-pass"
-find "$d/work" -name 'mapping-*' -exec rm -f {} + 2>/dev/null
+# brand-incumbent.md (a re-theme's) is this plan's input, consumed now: cleared so a later re-theme never reads a stale one
+find "$d/work" \( -name 'mapping-*' -o -name 'brand-incumbent.md' \) -exec rm -f {} + 2>/dev/null
 echo "PASS: $tasks tasks, $rows standards rows, total \$$total/month -> $out"
