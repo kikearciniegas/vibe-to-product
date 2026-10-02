@@ -128,6 +128,11 @@ printf '%s\n' "$fm" | grep -q '^description: *"\{0,1\}PLACEHOLDER' && st=placeho
 mv "$draft" "$out"
 # Receipt: mapping, execute's UI gate and review accept DESIGN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.brand-pass"
-if [ -n "$own" ]; then rd=", root DESIGN.md: project-owned, kept"; else ln -sfn "$(basename "$d")/DESIGN.md" "$root/DESIGN.md"; rd=" (+ DESIGN.md symlink)"; fi
-find "$d/work" -name 'brand-*' -exec rm -f {} + 2>/dev/null
+if [ -n "$own" ]; then rd=", root DESIGN.md: project-owned, kept"; else ln -sfn "$(basename "$d")/DESIGN.md" "$root/DESIGN.md"; rd=" (+ DESIGN.md symlink)"
+  # the link is v2p's, not the project's: an untracked file stops execute Step 0, so git ignores it locally (never committed)
+  if ex=$(cd "$root" && git rev-parse --git-path info/exclude 2>/dev/null) && pre=$(cd "$root" && git rev-parse --show-prefix); then
+    case $ex in /*) ;; *) ex=$root/$ex ;; esac; mkdir -p "$(dirname "$ex")"
+    grep -qx "/${pre}DESIGN.md" "$ex" 2>/dev/null || echo "/${pre}DESIGN.md" >> "$ex"; fi; fi
+# brand-incumbent.md (re-theme) is mapping cycle 2's input: kept
+find "$d/work" -name 'brand-*' ! -name 'brand-incumbent.md' -exec rm -f {} + 2>/dev/null
 echo "PASS: $nc colors, $nt typography roles, $ncp components, lint 0 errors / $nw warnings noted, status ${st:-final} -> $out$rd"

@@ -139,6 +139,14 @@ for SH in sh zsh; do
   is "15 adopt without a root DESIGN.md links" "$(test -L "$w/DESIGN.md" && readlink "$w/DESIGN.md")" ".v2p/DESIGN.md"
   good; code 'existing at .'; echo old > "$w/.v2p/DESIGN.md"; ln -s .v2p/DESIGN.md "$w/DESIGN.md"; run; is "15 adopt re-run over v2p's link exit" $rc 0
   has "15 adopt link is not project-owned" "$out" "(+ DESIGN.md symlink)"
+  # 16. live re-test: the link was an untracked file, so execute Step 0 stopped on it; in a git repo it goes in
+  # .git/info/exclude (local, never committed), once. A re-theme's brand-incumbent.md survives for mapping cycle 2.
+  good; mkdir -p "$w/sub"; (cd "$w" && git init -q && git add -A && git commit -qm base); mv "$w/.v2p" "$w/sub/.v2p"; w0=$w; w=$w/sub; P=$w/.v2p/DESIGN.draft.md
+  echo inc > "$w/.v2p/work/brand-incumbent.md"; echo x > "$w/.v2p/work/brand-x.md"; run; is "16 exit" $rc 0
+  is "16 link not untracked" "$(cd "$w0" && git status --porcelain --untracked-files=all -- sub/DESIGN.md)" ""
+  is "16 exclude names the link" "$(grep -cx '/sub/DESIGN.md' "$w0/.git/info/exclude")" 1
+  is "16 incumbent kept" "$(cat "$w/.v2p/work/brand-incumbent.md" 2>/dev/null)" inc; is "16 other work cleared" "$(test -f "$w/.v2p/work/brand-x.md" && echo yes)" ""
+  cp "$src/DESIGN.good.md" "$P"; run; is "16 re-run exclude once" "$(grep -cx '/sub/DESIGN.md' "$w0/.git/info/exclude")" 1
   good; run PATH=/usr/bin:/bin; nw "no npx" "designmd linter unavailable"
   good; rep 'Next: /v2p mapping' 'Next: later'; run PATH=/usr/bin:/bin; has "11 no npx: own checks still run" "$out" "no 'Next: /v2p mapping' (or"
   good; rep 'description: Warm, precise, local — sunlit orange on cream, deep navy text, calm energy' 'description: PLACEHOLDER — neutral tokens until brand.pdf arrives'
