@@ -1,6 +1,6 @@
 # EXECUTE template
 
-Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept, evidence empty); execute fills evidence as tasks earn it.
+Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept; a `done` row keeps its evidence, every other evidence cell starts empty); execute fills evidence as tasks earn it.
 
 Rules for §2: statuses are exactly `done`, `pending`, `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`), `not adopted — <path>` or `gap — <path>` (the path exists in the repo); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
 <!-- claude-only -->

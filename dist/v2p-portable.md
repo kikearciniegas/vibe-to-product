@@ -747,7 +747,7 @@ Print the paths written, the quarantine restore command, "commit: `.v2p/ docs/ R
 
 Adopt writes this as `.v2p/AUDIT.draft.md`, never as `AUDIT.md`; the finalize step checks it and produces `AUDIT.md`. Replace every `<…>`.
 
-Statuses are exactly `done`, `pending`, `N/A — <reason citing BRIEF §n>`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `` `cmd` → expected `` (any `→` makes it a command claim, so a path is written without one), a path, or a URL. A cell command has no pipe (a cell needs `\|`, which is copied into PLAN §4 and reads there as a literal pipe): use `grep -c`, `rg -e a -e b`. An absence claim (`→ 0`, `` `! …` ``) carries a positive control in the same cell: `` control: `cmd` → n ``. `N/A` carries its `BRIEF §n` reason in the status cell, never in the evidence cell: execute empties the evidence when it copies the table. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
+Statuses are exactly `done`, `pending`, `N/A — <reason citing BRIEF §n>`, `not adopted — <path §/line>`, `gap — <path:line>`. `done` needs evidence: `` `cmd` → expected `` (any `→` makes it a command claim, so a path is written without one), a path, or a URL. A cell command has no pipe (a cell needs `\|`, which is copied into PLAN §4 and reads there as a literal pipe): use `grep -c`, `rg -e a -e b`. An absence claim (`→ 0`, `` `! …` ``) carries a positive control in the same cell: `` control: `cmd` → n ``. `N/A` carries its `BRIEF §n` reason in the status cell, never in the evidence cell: execute empties the evidence of every row but `done` when it copies the table. `not adopted` (owner decision) and `gap` (known, not built) cite a path that exists in the repo.
 
 ````
 # AUDIT — <project name>
@@ -868,6 +868,7 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 - Model guard (router §2).
 
 ## Step 0 — Git safety
+- No repo, or no commit yet (`git rev-parse -q --verify HEAD` fails; greenfield) → say so, then `git init` when there is no repo, add the `.gitignore` lines `.v2p/work/` and `.v2p/*.draft.md` when missing, and commit the project as it stands as the base (`chore: v2p base`). Every task records its base commit; `task-record.sh start` refuses without one.
 - Tracked changes outside `.v2p/` (`git status --porcelain`, ignoring `??` lines and `.v2p/` paths) → print the paths and "Commit or discard these yourself; v2p never stashes or commits another session's changes." Stop.
 - Untracked files outside `.v2p/` (`??` lines) in the tree execute will work in → print them and stop until the user has committed, removed or listed each in `.git/info/exclude`. The task commit runs the scope check first, and the check counts every untracked file: one left here blocks every task commit.
 - Clean tree → choose where to work. `.v2p/PLAN.md` tracked in git (`git ls-files --error-unmatch .v2p/PLAN.md` succeeds) → a new worktree on a new branch, so the handoff files travel with the branch. Not tracked → a new branch in place: `git switch -c <name>`. `<name>` is `v2p/execute-<YYYY-MM-DD>`, or, when that branch exists (a same-day re-run, or cycle 2 on cycle 1's day), the first free of `v2p/execute-<YYYY-MM-DD>-2`, `-3`, … (free = `git rev-parse --verify --quiet refs/heads/<name>` fails). Already on this plan's execute branch (resuming it) → stay there; no new branch. Never work on the default branch.
@@ -876,7 +877,7 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 
 ## Step 1 — Preflight (before Task 1)
 The scan executes; it is not skipped because the plan looks fine.
-1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses, N/A reasons and `not adopted`/`gap` refs kept, evidence empty).
+1. Copy PLAN §4 into `.v2p/EXECUTE.draft.md` using `references/execute-template.md` (statuses, N/A reasons, `not adopted`/`gap` refs and the evidence of `done` rows kept; every other evidence cell empty).
 2. Run the plan's empirical claims: run every mechanical Verifier command that can run on the current tree. Red before green is judged per task: at least one of the task's runnable commands must FAIL now, except in a task titled `confirm:`. A command that runs the project's existing test suite (its documented test command over tests that exist today; mapping requires it in a code task's Verifier, and it passes by design) is exempt: it is neither the red one nor a reason to flag the task. A task that has non-exempt runnable commands and all of them pass before the task exists is a plan defect (a task with none is not judged here): record a ruling in the execution ledger and ask the user: skip the task as a no-op, or keep it as `confirm:` (the ruling says so; it runs and verifies as written, PLAN.md is not edited).
 3. Scope sanity: a task whose steps `cd` into a new directory (for example a scaffold command that creates a subfolder), or whose Files are outside the project root, is a plan defect. Ruling: scaffold into `.` (adapt the command) or stop and ask.
 4. UI gate once now: if any task is a UI task, run the Preconditions' UI gate check before Task 1, so a stale or missing DESIGN.md stops the run here, not mid-plan.
@@ -1009,7 +1010,7 @@ Print the path, the `checked:` counts, `live: https://<host>`, then `Next: live 
 <!-- source: references/execute-template.md -->
 # EXECUTE template
 
-Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept, evidence empty); execute fills evidence as tasks earn it.
+Copy the block below into `.v2p/EXECUTE.draft.md` at execute Step 1 and replace every `<…>`. §2 starts as a copy of PLAN §4 (statuses and N/A reasons kept; a `done` row keeps its evidence, every other evidence cell starts empty); execute fills evidence as tasks earn it.
 
 Rules for §2: statuses are exactly `done`, `pending`, `N/A` (an `N/A — <reason>` status cell is accepted when it or the evidence cell contains `BRIEF §`), `not adopted — <path>` or `gap — <path>` (the path exists in the repo); `done` needs evidence: `<command> → <observed output>`, a path, or a URL; never `[x]`.
 Portable: fill §1 yourself, one row per PLAN task, from what was actually run; there is no receipt without the scripts, so say so under the table.
