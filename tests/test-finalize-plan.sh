@@ -196,6 +196,7 @@ curl -m 5 -sI https://x | grep -cE 'hsts|csp'
   rep 'Order: 1 → 2' ''; is "10j no Order exit" $rc 1; has "10j no Order" "$out" "$M_OR"
   rep 'Order: 1 → 2' '' "$V2" "$V2
 Order: 1 → 2"; has "10j Order outside §6 does not count" "$out" "$M_OR"
+  rep 'Order: 1 → 2' 'Order: 1'; is "10j task left out exit" $rc 1; has "10j task left out" "$out" "FAIL: §6 Order: leaves out task 2"
   rep 'Order: 1 → 2' 'Order: tbd'; is "10j Order without numbers exit" $rc 1; has "10j Order without numbers" "$out" "FAIL: §6 Order: names no task number"
   # 11. provenance (field test V3: PLAN recorded a Qn as an owner decision nobody made): a `Qn` the PLAN cites
   # must be a label in BRIEF §10's item column; quarters (`Q4 2026`) and SCAVENGE's own Qn are not decision labels

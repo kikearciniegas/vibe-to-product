@@ -33,12 +33,14 @@ if ! grep -q '^## Architecture' "$draft"; then echo "FAIL: no '## Architecture' 
 elif ! awk '/^## Architecture/ { a = 1; next } /^## / { a = 0 } a && /^```mermaid/ { m = 1 } END { exit !m }' "$draft"; then
   echo "FAIL: '## Architecture' has no \`\`\`mermaid block"; fail=1; fi
 grep -q '^## Threat Model' "$draft" || { echo "FAIL: no '## Threat Model' section"; fail=1; }
-# §6 Order: execute runs the tasks in that order: a §6 line holding `Order:`, whose numbers are all `### Task <n>` numbers
+# §6 Order: execute runs the tasks in that order: a §6 line holding `Order:` that names every `### Task <n>` number and no other
 order=$(awk '/^## 6/ { f = 1; next } /^## / { f = 0 } f && /(^|[^A-Za-z])Order:/ { sub(/.*Order:/, ""); print "x" $0; exit }' "$draft")
 if [ -z "$order" ]; then echo "FAIL: §6 has no 'Order:' line (task numbers in run order)"; fail=1
 elif ! printf '%s\n' "$order" | grep -q '[0-9]'; then echo "FAIL: §6 Order: names no task number"; fail=1
 else for n in $(printf '%s\n' "$order" | grep -oE '[0-9]+' | sort -un); do
   grep -qE "^### Task $n([^0-9]|\$)" "$draft" || { echo "FAIL: §6 Order: names task $n, not a task in §5"; fail=1; }; done
+  for n in $(sed -n 's/^### Task \([0-9][0-9]*\).*/\1/p' "$draft"); do
+    printf '%s\n' "$order" | grep -qE "(^|[^0-9])$n([^0-9]|\$)" || { echo "FAIL: §6 Order: leaves out task $n"; fail=1; }; done
 fi
 if grep -qE '^- Profile: *landing([^a-z-]|$)' "$d/BRIEF.md" && ! grep -q '^## 4b' "$draft"; then
   echo "FAIL: profile landing and no '## 4b' section"; fail=1
