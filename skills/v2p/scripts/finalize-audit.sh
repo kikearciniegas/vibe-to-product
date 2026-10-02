@@ -99,7 +99,7 @@ rows '## 5.' | awk -F'|' 'NF {s=$2; t=$3; gsub(/^ +| +$/,"",s); gsub(/^ +| +$/,"
 while IFS='	' read -r s t; do (cd "$root" && grep -qF "From $s" "$t" 2>/dev/null) || { echo "FAIL: §5 $t has no 'From $s' section"; fail=1; }; done < "$tmp"
 
 [ "$fail" -eq 0 ] || { echo "FAIL: $out not written"; exit 1; }
-printf '%s\n%s\n' "$tidy" "$qline" > "$tmp"
+printf '%s\n%s\n%s\n' "$tidy" "$bline" "$qline" > "$tmp"
 awk -v t="$tmp" -v c="checked: $rows2/$expected standards · evidence runs $vp/$vt · $rows3 modularity · tidy $v violations · $qline" '
   /^checked: /{print c; next}
   /^## 4\./{print; print ""; while ((getline l < t) > 0) print l; print ""; skip=1; next}

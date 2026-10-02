@@ -84,6 +84,7 @@ for SH in sh zsh; do
   cd "$fx" || exit 2
   bk() { sed "s#^backup: .*#$1#" "$G" > .v2p/AUDIT.draft.md; rm -f .v2p/AUDIT.md .v2p/.audit-pass; }
   bk 'backup: none'; FA; is "B none exit" $rc 0
+  is "B backup line kept in §4" "$(grep -c '^backup: none$' .v2p/AUDIT.md 2>/dev/null)" 1
   mkdir -p "$HOME/.v2p-backups/p"; : > "$HOME/.v2p-backups/p/2026-10-01-000000-original.tar.gz"
   bk "backup: $HOME/.v2p-backups/p/2026-10-01-000000-original.tar.gz"; FA; is "B archive exit" $rc 0
   bk 'backup: ~/.v2p-backups/p/2026-10-01-000000-original.tar.gz'; FA; is "B ~ archive exit" $rc 0
