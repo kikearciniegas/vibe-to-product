@@ -107,5 +107,5 @@ awk -v t="$tmp" -v c="checked: $rows2/$expected standards · evidence runs $vp/$
   !skip' "$draft" > "$out" && rm "$draft"
 # Receipt: mapping accepts AUDIT.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.audit-pass"
-rm -f "$d"/work/adopt-*
+find "$d/work" -name 'adopt-*' -exec rm -f {} + 2>/dev/null
 echo "PASS: $rows2/$expected standards, evidence runs $vp/$vt, $rows3 modularity, tidy $v -> $out"

@@ -42,5 +42,5 @@ done
 sed -E "s|links: [^ ]+ ok|links: $ok/$total ok|" "$draft" > "$out" && rm "$draft"
 # Receipt: the next phase accepts SCAVENGE.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.scavenge-pass"
-rm -f "$d"/work/scavenge-*
+find "$d/work" -name 'scavenge-*' -exec rm -f {} + 2>/dev/null
 echo "PASS: links $ok/$total ok -> $out"

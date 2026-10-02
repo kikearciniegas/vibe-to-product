@@ -68,7 +68,7 @@ Claude Code: `AskUserQuestion`; question 1 with `preview` = each candidate's tok
 <!-- /claude-only -->
 
 ## Step 3 — Show and approve
-Write the draft to `.v2p/DESIGN.draft.md`. Print it (or its path), the preview page or mockup paths, and a six-line summary: primary / on-primary / surface / on-surface, display and body faces, motion approach. Ask "Approve DESIGN.md (Recommended) / Change tokens / Change direction". A change → back to the step named, then show again. Nothing is final before approval.
+Write the draft to `.v2p/DESIGN.draft.md`. Print it (or its path), the preview page or mockup paths, and an eight-line summary: primary / on-primary / surface / on-surface / error / on-error, display and body faces, motion approach. Ask "Approve DESIGN.md (Recommended) / Change tokens / Change direction". A change → back to the step named, then show again. Nothing is final before approval.
 
 ## Step 4 — Finalize
 Portable: rename the draft to `.v2p/DESIGN.md`, create the root link (`ln -sfn .v2p/DESIGN.md DESIGN.md`; not when BRIEF §1 says `Code: existing …` and root `DESIGN.md` is a regular file: that is the project's own, kept as is) and say there is no receipt.

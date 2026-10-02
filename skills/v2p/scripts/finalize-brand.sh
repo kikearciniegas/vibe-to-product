@@ -129,5 +129,5 @@ mv "$draft" "$out"
 # Receipt: mapping, execute's UI gate and review accept DESIGN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d' ' -f1 > "$d/.brand-pass"
 if [ -n "$own" ]; then rd=", root DESIGN.md: project-owned, kept"; else ln -sfn "$(basename "$d")/DESIGN.md" "$root/DESIGN.md"; rd=" (+ DESIGN.md symlink)"; fi
-rm -f "$d"/work/brand-*
+find "$d/work" -name 'brand-*' -exec rm -f {} + 2>/dev/null
 echo "PASS: $nc colors, $nt typography roles, $ncp components, lint 0 errors / $nw warnings noted, status ${st:-final} -> $out$rd"

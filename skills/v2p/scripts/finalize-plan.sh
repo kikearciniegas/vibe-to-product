@@ -147,5 +147,5 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.plan-pass"
-rm -f "$d"/work/mapping-*
+find "$d/work" -name 'mapping-*' -exec rm -f {} + 2>/dev/null
 echo "PASS: $tasks tasks, $rows standards rows, total \$$total/month -> $out"
