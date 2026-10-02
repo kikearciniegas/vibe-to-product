@@ -117,7 +117,7 @@ Run `sh <skill>/scripts/finalize-audit.sh .v2p` until it prints `PASS`. It fills
 <!-- /claude-only -->
 
 ## Step 8 — Hand off
-Print the paths written, the quarantine restore command, "commit: `.v2p/ docs/ README.md CHANGELOG.md .env.example .gitignore`", then `Next: /v2p scavenge`.
+Print the paths written, the quarantine restore command, "commit: `<the paths among .v2p/ docs/ README.md CHANGELOG.md .env.example .gitignore that exist>`" (list only paths that exist: `git add` with one missing path stages nothing), then `Next: /v2p scavenge`.
 
 <!-- claude-only -->
 ## Claude Code note

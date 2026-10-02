@@ -16,7 +16,7 @@ The execution loop itself belongs to a plan-execution method (superpowers in Cla
 - Existing `.v2p/EXECUTE.md` with its receipt → offer: resume (go to `/v2p review`) or re-run.
 - `.v2p/PLAN-AMENDMENTS.md`, if present: read it. Every line in it is scope already granted. PLAN.md itself is never edited during execute.
 <!-- claude-only -->
-- Records: list `.v2p/work/execute-task-*.md`. A record is reusable when its `plan:` value equals the content of `.v2p/.plan-pass` (not "today": execution spans days). Print `resuming: tasks <list> done, <list> started` and continue from the first task whose record has no `verifier: pass`. A record with another `plan:` is stale; `task-record.sh start` overwrites it. `.v2p/work/` records are the only resume source.
+- Records: list `.v2p/work/execute-task-*.md`. A record is reusable when its `plan:` value equals the content of `.v2p/.plan-pass` (not "today": execution spans days). Print `resuming: tasks <list> done, <list> started` and continue from the first task whose record has no `verifier: pass`. A record with another `plan:` is stale; `task-record.sh start` overwrites it. `.v2p/work/` records are the only resume source. On resume (records reused, already on this plan's execute branch): skip Step 0's branch choice and Step 1.1 (`EXECUTE.draft.md` already holds filled evidence; never re-copy it); uncommitted paths inside the resumed task's Files are its own work in progress, not a Step 0 stop.
 <!-- /claude-only -->
 - Model guard (router §2).
 

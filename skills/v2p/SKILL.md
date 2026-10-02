@@ -9,7 +9,7 @@ description: Turn an idea or AI prototype into a production product. Use when th
 v2p is a thin orchestrator: each phase reads the previous handoff file and writes one of its own in `<project>/.v2p/`.
 It never reimplements what superpowers or gstack already do; later phases call them.
 Portable pack: if this arrives as one pasted document, the files named below follow it as sections. Run the handshake first and use only the standards sections for the chosen profile.
-Receipts, every phase: when a v2p script or gate refuses or blocks, stop and show the user its output; never write, edit or seal a `.v2p/` handoff file, `.v2p/work/` record or `.*-pass` receipt by hand.
+Receipts, every phase: when a v2p script or gate refuses or blocks, stop and show the user its output; never write, edit or seal a `.v2p/` handoff file, `.v2p/work/` record or `.*-pass` receipt by hand. Portable: there are no scripts, so the phases tell you to write the handoff files directly (`checked: pending`); that is the only exception.
 Blocks between `<!-- claude-only -->` markers apply to Claude Code only; other runtimes skip them.
 
 ## 2. Entry
