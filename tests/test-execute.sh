@@ -117,6 +117,10 @@ for SH in sh zsh; do
   has "10a names finalize" "$out" "execute is finalized"; has "10a names the route" "$out" "REVIEW §2 scope finding row, not an amendment"
   is "10a amendments unchanged" "$(sha .v2p/PLAN-AMENDMENTS.md)" "$a0"
   TR verify 2; has "10a verify after finalize" "$out" "execute is finalized"; TR start 1; has "10a start after finalize" "$out" "execute is finalized"
+  # only the review route: no "run task-record.sh start" / draft-missing advice that cannot apply after finalize
+  TR allow 1 docs/review-fix.md "review asked for it"; is "10a allow: one line" "$(printf '%s\n' "$out" | grep -c .)" 1; hasnt "10a allow: no start advice" "$out" "task-record.sh start"
+  TR verify 2; is "10a verify: one line" "$(printf '%s\n' "$out" | grep -c .)" 1
+  TR start 1; is "10a start: one line" "$(printf '%s\n' "$out" | grep -c .)" 1; hasnt "10a start: no draft advice" "$out" "EXECUTE.draft.md missing"
   # 10b. branch mode (review): the union of task scopes + amendments is OK; a stray file is not
   DC --branch .v2p; is "10b branch exit" $rc 0; has "10b branch OK" "$out" "OK: 4 changed paths within the union of PLAN task scopes (1 allowed by amendments)"
   echo x > stray.txt; DC --branch .v2p; is "10b stray exit" $rc 1; has "10b stray" "$out" "DRIFT file stray.txt"; rm stray.txt
