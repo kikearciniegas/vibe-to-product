@@ -49,7 +49,7 @@ for SH in sh zsh; do
   TP "$base/c-$SH" --yes; is "3 bad receipt exit" $rc 1; has "3 bad receipt msg" "$out" "no valid receipt"; is "3 bad receipt no ledger" "$(test -e "$L" && echo yes)" ""
   cp "$base/pp" .v2p/.plan-pass
   # 3. with --yes: the hash is recorded once, and the runner proceeds
-  TP "$base/c-$SH" --yes; is "3 --yes exit" $rc 0; is "3 ledger has hash" "$(cat "$L")" "$(sha .v2p/PLAN.md)"
+  TP "$base/c-$SH" --yes; is "3 --yes exit" $rc 0; is "3 ledger has hash" "$(cat "$L")" "$(sha .v2p/PLAN.md)	$base/c-$SH"
   TP "$base/c-$SH" --yes; is "3 no duplicate line" "$(grep -c . "$L")" 1
   # 5. ledger permissions
   is "5 ledger 0600" "$(ls -l "$L" | cut -c1-10)" "-rw-------"; is "5 dir 0700" "$(ls -ld "${L%/*}" | cut -c1-10)" "drwx------"
@@ -63,8 +63,31 @@ for SH in sh zsh; do
   rm -rf "$XDG_CONFIG_HOME"; mk "$base/p-$SH"; mv .v2p/PLAN.md .v2p/PLAN.draft.md; rm .v2p/.plan-pass
   mkdir -p 'app/[locale]'; : > 'app/[locale]/page.tsx'  # Task 2 modifies it: finalize-plan wants it to exist
   out=$($SH "$S/finalize-plan.sh" .v2p 2>&1); is "2 finalize-plan exit" $? 0
-  is "2 ledger has hash" "$(cat "$L" 2>/dev/null)" "$(sha .v2p/PLAN.md)"; is "2 ledger 0600" "$(ls -l "$L" | cut -c1-10)" "-rw-------"
+  is "2 ledger has hash" "$(cat "$L" 2>/dev/null)" "$(sha .v2p/PLAN.md)	$base/p-$SH"; is "2 ledger 0600" "$(ls -l "$L" | cut -c1-10)" "-rw-------"
   git add -A; git commit -qm plan; TR start 1; TR verify 1; is "2 runs after finalize-plan" "$(pwned)" ran
+  # H1. finalize-plan auto-trusts only a draft this session wrote: root is its own git toplevel and the draft untracked
+  pd() { mk "$1"; mv .v2p/PLAN.md .v2p/PLAN.draft.md; rm .v2p/.plan-pass; mkdir -p 'app/[locale]'; : > 'app/[locale]/page.tsx'; }
+  FP() { out=$($SH "$S/finalize-plan.sh" .v2p 2>&1); rc=$?; }
+  rm -rf "$XDG_CONFIG_HOME"; pd "$base/h1t-$SH"; git add -f .v2p/PLAN.draft.md; git commit -qm 'clone ships a draft'
+  FP; is "H1 tracked draft finalized" $rc 0; is "H1 tracked draft receipt" "$(cat .v2p/.plan-pass)" "$(sha .v2p/PLAN.md)"
+  is "H1 tracked draft not trusted" "$(test -e "$L" && echo yes)" ""; has "H1 tracked draft names trust-plan" "$out" "trust-plan.sh $base/h1t-$SH"
+  git add -A; git commit -qm plan; TR start 1; TR verify 1; is "H1 tracked draft pwned" "$(pwned)" no
+  rm -rf "$XDG_CONFIG_HOME"; pd "$base/h1n-$SH"; rm -rf .git
+  FP; is "H1 no git finalized" $rc 0; is "H1 no git not trusted" "$(test -e "$L" && echo yes)" ""; has "H1 no git names trust-plan" "$out" "trust-plan.sh"
+  rm -rf "$XDG_CONFIG_HOME"; mkdir -p "$base/h1s-$SH"; pd "$base/h1s-$SH/proj"; rm -rf .git; git -C "$base/h1s-$SH" init -q
+  FP; is "H1 subdir of a repo finalized" $rc 0; is "H1 subdir of a repo not trusted" "$(test -e "$L" && echo yes)" ""
+  # M2. control or non-ASCII bytes in a Verifier command: trust refused, nothing written, the task named
+  esc=$(printf '\033'); cr=$(printf '\r')
+  for bad in "$esc[2K" "$cr"; do rm -rf "$XDG_CONFIG_HOME"; mk "$base/m2-$SH"
+    B=$bad awk '{ sub(/`touch pwned`/, "`touch pwned" ENVIRON["B"] "true`") } { print }' .v2p/PLAN.md > .v2p/p && mv .v2p/p .v2p/PLAN.md; sha .v2p/PLAN.md > .v2p/.plan-pass
+    is "M2 byte is in the PLAN" "$(grep -cF "touch pwned$bad" .v2p/PLAN.md)" 1
+    TP "$base/m2-$SH" --yes; is "M2 control byte exit" $rc 1; is "M2 control byte no ledger" "$(test -e "$L" && echo yes)" ""
+    has "M2 control byte names task" "$out" "FAIL: task 1 "; cd "$base" || exit 2; done
+  # M3. trust is per project path: an identical PLAN in another (or a moved) project is not trusted
+  rm -rf "$XDG_CONFIG_HOME"; mk "$base/m3a-$SH"; TP "$base/m3a-$SH" --yes; is "M3 trust A" $rc 0
+  cp -R "$base/m3a-$SH" "$base/m3b-$SH"; cd "$base/m3b-$SH" || exit 2; rm -f pwned
+  TR start 1; TR verify 1; is "M3 copy not trusted" "$(pwned)" no; has "M3 copy msg" "$out" "not trusted on this machine"
+  TP "$base/m3b-$SH"; has "M3 refusal names moved projects" "$out" "moved or renamed project"
   cd "$base" || exit 2
 done
 echo "test-trust: $fails failures (scratch: $base)"

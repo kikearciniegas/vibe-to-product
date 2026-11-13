@@ -90,7 +90,8 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   is "8 incumbent cleared" "$(test -f "$v/work/brand-incumbent.md" && echo yes)" ""
   is "8 draft gone" "$(test -f "$P" && echo yes)" ""
   is "8 receipt" "$(cat "$v/.plan-pass")" "$(shasum -a 256 "$v/PLAN.md" | cut -d' ' -f1)"
-  is "8 trusted on this machine" "$(grep -cxF "$(cat "$v/.plan-pass")" "$XDG_CONFIG_HOME/v2p/trusted-plans")" 1
+  # not a git repo: nothing shows this session wrote the draft, so the PLAN is finalized but not trusted (tests/test-trust.sh H1)
+  is "8 not trusted outside git" "$(test -e "$XDG_CONFIG_HOME/v2p/trusted-plans" && echo yes)" ""; has "8 names trust-plan" "$out" "trust-plan.sh"
   # 10. Verifier lint and Files completeness: each case replaces one line of the passing plan (always the original)
   cp "$v/PLAN.md" "$w/good"; V2='**Verifier:** mechanical: `npm test -- tests/booking.test.ts` → all passed'
   rep() { A=$1 B=$2 C=${3-} D=${4-} awk '$0 == ENVIRON["A"] { print ENVIRON["B"]; next }

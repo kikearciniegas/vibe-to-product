@@ -146,11 +146,17 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
 [ -f "$root/DESIGN.md" ] && [ ! -L "$root/DESIGN.md" ] && awk '/^### Task / { t = $3; sub(/:$/, "", t) }
   /^\*\*Files:\*\*/ && /`(\.\/)?DESIGN\.md`/ { print "WARN: Task " t " Files: `DESIGN.md` is the project'"'"'s own design doc (kept by brand); edit it only on purpose, tokens live in .v2p/DESIGN.md" }' "$draft"
 [ "$fail" -eq 0 ] || { echo "FAIL: $out not written"; exit 1; }
+# provenance (finalize-audit.sh's rule): only a draft this session wrote is trusted here — the root is its own git
+# toplevel and the draft untracked. A draft shipped in a clone is finalized, but its commands need trust-plan.sh first.
+root=$(cd "$d/.." && pwd -P); top=$(git -C "$root" rev-parse --show-toplevel 2>/dev/null) && top=$(cd "$top" && pwd -P)
+own=; [ -n "$top" ] && [ "$top" = "$root" ] && own=1
+[ -n "$own" ] && git -C "$d" ls-files --error-unmatch PLAN.draft.md >/dev/null 2>&1 && own=
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.plan-pass"
-# Trust: this machine wrote this PLAN, so its Verifier commands may run here (a clone needs trust-plan.sh instead).
-sh "$skill/scripts/check-trust.sh" "$out" --add >/dev/null || { echo "FAIL: PLAN.md written but not trusted (see check-trust.sh)"; exit 1; }
+# Trust: a draft this session wrote may run its Verifier commands here; any other needs trust-plan.sh (it shows them).
+if [ -n "$own" ]; then sh "$skill/scripts/check-trust.sh" "$out" --add >/dev/null || { echo "FAIL: PLAN.md written but not trusted (see check-trust.sh)"; exit 1; }
+else echo "NOTE: PLAN.draft.md is tracked by git or $root is not its own git repo, so this PLAN is not trusted here: run sh $skill/scripts/trust-plan.sh $root before /v2p execute"; fi
 # brand-incumbent.md (a re-theme's) is this plan's input, consumed now: cleared so a later re-theme never reads a stale one
 find "$d/work" \( -name 'mapping-*' -o -name 'brand-incumbent.md' \) -exec rm -f {} + 2>/dev/null
 echo "PASS: $tasks tasks, $rows standards rows, total \$$total/month -> $out"
