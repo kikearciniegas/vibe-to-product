@@ -7,6 +7,7 @@ Ship the reviewed branch behind a full security scan, complete the deferred evid
 - `.v2p/REVIEW.md` must have passed review's finalize step. Portable: it has a `checked:` line that is not `pending`. Otherwise print `Run /v2p review first.` and stop.
 <!-- claude-only -->
   In Claude Code this check is a script: `sh <this skill's dir>/scripts/check-pass.sh .v2p/REVIEW.md .v2p/.review-pass` must print `OK`.
+  `finalize-deploy.sh` re-runs the PLAN's Verifier commands only when this machine trusts PLAN.md (`check-trust.sh`; a receipt from a clone is not enough): if refused, run `sh <this skill's dir>/scripts/trust-plan.sh <root>`, show the user the commands it lists, and add `--yes` only on their yes.
 <!-- /claude-only -->
 - Clean tree and HEAD on the branch named in the REVIEW `checked:` line (`branch <b>`); otherwise print what differs and stop.
 - When the PLAN's Spec line names `.v2p/DESIGN.md`, DESIGN.md is still the one brand finalized.

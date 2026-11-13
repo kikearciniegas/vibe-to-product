@@ -94,6 +94,8 @@ start)
     echo "resume: task $n (base $(sed -n 's/.* · base: \([^ ]*\).*/\1/p' "$rec"))"; exit 0; fi
   uigate; write_start; echo "started: task $n (base $(git rev-parse HEAD))" ;;
 verify)
+  # trust: nothing below runs unless this machine trusts PLAN.md's hash (check-trust.sh; a shipped receipt is not enough)
+  sh "$S/check-trust.sh" "$plan" >&2 || exit 2
   need; k=$(sed -n 's/^verifier: .*attempts: \([0-9]*\).*/\1/p' "$rec"); k=$(( ${k:-0} + 1 ))
   if [ -n "$hd" ]; then dc=$(sh "$S/drift-check.sh" "$n" --head "$hd" "$d" 2>&1); else dc=$(sh "$S/drift-check.sh" "$n" "$d" 2>&1); fi; rc=$?
   # exit 2 is a usage error (a bad --head, no record), not drift: nothing is written
@@ -111,8 +113,8 @@ verify)
     # a redirect — both run. Erring toward running is the safe side: a wrong run fails, a wrong skip passes unseen.
     if printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>'; then
       res="$res$sep\`$c\` → skipped: placeholder"; continue; fi
-    # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh above) — by design,
-    # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
+    # trust boundary: $c is a Verifier command from PLAN.md, hash-locked (check-pass.sh) AND trusted on this machine
+    # (check-trust.sh: finalize-plan.sh wrote it here, or trust-plan.sh --yes after showing it) — not sanitized here
     ran=$((ran + 1)); sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     good=0; [ "$r" -eq 0 ] && good=1
     case $x in ''|*[!0-9]*) ;; *) [ "$last" = "$x" ] || good=0 ;; esac

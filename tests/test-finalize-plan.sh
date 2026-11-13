@@ -6,12 +6,14 @@
 # Source: $V2P_FP_SRC (default: tests/fixtures/finalize-plan, a synthetic landing plan). The source files are only
 # read, never written. A '{{STANDARDS_ROWS}}' line in PLAN.md is replaced by one §4 row per '- [ ]' item of the
 # BRIEF §9 standards files, so the fixture follows the live standards.
-# Writes only under ${TMPDIR:-/tmp}/v2p-fp-test.<pid>. Usage: sh tests/test-finalize-plan.sh   (exit 0 = all PASS)
+# Writes only under ${TMPDIR:-/tmp}/v2p-fp-test.<pid> (HOME points there too). Usage: sh tests/test-finalize-plan.sh   (exit 0 = all PASS)
 here=$(cd "$(dirname "$0")/.." && pwd -P); F=$here/skills/v2p/scripts/finalize-plan.sh
 src=${V2P_FP_SRC:-$here/tests/fixtures/finalize-plan}
 [ -f "$src/BRIEF.md" ] && [ -f "$src/PLAN.md" ] || { echo "ERROR: $src/{BRIEF,PLAN}.md missing; test did not run"; exit 2; }
 sum0=$(cat "$src/BRIEF.md" "$src/PLAN.md" | shasum -a 256)
-base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-fp-test.$$; mkdir -p "$base"
+base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-fp-test.$$; mkdir -p "$base/home"
+# finalize-plan.sh trusts the PLAN it writes: HOME and XDG_CONFIG_HOME point here, so the real ledger is never touched
+HOME=$base/home; export HOME; XDG_CONFIG_HOME=$HOME/.config; export XDG_CONFIG_HOME
 # §4 rows from the BRIEF §9 standards files; nrows is counted from the standards, not from the plan
 awk '/^## 9/{f=1;next} /^## /{f=0} f' "$src/BRIEF.md" | grep -oE '[a-z-]+\.md' | sort -u | while IFS= read -r n; do
   sf=$here/skills/v2p/references/standards/$n; [ -f "$sf" ] && sed -n "s/^- \[ \] \(.*\)/| \1 | $n | pending | |/p" "$sf"
@@ -88,6 +90,7 @@ Assets: contact data. Entry points: booking form. Abuse cases: spam, …'
   is "8 incumbent cleared" "$(test -f "$v/work/brand-incumbent.md" && echo yes)" ""
   is "8 draft gone" "$(test -f "$P" && echo yes)" ""
   is "8 receipt" "$(cat "$v/.plan-pass")" "$(shasum -a 256 "$v/PLAN.md" | cut -d' ' -f1)"
+  is "8 trusted on this machine" "$(grep -cxF "$(cat "$v/.plan-pass")" "$XDG_CONFIG_HOME/v2p/trusted-plans")" 1
   # 10. Verifier lint and Files completeness: each case replaces one line of the passing plan (always the original)
   cp "$v/PLAN.md" "$w/good"; V2='**Verifier:** mechanical: `npm test -- tests/booking.test.ts` → all passed'
   rep() { A=$1 B=$2 C=${3-} D=${4-} awk '$0 == ENVIRON["A"] { print ENVIRON["B"]; next }

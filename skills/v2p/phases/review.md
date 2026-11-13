@@ -7,6 +7,7 @@ Review the whole execute branch once with the phase-level checks, fix what they 
 - `.v2p/EXECUTE.md` must have passed execute's finalize step. Portable: it has a `checked:` line that is not `pending`. Otherwise print `Run /v2p execute first.` and stop.
 <!-- claude-only -->
   In Claude Code this check is a script: `sh <this skill's dir>/scripts/check-pass.sh .v2p/EXECUTE.md .v2p/.execute-pass` must print `OK`.
+  `finalize-review.sh` re-runs the PLAN's Verifier commands only when this machine trusts PLAN.md (`check-trust.sh`; a receipt from a clone is not enough): if refused, run `sh <this skill's dir>/scripts/trust-plan.sh <root>`, show the user the commands it lists, and add `--yes` only on their yes.
 <!-- /claude-only -->
 - Existing `.v2p/REVIEW.md` with its receipt → offer: resume (keep) or re-run.
 - Clean tree and HEAD on the branch named in the EXECUTE `checked:` line (`branch <b>`); otherwise print what differs and stop.

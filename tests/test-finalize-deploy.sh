@@ -9,7 +9,11 @@
 # too). Usage: sh tests/test-finalize-deploy.sh
 here=$(cd "$(dirname "$0")/.." && pwd -P); S=$here/skills/v2p/scripts; src=$here/tests/fixtures/finalize-deploy/DEPLOY.md
 base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-fd.$$; mkdir -p "$base/home" "$base/fk"; HOME=$base/home; export HOME
+XDG_CONFIG_HOME=$HOME/.config; export XDG_CONFIG_HOME
 GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t; export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+# the fixture's PLAN and every resealed PLAN are trusted in the scratch ledger (check-trust.sh), as finalize-plan.sh would
+fixture() { sh "$here/tests/fixture-execute.sh" "$1" && sh "$S/check-trust.sh" "$1/.v2p/PLAN.md" --add; }
+trust() { sh "$S/check-trust.sh" .v2p/PLAN.md --add >/dev/null; }
 sum0=$(shasum -a 256 < "$src"); fails=0; fk=$base/fk
 is() { if [ "$2" = "$3" ]; then echo "PASS [$SH] $1"; else echo "FAIL [$SH] $1: got '$2' want '$3'"; fails=$((fails+1)); fi; }
 has() { case $2 in *"$3"*) echo "PASS [$SH] $1" ;; *) echo "FAIL [$SH] $1: missing '$3' in: $(printf '%s' "$2" | head -c 600)"; fails=$((fails+1)) ;; esac; }
@@ -47,13 +51,13 @@ reports() { printf '%s\n' '# Deploy report' 'Verification: HEALTHY' '' 'VERDICT:
 M1="target host 'fixture.test;rm' is not a plain hostname"; M2="§1 missing canary row"; M3="§1 strix result 'maybe'"; M4="§2 status 'open: later'"
 M5="pending without post-launch"; M6="FAIL: rollback line"; M7="secret-looking value in .v2p/DEPLOY.draft.md:"; M8="'---' rule"; M9="no 'Next: live' line"
 for SH in sh zsh; do
-  fx=$base/fx-$SH; sh "$here/tests/fixture-execute.sh" "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
+  fx=$base/fx-$SH; fixture "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
   # PLAN: a deploy runbook task (its verifier needs the live host) and one with a placeholder deploy cannot fill beside a
   # runnable command (all placeholders would run nothing: not verified, see "10 all placeholders")
   { printf '%s\n' '' '### Task 4: Deploy runbook' '**Files:** Modify: `docs/secrets.md`' \
       "**Verifier:** manual: dashboards; then mechanical: \`curl -m 10 -sI https://<domain> | grep -q 'HTTP/2 200'\` → exit 0" '' \
       '### Task 5: Chunk map' '**Files:** none' '**Verifier:** mechanical: `curl -m 10 -sI https://<domain>/_next/<chunk>.js.map | grep -q 404` → exit 0, `curl -m 10 -sI https://<domain>/ | grep -q 200` → exit 0'; } >> .v2p/PLAN.md
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: deploy tasks'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; git add -A; git commit -qm 'plan: deploy tasks'
   # execute, the short way: 1 pass, 2 deferred (credential), 3 handed to review, 4 and 5 handed to deploy
   q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   git add -A; git commit -qm 'feat: greeting'; q verify 1; q ponytail 1 none
@@ -127,9 +131,9 @@ for SH in sh zsh; do
   done
   # brand receipt for post-brand plans
   cp .v2p/PLAN.md "$base/pl"; awk '{print} /^# Fixture Implementation Plan$/ {print "**Spec:** .v2p/BRIEF.md · .v2p/DESIGN.md"}' "$base/pl" > .v2p/PLAN.md
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; mv .v2p/.brand-pass "$base/bp"
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; mv .v2p/.brand-pass "$base/bp"
   no "10 brand receipt" "DESIGN.md does not match its receipt"; mv "$base/bp" .v2p/.brand-pass; ok "10 brand receipt back"
-  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   # §1 rows and the gstack reports
   sub "$P" '| setup-deploy | /setup-deploy |' '| setup-deploy |  |'; no "10 empty run cell" "§1 setup-deploy row has no run invocation"
   sub "$P" '| 1 findings |' '| some |'; no "10 security-full result" "§1 security-full result 'some'"
@@ -214,17 +218,17 @@ for SH in sh zsh; do
   rm -f .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"
   # a mechanical Verifier with no backticked command (field test V0) ran nothing and counted as verified: now it fails
   cp .v2p/PLAN.md "$base/pl"; sub .v2p/PLAN.md "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: grep -c hi src/greet.sh → 1'
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "10 unbackticked fixture edited" $? 0
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "10 unbackticked fixture edited" $? 0
   no "10 unbackticked mechanical verifier" "FAIL: verifier of task 2: mechanical with no backticked"
-  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   # a mechanical Verifier whose commands are all `<placeholder>`s once <domain>/<url> are filled ran nothing: not verified
-  sub .v2p/PLAN.md "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: `grep -c hi <file>` → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  sub .v2p/PLAN.md "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: `grep -c hi <file>` → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   no "10 all placeholders" "FAIL: verifier of task 2: every command is a <placeholder>: nothing ran"
-  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   # a backticked `cmd` → x inside the manual part is not run
-  rm -f MANUALRAN; sub .v2p/PLAN.md 'manual: the user opens it' 'manual: run `touch MANUALRAN` → see it'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  rm -f MANUALRAN; sub .v2p/PLAN.md 'manual: the user opens it' 'manual: run `touch MANUALRAN` → see it'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   FD; hasnt "10 manual part not run" "$out" "run: task 2: touch"; is "10 no MANUALRAN" "$(test -f MANUALRAN && echo yes)" ""; has "10 mechanical part runs" "$out" "run: task 2: sh -c"
-  rm -f MANUALRAN .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"; cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  rm -f MANUALRAN .v2p/DEPLOY.md .v2p/.deploy-pass; cp "$G" "$P"; cp "$base/pl" .v2p/PLAN.md; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   is "10 curl only ever hit the fixture host" "$(grep -v '://fixture\.test' "$fk/calls" | grep -c .)" 0
   ok "10 good draft still passes"
   cd "$base"

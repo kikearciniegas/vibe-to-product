@@ -149,6 +149,8 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.plan-pass"
+# Trust: this machine wrote this PLAN, so its Verifier commands may run here (a clone needs trust-plan.sh instead).
+sh "$skill/scripts/check-trust.sh" "$out" --add >/dev/null || { echo "FAIL: PLAN.md written but not trusted (see check-trust.sh)"; exit 1; }
 # brand-incumbent.md (a re-theme's) is this plan's input, consumed now: cleared so a later re-theme never reads a stale one
 find "$d/work" \( -name 'mapping-*' -o -name 'brand-incumbent.md' \) -exec rm -f {} + 2>/dev/null
 echo "PASS: $tasks tasks, $rows standards rows, total \$$total/month -> $out"

@@ -1,0 +1,72 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Rafael Arciniegas
+# The local trust ledger, under sh and zsh: a cloned project that ships PLAN.md plus a matching .plan-pass gets none of
+# its Verifier commands run by task-record.sh, finalize-review.sh or finalize-deploy.sh until this machine trusts that
+# PLAN (finalize-plan.sh, or trust-plan.sh --yes after the commands were shown). Writes only under
+# ${TMPDIR:-/tmp}/v2p-tr.<pid>; HOME and XDG_CONFIG_HOME point there, so the real ledger is never touched.
+# Usage: sh tests/test-trust.sh   (exit 0 = all PASS)
+here=$(cd "$(dirname "$0")/.." && pwd -P); S=$here/skills/v2p/scripts
+base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-tr.$$; mkdir -p "$base/home" "$base/fk"; HOME=$base/home; export HOME
+XDG_CONFIG_HOME=$HOME/.config; export XDG_CONFIG_HOME; L=$XDG_CONFIG_HOME/v2p/trusted-plans
+GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t; export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+fails=0
+is() { if [ "$2" = "$3" ]; then echo "PASS [$SH] $1"; else echo "FAIL [$SH] $1: got '$2' want '$3'"; fails=$((fails+1)); fi; }
+has() { case $2 in *"$3"*) echo "PASS [$SH] $1" ;; *) echo "FAIL [$SH] $1: missing '$3' in: $(printf '%s' "$2" | head -c 400)"; fails=$((fails+1)) ;; esac; }
+sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
+# fake curl: finalize-deploy's live checks never touch the network
+printf '#!/bin/sh\nexit 7\n' > "$base/fk/curl"; chmod +x "$base/fk/curl"
+pwned() { test -f pwned && echo ran || echo no; }
+# a project as a clone ships it: PLAN.md whose Task 1 Verifier is `touch pwned`, its receipt recomputed and committed,
+# an EXECUTE.md + REVIEW.md with receipts and both drafts, so review and deploy reach their verifier re-runs
+mk() { sh "$here/tests/fixture-execute.sh" "$1" >/dev/null 2>&1; cd "$1" || exit 2
+  sed 's/`sh tests\/greet.test.sh` → exit 0/`touch pwned` → exit 0/' .v2p/PLAN.md > .v2p/p && mv .v2p/p .v2p/PLAN.md
+  sha .v2p/PLAN.md > .v2p/.plan-pass
+  printf '# EXECUTE\nchecked: x · branch %s · y\n' "$(git rev-parse --abbrev-ref HEAD)" > .v2p/EXECUTE.md; sha .v2p/EXECUTE.md > .v2p/.execute-pass
+  printf '# REVIEW\nchecked: x\n' > .v2p/REVIEW.md; sha .v2p/REVIEW.md > .v2p/.review-pass
+  printf 'checked: pending\n' > .v2p/REVIEW.draft.md
+  printf 'written: 2026-11-13 · target: https://example.com · pr: #1 · base: main\nchecked: pending\n' > .v2p/DEPLOY.draft.md
+  git add -A; git commit -qm 'clone: plan + receipt'; }
+TR() { out=$($SH "$S/task-record.sh" "$@" 2>&1); rc=$?; }
+FR() { out=$($SH "$S/finalize-review.sh" .v2p 2>&1); rc=$?; }
+FD() { out=$(PATH=$base/fk:$PATH $SH "$S/finalize-deploy.sh" .v2p 2>&1); rc=$?; }
+TP() { out=$($SH "$S/trust-plan.sh" "$@" 2>&1); rc=$?; }
+for SH in sh zsh; do
+  rm -rf "$XDG_CONFIG_HOME"
+  # 1. the exploit: a valid shipped receipt, an empty ledger → no runner runs `touch pwned`
+  mk "$base/c-$SH"
+  is "1 receipt valid" "$(sh "$S/check-pass.sh" .v2p/PLAN.md .v2p/.plan-pass >/dev/null && echo ok)" ok
+  TR start 1; TR verify 1; is "1 task-record pwned" "$(pwned)" no; is "1 task-record exit" "$([ $rc -ne 0 ] && echo nonzero)" nonzero
+  has "1 task-record msg" "$out" "FAIL: PLAN.md is not trusted on this machine; review its Verifier commands with: sh $here/skills/v2p/scripts/trust-plan.sh $base/c-$SH"
+  rm -f pwned; FR; is "1 finalize-review pwned" "$(pwned)" no; is "1 finalize-review exit" $rc 1; has "1 finalize-review msg" "$out" "PLAN.md is not trusted on this machine"
+  rm -f pwned; FD; is "1 finalize-deploy pwned" "$(pwned)" no; is "1 finalize-deploy exit" $rc 1; has "1 finalize-deploy msg" "$out" "PLAN.md is not trusted on this machine"
+  # 3. trust-plan.sh without --yes: lists the commands, writes nothing, exit 1
+  TP "$base/c-$SH"; is "3 no --yes exit" $rc 1; has "3 lists command" "$out" "touch pwned"
+  has "3 lists task 2" "$out" "sh -c 'grep -c hi src/greet.sh'"; has "3 names --yes" "$out" "trust-plan.sh $base/c-$SH --yes"
+  is "3 no ledger" "$(test -e "$L" && echo yes)" ""; is "3 pwned" "$(pwned)" no
+  # 3. an invalid receipt: refused, even with --yes
+  cp .v2p/.plan-pass "$base/pp"; echo 0 > .v2p/.plan-pass
+  TP "$base/c-$SH" --yes; is "3 bad receipt exit" $rc 1; has "3 bad receipt msg" "$out" "no valid receipt"; is "3 bad receipt no ledger" "$(test -e "$L" && echo yes)" ""
+  cp "$base/pp" .v2p/.plan-pass
+  # 3. with --yes: the hash is recorded once, and the runner proceeds
+  TP "$base/c-$SH" --yes; is "3 --yes exit" $rc 0; is "3 ledger has hash" "$(cat "$L")" "$(sha .v2p/PLAN.md)"
+  TP "$base/c-$SH" --yes; is "3 no duplicate line" "$(grep -c . "$L")" 1
+  # 5. ledger permissions
+  is "5 ledger 0600" "$(ls -l "$L" | cut -c1-10)" "-rw-------"; is "5 dir 0700" "$(ls -ld "${L%/*}" | cut -c1-10)" "drwx------"
+  rm -f pwned; TR verify 1; is "3 trusted task-record runs" "$(pwned)" ran; has "3 trusted verifier" "$out" "verifier: pass"
+  rm -f pwned; FR; is "3 trusted finalize-review runs" "$(pwned)" ran
+  # 4. PLAN edited after trust (receipt resealed by hand): ledger miss → nothing runs
+  rm -f pwned; sed 's/`touch pwned`/`touch pwned; true`/' .v2p/PLAN.md > .v2p/p && mv .v2p/p .v2p/PLAN.md; sha .v2p/PLAN.md > .v2p/.plan-pass
+  TR start 1; TR verify 1; is "4 edited task-record pwned" "$(pwned)" no; has "4 edited msg" "$out" "not trusted on this machine"
+  FR; is "4 edited finalize-review pwned" "$(pwned)" no; FD; is "4 edited finalize-deploy pwned" "$(pwned)" no
+  # 2. finalize-plan.sh trusts the PLAN it writes: the runner then runs with no trust-plan step
+  rm -rf "$XDG_CONFIG_HOME"; mk "$base/p-$SH"; mv .v2p/PLAN.md .v2p/PLAN.draft.md; rm .v2p/.plan-pass
+  mkdir -p 'app/[locale]'; : > 'app/[locale]/page.tsx'  # Task 2 modifies it: finalize-plan wants it to exist
+  out=$($SH "$S/finalize-plan.sh" .v2p 2>&1); is "2 finalize-plan exit" $? 0
+  is "2 ledger has hash" "$(cat "$L" 2>/dev/null)" "$(sha .v2p/PLAN.md)"; is "2 ledger 0600" "$(ls -l "$L" | cut -c1-10)" "-rw-------"
+  git add -A; git commit -qm plan; TR start 1; TR verify 1; is "2 runs after finalize-plan" "$(pwned)" ran
+  cd "$base" || exit 2
+done
+echo "test-trust: $fails failures (scratch: $base)"
+[ "$fails" -eq 0 ] && rm -rf "$base"
+[ "$fails" -eq 0 ]
