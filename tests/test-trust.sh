@@ -109,6 +109,9 @@ for SH in sh zsh; do
   git update-index --add --cacheinfo "100644,$(git hash-object -w README.md),odd
 name"; git commit -qm 'an entry with a newline'
   FP; is "R4 newline entry finalized" $rc 0; is "R4 newline entry fails closed" "$(test -e "$L" && echo yes)" ""
+  # R5. .v2p is a nested repo holding the draft: the outer index never lists it, so a nested repo is not this session's draft
+  rm -rf "$XDG_CONFIG_HOME"; pd "$base/r5-$SH"; git -C .v2p init -q; git -C .v2p add -f PLAN.draft.md; git -C .v2p commit -qm 'nested repo ships the draft'
+  FP; is "R5 nested repo finalized" $rc 0; is "R5 nested repo not trusted" "$(test -e "$L" && echo yes)" ""; cd "$base" || exit 2
   # R4. the normal path still trusts: a draft genuinely untracked in its own repo
   rm -rf "$XDG_CONFIG_HOME"; pd "$base/r4u-$SH"; FP; is "R4 untracked draft finalized" $rc 0
   is "R4 untracked draft trusted" "$(cat "$L" 2>/dev/null)" "$(sha .v2p/PLAN.md)	$base/r4u-$SH"; cd "$base" || exit 2

@@ -80,6 +80,13 @@ for SH in sh zsh; do
       is "8d3 $alias exit" $rc 1; has "8d3 $alias tracked" "$out" "tracked by git"; is "8d3 $alias nothing ran" "$(test -f pwned && echo yes)" ""
     else echo "SKIP [$SH] 8d3 $alias: this filesystem is case-sensitive"; fi
   done
+  # 8d5. .v2p is a nested repo holding the draft: the outer index never lists it; refused, and the message says why
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; rm -f pwned; git -C .v2p init -q; git -C .v2p add -f AUDIT.draft.md
+  git -C .v2p -c user.name=t -c user.email=t@t commit -qm 'nested repo ships the draft'; FA; rm -rf .v2p/.git
+  is "8d5 nested repo exit" $rc 1; has "8d5 nested repo says why" "$out" "inside a nested repo"; is "8d5 nested repo nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8d6. an unreadable index fails closed, and the message says why
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; rm -f pwned; cp .git/index "$base/idx-$SH"; echo junk > .git/index; FA; cp "$base/idx-$SH" .git/index
+  is "8d6 unreadable index exit" $rc 1; has "8d6 unreadable index says why" "$out" "index unreadable"; is "8d6 unreadable index nothing ran" "$(test -f pwned && echo yes)" ""
   # 8d4. the normal path still runs: the same draft, untracked in its own repo
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; rm -f pwned; FA; is "8d4 untracked draft runs" "$(test -f pwned && echo yes)" yes; rm -f pwned
   # 8g. fail closed: outside a git work tree nothing shows the draft is this session's, so its commands never run

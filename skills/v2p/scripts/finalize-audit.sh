@@ -73,8 +73,11 @@ done < "$tmp.d"; }
 r3=$(rows '## 3.'); rows3=$(printf '%s\n' "$r3" | grep -c .)
 # the root must be the top of its own repo: a parent repo (a monorepo, or one behind an empty .git) never vouches for the draft
 # tracked is decided by file identity over the whole index (draft-owned.sh), so no spelling of the path slips past
-sh "$skill/scripts/draft-owned.sh" "$root" "$draft"; prov=$?; nogit=; [ "$prov" -eq 2 ] && nogit=1
-if [ "$prov" -eq 1 ]; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
+why=$(sh "$skill/scripts/draft-owned.sh" "$root" "$draft"); prov=$?; nogit=; [ "$prov" -eq 2 ] && nogit=1
+if [ "$prov" -eq 1 ]; then case $why in
+  nested) echo "FAIL: $draft is inside a nested repo (its own .git or a submodule), so nothing shows this session wrote it: its evidence commands are not run" ;;
+  unreadable) echo "FAIL: git index unreadable, so nothing shows $draft is untracked: its evidence commands are not run" ;;
+  *) echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run" ;; esac; fail=1
 else runev §2 "$r2" 4; runev §3 "$r3" 3; fi
 [ "$rows3" -eq "$modexp" ] || { echo "FAIL: §3 rows $rows3/$modexp"; fail=1; }
 bad=$(check "$r3" 3); [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }

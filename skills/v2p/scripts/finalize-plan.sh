@@ -148,7 +148,7 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
 [ "$fail" -eq 0 ] || { echo "FAIL: $out not written"; exit 1; }
 # provenance (finalize-audit.sh's rule): only a draft this session wrote is trusted here — the root is its own git
 # toplevel and the draft untracked. A draft shipped in a clone is finalized, but its commands need trust-plan.sh first.
-root=$(cd "$d/.." && pwd -P); own=; sh "$skill/scripts/draft-owned.sh" "$root" "$draft" && own=1
+root=$(cd "$d/.." && pwd -P); own=; sh "$skill/scripts/draft-owned.sh" "$root" "$draft" >/dev/null && own=1
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.plan-pass"
