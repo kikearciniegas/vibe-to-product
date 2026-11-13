@@ -1,0 +1,57 @@
+# BRIEF template
+
+Copy the block below into `.v2p/BRIEF.md` and replace every `<…>`. §11 must be literally `none` before the file is written.
+
+```
+# BRIEF — <project name>
+written: <YYYY-MM-DD> by v2p handshake · language: <xx>
+
+## 1. Project
+- Profile: <landing|saas-web|native-app|internal-tool> · secondary: <profile|none>
+- Code: <greenfield | existing at <path>>
+- Vision: <one paragraph>
+- Breaks without it: <one line>
+
+## 2. Audience and scale
+- Who: <…> · How many / how often: <…>
+
+## 3. The one job
+- <primary action or core verb>; expensive-to-undo actions: <list|none>; offline: <yes|no|n/a>
+
+## 4. Success criteria
+- 90-day metric: <number + how measured>
+- Day-1 acceptance:
+  - WHEN <trigger> THE SYSTEM SHALL <observable response>
+
+## 5. Non-goals (v1)
+- <…>
+
+## 6. Brand
+- Status: <existing (source: <path/url>) | to-create | none>
+- Palette / type / voice / logo: <… | pending brand phase (brand writes .v2p/DESIGN.md; "existing (source: pending …)" yields a placeholder DESIGN.md until the guide arrives)>
+- Adjectives: <…> · References: <…> · Must-avoid: <…>
+- Locales: <one | list; translated | per-market>
+
+## 7. Constraints
+- Deadline: <…> · Budget/month: <$n | 0 | none> · Data sensitivity: <flags|none> · Operator after launch: <solo|team>
+- Operating country: <country the business/legal entity operates from, ISO 3166 English name | unknown> · Audience countries: <list | worldwide | unknown>
+
+## 8. Stack
+- Must-have: <…> · Won't-accept: <…> · Existing accounts: <…>
+- Money model: <…|none> · Integrations: <…|none>
+
+## 9. Standards loaded
+- references/standards/core.md + <web.md +> <profile>.md <+ landing-10-sections.md + ux-laws.md>
+- Conditional blocks ON: <AI feature | payments | webhooks/idempotency | i18n | offline | load test | special-category data | GraphQL | file uploads | none>
+
+## 10. Decisions log
+| item | answered / defaulted / deferred / inferred | value (inferred: ← source path) |
+|---|---|---|
+
+## 11. Open markers
+none  ← must be literally "none" for the file to be written
+
+Next: /v2p scavenge
+```
+
+***

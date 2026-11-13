@@ -1,0 +1,130 @@
+# Vibe-to-Product (v2p)
+
+v2p turns an idea or an AI-generated prototype into a production product. It starts with a short interview (the handshake) that writes `.v2p/BRIEF.md` in your project: profile, the one job, success criteria, scope, brand, constraints, stack and the standards that apply. Later phases read that file instead of re-asking.
+
+It is a thin orchestrator. In Claude Code, planning, execution and review are delegated to the superpowers and gstack skills; v2p decides what runs when and what each phase hands to the next.
+
+## Two runtimes
+**Claude Code (skill).** Install by symlink, then type `/v2p`:
+
+```sh
+ln -s "$PWD/skills/v2p" ~/.claude/skills/v2p
+```
+
+**Portable (any chat model).** Paste `dist/v2p-portable.md` into ChatGPT, Gemini or another chat, then say what you are building. The pack tells the model to run the handshake and use only the standards for your profile.
+
+## Phases
+| Phase | Writes | Status |
+|---|---|---|
+| `handshake` | `.v2p/BRIEF.md` | available |
+| `adopt` | `.v2p/BRIEF.md` + `.v2p/AUDIT.md` | available |
+| `scavenge` | `.v2p/SCAVENGE.md` | available |
+| `brand` | `.v2p/DESIGN.md` (+ root `DESIGN.md` symlink) | available |
+| `mapping` | `.v2p/PLAN.md` | available |
+| `execute` | `.v2p/EXECUTE.md` (+ `.v2p/PLAN-AMENDMENTS.md`) | available |
+| `review` | `.v2p/REVIEW.md` | available |
+| `deploy` | `.v2p/DEPLOY.md` | available |
+
+## Profiles
+| Profile | Shape | Standards loaded |
+|---|---|---|
+| `landing` | one-action page, no login | core, web, landing + 10-section checks + UX laws |
+| `saas-web` | logged-in, users outside your organisation | core, web, saas-web |
+| `internal-tool` | logged-in, users work for you | core, web, internal-tool |
+| `native-app` | iOS/Android binary | core, native-app |
+
+The standards hold 226 checklist items across six files (`grep -c '^- \[ \]' skills/v2p/references/standards/*.md`), each claimed with evidence rather than a tick.
+
+## File map
+| Path | Role |
+|---|---|
+| `skills/v2p/SKILL.md` | router: entry, profiles, phases, when to load what |
+| `skills/v2p/phases/handshake.md` | the interview and its confirmation gate |
+| `skills/v2p/phases/scavenge.md` | evidence gathering: reference architecture, patterns, integrations, obligations, brownfield inventory |
+| `skills/v2p/phases/brand.md` | BRIEF §6 into `.v2p/DESIGN.md` (tokens + rules), routed to the design skills per brand case; re-theme archives a finished cycle |
+| `skills/v2p/references/design-template.md` | layout of `.v2p/DESIGN.md` (Google DESIGN.md format + v2p sections) |
+| `skills/v2p/scripts/finalize-brand.sh` | gate that lints `DESIGN.draft.md` (pinned `@google/design.md`, offline) and turns it into `DESIGN.md` + receipt + root symlink (Claude Code only) |
+| `skills/v2p/scripts/archive-cycle.sh` | re-theme: moves a reviewed cycle's PLAN/EXECUTE/REVIEW and receipts into `.v2p/cycles/<date>/` (Claude Code only) |
+| `tests/test-finalize-brand.sh`, `tests/fixtures/finalize-brand/` | brand gate and archive tests (sh and zsh; need the linter in the npx cache) |
+| `skills/v2p/phases/mapping.md` | providers, skills, standards rows and verifiable tasks into `.v2p/PLAN.md` |
+| `skills/v2p/phases/adopt.md` | existing code: scan, derived BRIEF, AUDIT, canonical files, merges, quarantine |
+| `skills/v2p/phases/execute.md` | plan execution task by task: scope gate, verifier record, one commit per task, standards evidence |
+| `skills/v2p/phases/review.md` | one review of the whole branch: runs, adjudicated findings, completed evidence, receipt for deploy |
+| `skills/v2p/references/execute-template.md` | layout of `.v2p/EXECUTE.md` |
+| `skills/v2p/references/review-template.md` | layout of `.v2p/REVIEW.md` |
+| `skills/v2p/phases/deploy.md` | ship the reviewed branch: full security scan gate, provisioning, delegated merge/deploy/canary, rollback rehearsal, live receipt |
+| `skills/v2p/references/deploy-template.md` | layout of `.v2p/DEPLOY.md` |
+| `skills/v2p/references/audit-template.md` | layout of `.v2p/AUDIT.md` |
+| `skills/v2p/references/tidy-rules.md` | canonical files, debris, scattered notes, never-touch list |
+| `skills/v2p/scripts/tidy-check.sh` | read-only probe and tidy check (Claude Code only) |
+| `skills/v2p/scripts/quarantine.sh` | moves approved tidy rows to `~/.v2p-backups/` with a manifest and `restore.sh`; never deletes (Claude Code only) |
+| `skills/v2p/scripts/finalize-audit.sh` | gate that turns `AUDIT.draft.md` into `AUDIT.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/finalize-plan.sh` | gate that turns `PLAN.draft.md` into `PLAN.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/drift-check.sh` | read-only scope gate: changed paths vs the PLAN task's Files list, branch, base, tidy delta (Claude Code only) |
+| `skills/v2p/scripts/task-record.sh` | the only writer of execute's per-task records and `.v2p/PLAN-AMENDMENTS.md` (Claude Code only) |
+| `skills/v2p/scripts/finalize-execute.sh` | gate that turns `EXECUTE.draft.md` into `EXECUTE.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/finalize-review.sh` | gate that re-runs the PLAN verifiers and turns `REVIEW.draft.md` into `REVIEW.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/finalize-deploy.sh` | gate that reads the scan stamp and gstack reports, re-runs the PLAN verifiers against the live host, curls it, and turns `DEPLOY.draft.md` into `DEPLOY.md` + receipt (Claude Code only) |
+| `skills/v2p/hooks/guard-finals.sh`, `hooks.json` | proposed PreToolUse hook that blocks direct writes to the handoff files; not installed |
+| `tests/fixture-messy.sh`, `tests/test-tidy.sh` | messy sample project and the script tests (sh and zsh) |
+| `tests/fixture-execute.sh`, `tests/test-execute.sh`, `tests/test-finalize-review.sh`, `tests/fixtures/finalize-review/` | execute fixture project and the execute/review script tests (sh and zsh) |
+| `tests/test-finalize-deploy.sh`, `tests/fixtures/finalize-deploy/` | deploy gate tests: fake curl, fake scan stamp, fake gstack reports, local bare origin, injection payloads (sh and zsh) |
+| `skills/v2p/references/brief-template.md` | layout of `.v2p/BRIEF.md` |
+| `skills/v2p/references/scavenge-template.md` | layout of `.v2p/SCAVENGE.md` |
+| `skills/v2p/references/plan-template.md` | layout of `.v2p/PLAN.md` |
+| `skills/v2p/references/stack/overview.md` | startup stack: happy path, provider table, cost at launch, architecture diagram |
+| `skills/v2p/references/stack/wiring.md` | config wiring matrix: which value goes where |
+| `skills/v2p/references/stack/security.md` | security and privacy per provider |
+| `skills/v2p/references/skills-catalog.md` | one default skill per need, with status on this machine (Claude Code only) |
+| `skills/v2p/references/standards/` | `core.md`, `web.md`, and one file per profile |
+| `skills/v2p/references/landing-10-sections.md` | per-section checks for landing pages |
+| `skills/v2p/references/ux-laws.md` | UX laws as measurable checks |
+| `skills/v2p/references/model-routing.md` | which agent and model runs each phase (Claude Code only) |
+| `WORKFLOW.md` | the Architect / Executor / Auditor loop and failure-recovery rule |
+| `build-portable.sh` | builds `dist/v2p-portable.md` |
+| `dist/v2p-portable.md` | generated portable pack; never edit by hand |
+
+## Build
+```sh
+sh build-portable.sh
+```
+
+## Verify
+Run from the project directory:
+
+```sh
+grep -cE '^(name|description): ' skills/v2p/SKILL.md          # 2
+grep -ciE 'custom cursor|urgency|whatsapp|back-to-top' skills/v2p/references/standards/core.md   # 0
+grep -n 'FID' skills/v2p/references/standards/*.md              # no output
+grep -rniE 'refuse any request|maximum 200 lines' skills/v2p    # no output
+grep -rc '(verified: 2026-09)' skills/v2p/references            # total 8 or more
+grep -rn 'PERSON[A]' README.md WORKFLOW.md skills/                # no output
+sh build-portable.sh && grep -c '^Copyright (c) 2026 ' dist/v2p-portable.md   # 1
+grep -cE '^\| `(scavenge|mapping)` \| `phases/(scavenge|mapping)\.md` \| `\.v2p/(SCAVENGE|PLAN)\.md` \| available' skills/v2p/SKILL.md   # 2
+grep -rn '(verified: 2026-09)' skills/v2p/references/stack | grep -vc 'https\?://'   # 0
+grep -c '<!-- source: references/stack/' dist/v2p-portable.md; grep -c 'skills-[c]atalog\|model-[r]outing' dist/v2p-portable.md   # 3, 0
+grep -c '| [a]vailable |' README.md; grep -c 'skills-[c]atalog' README.md   # 8, 1
+grep -cE '^\| `adopt` \| `phases/adopt\.md` \| .*\| available' skills/v2p/SKILL.md   # 1
+awk '/^## 2\./{f=1} /^## 5\./{f=0} f' skills/v2p/references/tidy-rules.md | grep -oE '`[^`]+`' | tr -d '`' | grep -E '[*.]' | while IFS= read -r t; do cat skills/v2p/scripts/tidy-check.sh skills/v2p/scripts/quarantine.sh | tr -d '\\' | grep -qF -- "$t" || echo "UNMATCHED: $t"; done   # no output
+grep -c '\.v2p/work/' skills/v2p/phases/scavenge.md skills/v2p/phases/adopt.md   # 3 or more each
+sh build-portable.sh && grep -c '<!-- source: phases/adopt.md -->' dist/v2p-portable.md   # 1
+grep -cE '^\| `(execute|review)` \| `phases/(execute|review)\.md` \| .*\| available' skills/v2p/SKILL.md; grep -c 'not available in [t]his version' skills/v2p/SKILL.md   # 2, 0
+sh tests/test-execute.sh | tail -1; sh tests/test-finalize-review.sh | tail -1   # 0 failures each
+sh build-portable.sh && grep -c '<!-- source: phases/\(execute\|review\)\.md -->' dist/v2p-portable.md; grep -c 'AskUserQuestion\|claude-only\|task-record\|drift-check\|finalize-execute\|finalize-review\|subagent_type' dist/v2p-portable.md   # 2, 0
+grep -c '(stub)' skills/v2p/references/model-routing.md; grep -c 'ponytail-review' skills/v2p/references/model-routing.md skills/v2p/references/skills-cat*.md   # 0; 1 or more each
+grep -cE '^\| `brand` \| `phases/brand\.md` \| .*\| available' skills/v2p/SKILL.md   # 1
+sh tests/test-finalize-brand.sh | tail -1   # test-finalize-brand: 0 failures
+grep -c 'awesome-design-md' skills/v2p/references/skills-catalog.md; grep -c 'drop one DESIGN.md' skills/v2p/references/skills-catalog.md   # 1, 0
+awk '/^## 4\./{f=1;next} /^## /{f=0} f' skills/v2p/references/tidy-rules.md | grep '^- Lockfiles' | grep -oE '`[^`]+`' | tr -d '`' | while IFS= read -r t; do grep -qF -- "$t" skills/v2p/scripts/drift-check.sh || echo "UNMATCHED: $t"; done   # no output
+grep -cE '^\| `deploy` \| `phases/deploy\.md` \| `\.v2p/DEPLOY\.md` \| available' skills/v2p/SKILL.md; grep -rc 'not available in [t]his version' skills/v2p tests/fixtures README.md | grep -vc ':0$'   # 1, 0
+sh tests/test-finalize-deploy.sh | tail -1; sh tests/test-guard.sh | tail -1   # test-finalize-deploy: 0 failures …; test-guard: 0 failures
+```
+
+The full list, including the referenced-path and no-item-lost checks, is in `docs/specs/slice-1-spec.md` §6.
+
+## Models
+Claude Code: see `skills/v2p/references/model-routing.md`. Portable: any strong reasoning model.
+
+**Stop vibing. Start engineering.**
+
+***

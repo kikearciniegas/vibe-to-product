@@ -1,0 +1,85 @@
+# v2p phase: review
+
+## Purpose
+Review the whole execute branch once with the phase-level checks, fix what they find, complete the standards evidence, and hand a receipt to deploy. Writes `.v2p/REVIEW.md`.
+
+## Preconditions
+- `.v2p/EXECUTE.md` must have passed execute's finalize step. Portable: it has a `checked:` line that is not `pending`. Otherwise print `Run /v2p execute first.` and stop.
+<!-- claude-only -->
+  In Claude Code this check is a script: `sh <this skill's dir>/scripts/check-pass.sh .v2p/EXECUTE.md .v2p/.execute-pass` must print `OK`.
+<!-- /claude-only -->
+- Existing `.v2p/REVIEW.md` with its receipt → offer: resume (keep) or re-run.
+- Clean tree and HEAD on the branch named in the EXECUTE `checked:` line (`branch <b>`); otherwise print what differs and stop.
+- Model guard (router §2).
+<!-- claude-only -->
+- Named skills enabled: `jq -r '.skillOverrides // {} | to_entries[] | select(.value == "off") | .key' ~/.claude/settings.json | grep -xE '([^:]+:)?(review|requesting-code-review-extras|simplify|ponytail-review|ponytail-audit|security-review|claude-security|verification-before-completion|verification-before-completion-extras|design-review|gstack-extras|make-interfaces-feel-better|review-animations|translation-quality|codex|qa|qa-only|browse)'` lists the Step 1 skills set to `off`. Any listed → one `AskUserQuestion` at phase start, naming them: enable them in `skillOverrides`, or the user types each one when its check runs. This is the phase's opening prompt; Step 1's claude-security cost question, when needed, goes in it too.
+<!-- /claude-only -->
+- Checkpoints: `.v2p/work/review-<check>.md` is reusable when its line 1 `head:` equals the current `git rev-parse HEAD`; otherwise it is stale: overwrite it, never read it.
+
+## Step 0 — Scope
+`base` and `branch` come from the EXECUTE `checked:` line; the diff under review is `git diff <base>..HEAD`. A file changed on the branch that no PLAN task names (and no amendment grants) is finding #1.
+Preview: before the ux-laws and qa checks run, write the draft header's `preview: <URL> · started by <cmd>` line (`references/review-template.md`) for the running preview they check; without it they do not start. No preview running → suggest how to create one, first that works: the project's documented dev or preview command (README/CLAUDE.md Commands, `package.json` scripts such as `dev`, `preview`, `start`), including any services it needs first; a production build served locally (`build` then `start`/`preview`); a preview deploy on the PLAN's host (e.g. a Vercel preview URL). Ask before starting anything that needs credentials or costs money. If none can be created (native app with no web build, a missing secret the user cannot supply now), write `preview: none — <reason>`, set the ux-laws and qa findings cells to `unavailable: <reason>`, record the gap as one §2 `open:` finding naming the deploy task (the finalize step expects it on top of the §1 findings sum), and move on.
+<!-- claude-only -->
+Claude Code: `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` (changed set against the union of every task's Files list plus `.v2p/PLAN-AMENDMENTS.md`).
+<!-- /claude-only -->
+
+## Step 1 — Runs
+Each check writes a checkpoint first (line 1: `head: <sha> · check: <name> · run: <exact invocation>`, then one finding per line: `- <path:line> · <severity> · <one line>`), then one row in REVIEW.draft.md §1 (`references/review-template.md`).
+
+| check | what runs | on | required |
+|---|---|---|---|
+| code-review | a code review of the branch diff | the diff | always |
+| simplify | an over-engineering review of the diff, then of the whole repo | diff, then repo | always |
+| security | a security review of the diff | the diff | always |
+| verification | re-run the command cited by every `done` row of EXECUTE §2; output that no longer matches is a finding | evidence table | always |
+| ux-laws | `references/ux-laws.md` checks plus a visual design review of the running preview against `.v2p/DESIGN.md` (frontmatter tokens are normative: a value in the token map is never a finding; a departure names the token) | UI | always (every profile has UI) |
+| i18n | a translation-quality pass on the locale files named in PLAN | locale files | only when BRIEF §9 `Conditional blocks ON` contains `i18n` |
+| codex | an independent second-opinion review of the diff (read-only; it never edits) | the diff | always; may be `unavailable: <reason>` |
+| qa | a QA pass on the preview URL; re-checks after fixes | running app | web profiles; native-app: `manual: <who ran what on which device>` |
+
+Portable: run each check yourself, as a separate pass with its own list; the codex row reads `unavailable: portable` unless the user pastes a second model's review.
+<!-- claude-only -->
+Claude Code invocations (verified on this machine 2026-09-24, see `references/skills-catalog.md`):
+- code-review: gstack `/review` + `requesting-code-review-extras` (main thread).
+- simplify: the Claude Code built-in `/simplify` on the branch diff (it applies fixes: each one becomes a fix commit under Step 2's rules), then the `ponytail-review` skill on `git diff <base>..HEAD`, then `ponytail-audit` on the repo (plugin `ponytail@ponytail` 4.9.0). `ponytail-review` = diff, `ponytail-audit` = whole repo.
+- security: the Claude Code built-in `/security-review` (reviews the pending changes of the current branch), and the `claude-security` plugin at its lowest tier: `/claude-security scan changes --base <base> --effort low` (the explicit `--base` matters, because a bare sha is read as `--commit`). Plugin 0.12.0 has no `disable-model-invocation`: the model may invoke this scan when the user's request accepted its time or token cost in words. Otherwise it asks its own fixed cost confirmation; if that still blocks, ask for the scan in the phase's opening prompt (Preconditions). It needs the Workflow tool, and writes `CLAUDE-SECURITY-<timestamp>/CLAUDE-SECURITY-RESULTS.md` behind its own `.gitignore`. The full-effort scan is deploy's. The row's run cell names both invocations; findings = the sum. `/security-review` reads the git state of the session's working directory: run it from the execute worktree (a subagent may start elsewhere), and the run cell names the `<branch>@<short HEAD>` it reviewed, which must be the execute branch; a review of any other tree is not run. No Workflow tool in this session (the plugin scan cannot start) → run `/security-review` alone, write the run cell as `/security-review · claude-security unavailable: <reason>` and count only its findings; never write a scan that did not run as `0 findings`.
+- verification: `superpowers:verification-before-completion` + `verification-before-completion-extras` on EXECUTE §2.
+- ux-laws: gstack `/design-review <preview URL>` + `gstack-extras`. Pass the URL explicitly: on a feature branch without one it switches to diff-aware mode. Its setup reads the root `DESIGN.md` (the symlink to `.v2p/DESIGN.md`, or in adopt mode the project's own file, which brand kept) and compares the page with it; decline its offer to save a DESIGN.md. Then `make-interfaces-feel-better` in `full` mode on the branch's UI diff, and `review-animations` (emil) only when the diff matches `transition|animate|framer|motion|@keyframes`. Not `/impeccable audit` or `critique` (duplicates). All outputs go into `.v2p/work/review-ux-laws.md`; the run cell names `DESIGN.md` (e.g. `/design-review http://localhost:3101 against DESIGN.md + make-interfaces-feel-better full`). Never `mcp__claude-in-chrome__*`; `/browse` for anything that needs a click.
+- i18n: the `translation-quality` skill.
+- codex: `/codex review` with no text after `review` (any text there turns into custom instructions sent through `codex exec` instead of the scoped `codex review --base`). The skill resolves the base branch itself and probes auth in its Step 0.5; `AUTH_FAILED` or `MODEL_UNUSABLE` → the row reads `unavailable: <that reason>` and review continues (user decision). Codex findings enter §2 as rows the main thread adjudicates.
+- qa: gstack `/qa` on the preview URL; `/qa-only` for re-checks.
+Each skill's output is written to its checkpoint by the main thread on receipt.
+<!-- /claude-only -->
+
+## Step 2 — Adjudicate and fix
+Every finding gets one row in REVIEW.draft.md §2 with a status: `fixed <sha>` (each fix its own commit, test first), `accepted: <reason>`, or `open: <reason>`. `open` is allowed only when the reason names the deploy task or a BRIEF §. A fix touches only the finding's paths; after each fix, check the branch scope again: a path outside every task's scope is itself a finding (its own §2 row, adjudicated like any other). Update the draft's `diff: <base>..<head>` after the last fix commit.
+<!-- claude-only -->
+Claude Code: fixes are implemented by `builder` (code) or `quick` (docs) under execute's dispatch rules, with the Files list = the finding's paths; `sh <this skill's dir>/scripts/drift-check.sh --branch .v2p` after each fix. `AskUserQuestion` before accepting any `open` finding. Execute is finalized, so `task-record.sh allow` no longer grants scope: a fix outside every task's scope is a §2 scope finding row, never a PLAN amendment.
+<!-- /claude-only -->
+
+## Step 3 — Standards evidence
+Copy EXECUTE §2 into REVIEW.draft.md §3 and complete it: every row `done` with evidence (a command and its output from this phase, a path or a URL; met another way is `done | <path:line>`), `N/A` citing `BRIEF §`, `not adopted — <path §/line>` (an owner decision recorded in the repo) or `gap — <path:line>` (known, not built, tracked in the repo); `pending` only as `pending | deferred to deploy: <what production state it needs>`.
+<!-- claude-only -->
+Claude Code: `planner` audits the table read-only and returns the rows whose evidence does not prove the item; the main thread fixes them. `AskUserQuestion` to confirm the deferred rows and any row newly marked `not adopted` or `gap`.
+<!-- /claude-only -->
+
+## Step 4 — Threat model and docs
+`docs/threat-model.md` exists and names every entry point of PLAN `## Threat Model`; `docs/ARCHITECTURE.md` module map matches the tree (core.md Modularity item 1); the tidy check reports 0 violations, or each one is listed with a reason.
+
+## Step 5 — Finalize
+Portable: write `.v2p/REVIEW.md` from the draft; there is no receipt without the scripts; say so.
+<!-- claude-only -->
+Claude Code: `sh <this skill's dir>/scripts/finalize-review.sh .v2p` until it prints `PASS`. It checks every required run row, one §2 row per finding (fix commits exist), §3 against PLAN §4, the draft's head = HEAD, the branch and a clean tree, and, when the PLAN's Spec line names `.v2p/DESIGN.md`, that DESIGN.md still matches `.v2p/.brand-pass` and the ux-laws run cell names `DESIGN.md`; and it re-runs every mechanical PLAN verifier of the tasks EXECUTE did not skip or defer (expect minutes). A verifier that cannot pass as written (a plan defect, e.g. a raw `wc -l` comparison) is never edited: on the user's yes (`AskUserQuestion`, with the evidence that the property holds), add `ruling: task <n> · plan defect · <evidence>` to the draft; that verifier is not re-run and the count shows in the PASS line. It writes `REVIEW.md`, the receipt `.v2p/.review-pass`, and clears `.v2p/work/review-*`. Never write `REVIEW.md` by hand.
+<!-- /claude-only -->
+
+## Step 6 — Hand off
+Print the path, findings fixed/accepted/open, standards done/N-A/deferred, `pre-deploy: pending (claude-security full scan + Strix pentest run by /v2p deploy)`, then `Next: /v2p deploy`.
+
+<!-- claude-only -->
+## Claude Code note
+- Main thread runs the gstack skills (they need `AskUserQuestion`); `planner` audits evidence; `/codex` runs through its skill only.
+- `AskUserQuestion` for: named skills set to `off` (Preconditions), accepting an `open` finding, `/codex` unavailable → continue without, deferred rows.
+- Strix is deploy's: optional, needs Docker + an LLM key; never installed here.
+<!-- /claude-only -->
+
+***
