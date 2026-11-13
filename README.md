@@ -60,6 +60,9 @@ The standards hold 226 checklist items across six files (`grep -c '^- \[ \]' ski
 | `skills/v2p/scripts/quarantine.sh` | moves approved tidy rows to `~/.v2p-backups/` with a manifest and `restore.sh`; never deletes (Claude Code only) |
 | `skills/v2p/scripts/finalize-audit.sh` | gate that turns `AUDIT.draft.md` into `AUDIT.md` + receipt (Claude Code only) |
 | `skills/v2p/scripts/finalize-plan.sh` | gate that turns `PLAN.draft.md` into `PLAN.md` + receipt (Claude Code only) |
+| `skills/v2p/scripts/check-trust.sh` | per-machine trust ledger (`${XDG_CONFIG_HOME:-~/.config}/v2p/trusted-plans`, PLAN hash + project path); execute, review and deploy run PLAN verifier commands only for a trusted PLAN (Claude Code only) |
+| `skills/v2p/scripts/trust-plan.sh` | lists a PLAN's verifier commands and, with `--yes`, trusts it on this machine; needed after a clone, a download or a moved project (Claude Code only) |
+| `skills/v2p/scripts/draft-owned.sh` | decides whether a draft was written in this session (untracked in a repo rooted at the project) before finalize-plan trusts or finalize-audit runs it (Claude Code only) |
 | `skills/v2p/scripts/drift-check.sh` | read-only scope gate: changed paths vs the PLAN task's Files list, branch, base, tidy delta (Claude Code only) |
 | `skills/v2p/scripts/task-record.sh` | the only writer of execute's per-task records and `.v2p/PLAN-AMENDMENTS.md` (Claude Code only) |
 | `skills/v2p/scripts/finalize-execute.sh` | gate that turns `EXECUTE.draft.md` into `EXECUTE.md` + receipt (Claude Code only) |
@@ -83,6 +86,15 @@ The standards hold 226 checklist items across six files (`grep -c '^- \[ \]' ski
 | `WORKFLOW.md` | the Architect / Executor / Auditor loop and failure-recovery rule |
 | `build-portable.sh` | builds `dist/v2p-portable.md` |
 | `dist/v2p-portable.md` | generated portable pack; never edit by hand |
+
+## Trusting a PLAN on a new machine
+
+Receipts in `.v2p/` are shared with the repo; permission to run a PLAN's verifier commands is not. `finalize-plan.sh` trusts the PLAN it writes from a draft made in this session. After a clone, a download or a move, review the commands first:
+
+```sh
+sh skills/v2p/scripts/trust-plan.sh <project-root>        # lists the commands, trusts nothing
+sh skills/v2p/scripts/trust-plan.sh <project-root> --yes  # trusts this PLAN at this path
+```
 
 ## Build
 ```sh
