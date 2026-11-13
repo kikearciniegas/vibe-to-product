@@ -142,6 +142,14 @@ for SH in sh zsh; do
   r=$(: | $SH "$S/quarantine.sh" "$em"); is "16 empty input exit" $? 0; has "16 empty input" "$r" "nothing to quarantine"
   is "16 no manifest written" "$(( $(find "$HOME/.v2p-backups" -name MANIFEST.tsv | wc -l) - n1 ))" 0
   has "16 control: one eligible row is not nothing" "$(printf 'debris\tkeep/main.ts\tquarantine\n' | $SH "$S/quarantine.sh" "$em")" "moved: 1 "
+  # 17. restore.sh treats every path as data: a name holding $( ), a backtick, ", \ or ' never runs as a command
+  ij=$base/ij-$SH; mkdir -p "$ij/d\$(touch pwned)"; cd "$ij"; git init -q
+  N=$(printf '%s\n' '$(touch pwned).bak' 'a`touch pwned`.bak' 'q"x.bak' "s'q.bak" 'b\s.bak' 'd$(touch pwned)/f.bak')
+  printf '%s\n' "$N" | while IFS= read -r n; do : > "$n"; done; before=$(files)
+  r=$(printf '%s\n' "$N" | sed 's/^/debris	/; s/$/	quarantine/' | $SH "$S/quarantine.sh" --apply "$ij"); is "17 apply exit" $? 0
+  q=$(printf '%s\n' "$r" | sed -n 's/^restore: sh //p'); is "17 moved" "$(test -e "$ij/q\"x.bak" || echo gone)" gone
+  sh "$q" >/dev/null 2>&1; is "17 restore exit" $? 0
+  is "17 nothing ran" "$(find "$ij" "$base/home" -name pwned | grep -c .)" 0; is "17 files back" "$(files)" "$before"
   # 14. age_days: a tracked file's age is its last commit, not its mtime (a fresh clone sets every mtime to now);
   # an untracked file keeps its mtime
   ag=$base/age-$SH; mkdir -p "$ag"; cd "$ag"; git init -q; now=$(date +%s)

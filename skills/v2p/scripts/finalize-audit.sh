@@ -45,7 +45,8 @@ v30=$(awk '/^\|/ { c = $0; while (match(c, /`[^`]*`/)) { if (index(substr(c, RST
 # holding a quote, pipe, backslash, ^ or $ is a pattern (`[`/`(` stay: `[locale]`, `(group)` are real path parts).
 # Absence (→ 0 or `! …`) without `control:` in the cell is only a WARN.
 # trust boundary: the draft is unsealed, written by this session (adopt Step 4) and gitignored (`.v2p/*.draft.md`); its
-# writer can already run commands. A draft tracked by git came from the repo instead, so nothing from it runs.
+# writer can already run commands. A draft tracked by git came from the repo instead, so nothing from it runs; outside a
+# repo whose top is the project root nothing tells the two apart, so a row with a command to run fails there (a draft with none still passes).
 # §3 (modularity) done rows run the same way: runev <label> <rows> <status field>.
 vt=0; vp=0
 runev() { printf '%s\n' "$2" | awk -F'|' -v s="$3" '{st=$s; gsub(/^ +| +$/,"",st); if (st!="done") next; it=$2; gsub(/^ +| +$/,"",it)
@@ -56,6 +57,7 @@ while IFS='	' read -r it ev; do
     c=$(printf '%s\n' "$m" | sed 's/^`\([^`]*\)`.*/\1/'); x=$(printf '%s\n' "$m" | sed 's/^`[^`]*` *→ *//; s/`//g; s/ *$//')
     printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>' && continue
     vt=$((vt + 1)); ran=1; case $c in '!'*) abs=1 ;; esac; [ "$x" = 0 ] && abs=1
+    [ -z "$nogit" ] || { echo "FAIL: $1 $it: \`$c\` not run: $d is not in a git repo, so nothing shows $draft was written by this session (git init, then run this again)"; fail=1; continue; }
     (cd "$root" && sh -c "$c") > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     if [ "$r" -ne 0 ]; then echo "FAIL: $1 $it: \`$c\` exit $r"; fail=1
     else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: $1 $it: \`$c\` → $last (expected $x)"; fail=1; fi ;; esac; fi
@@ -69,7 +71,10 @@ while IFS='	' read -r it ev; do
   esac
 done < "$tmp.d"; }
 r3=$(rows '## 3.'); rows3=$(printf '%s\n' "$r3" | grep -c .)
-if git -C "$d" ls-files --error-unmatch AUDIT.draft.md >/dev/null 2>&1; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
+# the root must be the top of its own repo: a parent repo (a monorepo, or one behind an empty .git) never vouches for the draft
+top=$(git -C "$root" rev-parse --show-toplevel 2>/dev/null) && top=$(cd "$top" && pwd -P)
+nogit=; [ -n "$top" ] && [ "$top" = "$root" ] || nogit=1
+if [ -z "$nogit" ] && git -C "$d" ls-files --error-unmatch AUDIT.draft.md >/dev/null 2>&1; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
 else runev §2 "$r2" 4; runev §3 "$r3" 3; fi
 [ "$rows3" -eq "$modexp" ] || { echo "FAIL: §3 rows $rows3/$modexp"; fail=1; }
 bad=$(check "$r3" 3); [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }

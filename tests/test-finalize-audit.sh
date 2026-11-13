@@ -14,7 +14,7 @@ FA() { out=$($SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?; }
 # plant <row 1 replacement>: the good draft with §2 row 1 (std1) replaced; any earlier AUDIT.md removed
 plant() { rm -f .v2p/AUDIT.md .v2p/.audit-pass; R=$1 awk '!done && $0 == "| std1 | core.md | pending | |" { print ENVIRON["R"]; done = 1; next } { print }' "$G" > .v2p/AUDIT.draft.md; }
 for SH in sh zsh; do
-  fx=$base/fx-$SH; mkdir -p "$fx/.v2p"; cd "$fx" || exit 2; G=$base/good-$SH
+  fx=$base/fx-$SH; mkdir -p "$fx/.v2p"; cd "$fx" || exit 2; G=$base/good-$SH; git init -q   # evidence runs only in a git repo (8g)
   echo '# fixture' > README.md; echo '- [ ] passkeys: rejected, see docs' > BACKLOG.md
   printf '%s\n' '# BRIEF' '' '## 9. Standards' '- core.md' '' '## 11. Open questions' 'none' > .v2p/BRIEF.md
   { printf '%s\n' '# AUDIT — fixture' 'checked: pending' '' '## 2. Standards' '| item | file | status | evidence |' '|---|---|---|---|'
@@ -66,8 +66,22 @@ for SH in sh zsh; do
   plant '| std1 | core.md | done | `! grep -q lorem README.md` → exit 0 |'; FA; is "8c absence exit" $rc 0; has "8c absence warns" "$out" "WARN: §2 std1: absence claim"
   plant '| std1 | core.md | done | `! grep -q lorem README.md` → exit 0 · control: `grep -c fixture README.md` → 1 |'; FA; is "8c control exit" $rc 0; hasnt "8c control no warn" "$out" "WARN"
   # 8d. trust boundary: a draft tracked by git came from the repo, not this session; its commands never run
-  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git init -q; git add -f .v2p/AUDIT.draft.md; FA; rm -rf .git
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git add -f .v2p/AUDIT.draft.md; FA; git rm -q --cached .v2p/AUDIT.draft.md
   is "8d tracked draft exit" $rc 1; has "8d tracked draft" "$out" "tracked by git"; is "8d nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8g. fail closed: outside a git work tree nothing shows the draft is this session's, so its commands never run
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; mv .git "$base/git-off-$SH"; FA; mv "$base/git-off-$SH" .git
+  is "8g no git exit" $rc 1; has "8g no git" "$out" "not in a git repo"; is "8g nothing ran" "$(test -f pwned && echo yes)" ""; rm -f pwned
+  # 8i. no git and nothing to run: adopt's "No git → continue" still finishes
+  plant '| std1 | core.md | pending | |'; mv .git "$base/git-off-$SH"; FA; mv "$base/git-off-$SH" .git
+  is "8i no git, no commands exit" $rc 0; hasnt "8i no git, no commands" "$out" "git repo"
+  # 8h. an empty .git (a copy without history) never lets a parent repo vouch for the draft
+  pr=$base/par-$SH; mkdir -p "$pr/p/.git" "$pr/p/.v2p"; git init -q "$pr"; cp README.md BACKLOG.md "$pr/p/"; cp .v2p/BRIEF.md "$pr/p/.v2p/"
+  R='| std1 | core.md | done | `touch pwned` → exit 0 |' awk '!done && $0 == "| std1 | core.md | pending | |" { print ENVIRON["R"]; done = 1; next } { print }' "$G" > "$pr/p/.v2p/AUDIT.draft.md"
+  out=$(cd "$pr/p" && $SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?
+  is "8h parent repo exit" $rc 1; has "8h parent repo" "$out" "not in a git repo"; is "8h nothing ran" "$(test -f "$pr/p/pwned" && echo yes)" ""
+  # 8j. a project with no .git inside another repo (a monorepo subfolder) is not its repo's top: nothing runs
+  rm -rf "$pr/p/.git" "$pr/p/.v2p/AUDIT.md" "$pr/p/.v2p/.audit-pass"; out=$(cd "$pr/p" && $SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?
+  is "8j subfolder exit" $rc 1; has "8j subfolder" "$out" "not in a git repo"; is "8j nothing ran" "$(test -f "$pr/p/pwned" && echo yes)" ""
   # 8e. `\|` inside a backticked cell fails here, as finalize-plan's V30 lint does later (the copied command keeps the
   # backslash); a `\|` outside backticks is plain text (control)
   plant "| std1 | core.md | done | \`echo 'a\\|b'\` → exit 0 |"; FA; is "8e escaped pipe in a done cell exit" $rc 1; has "8e escaped pipe" "$out" 'has `\|` inside backticks'
@@ -79,7 +93,7 @@ for SH in sh zsh; do
   has "8f §3 differing output" "$out" 'FAIL: §3 mod1: `grep -c fixture README.md` → 1 (expected 2)'
   m3 '| mod1 | done | `grep -c fixture README.md` → 1 |'; FA; is "8f §3 matching exit" $rc 0; has "8f §3 runs counted" "$out" "evidence runs 1/1"
   m3 "| mod1 | done | rg 'big/file' → 0 |"; FA; is "8f §3 unbackticked arrow exit" $rc 1; has "8f §3 unbackticked arrow" "$out" "FAIL: §3 mod1: done evidence has → but no backticked"
-  m3 '| mod1 | done | `touch pwned` → exit 0 |'; git init -q; git add -f .v2p/AUDIT.draft.md; FA; rm -rf .git
+  m3 '| mod1 | done | `touch pwned` → exit 0 |'; git add -f .v2p/AUDIT.draft.md; FA; git rm -q --cached .v2p/AUDIT.draft.md
   is "8f §3 tracked draft exit" $rc 1; is "8f §3 nothing ran" "$(test -f pwned && echo yes)" ""
   cd "$base"
   # B. §4 backup line: exactly one, declined|none|existing archive
