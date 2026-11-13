@@ -68,6 +68,11 @@ for SH in sh zsh; do
   # 8d. trust boundary: a draft tracked by git came from the repo, not this session; its commands never run
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git add -f .v2p/AUDIT.draft.md; FA; git rm -q --cached .v2p/AUDIT.draft.md
   is "8d tracked draft exit" $rc 1; has "8d tracked draft" "$out" "tracked by git"; is "8d nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8d2. tracked under another case: on a case-insensitive disk (macOS default) .v2p/audit.draft.md IS this draft
+  if [ -f .v2p/audit.draft.md ]; then rm -f pwned
+    git update-index --add --cacheinfo "100644,$(git hash-object -w .v2p/AUDIT.draft.md),.v2p/audit.draft.md"; FA; git rm -q --cached .v2p/audit.draft.md
+    is "8d2 case-folded tracked draft exit" $rc 1; has "8d2 case-folded tracked draft" "$out" "tracked by git"; is "8d2 nothing ran" "$(test -f pwned && echo yes)" ""
+  else echo "SKIP [$SH] 8d2 case-folded tracked draft: this filesystem is case-sensitive"; fi
   # 8g. fail closed: outside a git work tree nothing shows the draft is this session's, so its commands never run
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; mv .git "$base/git-off-$SH"; FA; mv "$base/git-off-$SH" .git
   is "8g no git exit" $rc 1; has "8g no git" "$out" "not in a git repo"; is "8g nothing ran" "$(test -f pwned && echo yes)" ""; rm -f pwned

@@ -74,7 +74,8 @@ r3=$(rows '## 3.'); rows3=$(printf '%s\n' "$r3" | grep -c .)
 # the root must be the top of its own repo: a parent repo (a monorepo, or one behind an empty .git) never vouches for the draft
 top=$(git -C "$root" rev-parse --show-toplevel 2>/dev/null) && top=$(cd "$top" && pwd -P)
 nogit=; [ -n "$top" ] && [ "$top" = "$root" ] || nogit=1
-if [ -z "$nogit" ] && git -C "$d" ls-files --error-unmatch AUDIT.draft.md >/dev/null 2>&1; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
+# icase: on a case-insensitive disk (macOS default) a tracked .v2p/audit.draft.md IS this draft
+if [ -z "$nogit" ] && [ -n "$(git -C "$d" ls-files -- ':(icase)AUDIT.draft.md')" ]; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
 else runev §2 "$r2" 4; runev §3 "$r3" 3; fi
 [ "$rows3" -eq "$modexp" ] || { echo "FAIL: §3 rows $rows3/$modexp"; fail=1; }
 bad=$(check "$r3" 3); [ -z "$bad" ] || { echo "FAIL: §3"; printf '%s\n' "$bad"; fail=1; }

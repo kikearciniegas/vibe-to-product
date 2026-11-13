@@ -150,7 +150,8 @@ mf=$(printf '%s\n' "$mods" | while IFS='	' read -r t p; do [ -n "$p" ] || contin
 # toplevel and the draft untracked. A draft shipped in a clone is finalized, but its commands need trust-plan.sh first.
 root=$(cd "$d/.." && pwd -P); top=$(git -C "$root" rev-parse --show-toplevel 2>/dev/null) && top=$(cd "$top" && pwd -P)
 own=; [ -n "$top" ] && [ "$top" = "$root" ] && own=1
-[ -n "$own" ] && git -C "$d" ls-files --error-unmatch PLAN.draft.md >/dev/null 2>&1 && own=
+# icase: on a case-insensitive disk (macOS default) a tracked .v2p/plan.draft.md IS this draft
+[ -n "$own" ] && [ -n "$(git -C "$d" ls-files -- ':(icase)PLAN.draft.md')" ] && own=
 mv "$draft" "$out"
 # Receipt: execute accepts PLAN.md only if its hash matches this file.
 shasum -a 256 "$out" | cut -d" " -f1 > "$d/.plan-pass"

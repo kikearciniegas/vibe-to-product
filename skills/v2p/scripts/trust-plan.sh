@@ -22,6 +22,7 @@ done
 bad=$(LC_ALL=C grep -n '[^ -~	]' "$tmp" | head -n 1 | cut -d: -f2 | cut -f1)
 [ -z "$bad" ] || { echo "FAIL: task $bad Verifier command has a control or non-ASCII byte that could hide what runs; not trusted (fix PLAN.md and re-run finalize-plan)"; exit 1; }
 echo "Verifier commands in $plan (run with sh -c; deploy fills <domain>/<url> with its target):"
-while IFS='	' read -r n c; do echo "  task $n: $c"; done < "$tmp"
+# printf, never echo: echo expands a literal `\033[2K\r` (all ASCII, past the byte check) into the ESC/CR it spells
+while IFS='	' read -r n c; do printf '  task %s: %s\n' "$n" "$c"; done < "$tmp"
 [ -n "$yes" ] || { echo "Not trusted on this machine for $root (trust is per project path: a moved or renamed project needs it again). If every command above is safe to run here: sh $skill/scripts/trust-plan.sh $root --yes"; exit 1; }
 sh "$skill/scripts/check-trust.sh" "$plan" --add

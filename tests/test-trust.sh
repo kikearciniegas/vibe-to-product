@@ -83,6 +83,27 @@ for SH in sh zsh; do
     is "M2 byte is in the PLAN" "$(grep -cF "touch pwned$bad" .v2p/PLAN.md)" 1
     TP "$base/m2-$SH" --yes; is "M2 control byte exit" $rc 1; is "M2 control byte no ledger" "$(test -e "$L" && echo yes)" ""
     has "M2 control byte names task" "$out" "FAIL: task 1 "; cd "$base" || exit 2; done
+  # R1. the listing prints each command verbatim: a literal backslash escape (`\033[2K\r`, all ASCII) never becomes ESC/CR
+  rm -rf "$XDG_CONFIG_HOME"; mk "$base/r1-$SH"
+  sed 's/`touch pwned`/`printf "\\033[2K\\r"; touch pwned`/' .v2p/PLAN.md > .v2p/p && mv .v2p/p .v2p/PLAN.md; sha .v2p/PLAN.md > .v2p/.plan-pass
+  is "R1 PLAN holds the literal escape" "$(grep -cF 'printf "\033[2K\r"; touch pwned' .v2p/PLAN.md)" 1
+  TP "$base/r1-$SH"; v=$(printf '%s\n' "$out" | cat -v)
+  has "R1 listing shows the backslash text" "$v" 'task 1: printf "\033[2K\r"; touch pwned'
+  is "R1 no ESC or CR in the listing" "$(printf '%s\n' "$v" | grep -c '\^\[\|\^M')" 0
+  # R2. a draft tracked under another case is the same file on a case-insensitive disk: not auto-trusted
+  rm -rf "$XDG_CONFIG_HOME"; pd "$base/r2-$SH"
+  if [ -f .v2p/plan.draft.md ]; then
+    git update-index --add --cacheinfo "100644,$(git hash-object -w .v2p/PLAN.draft.md),.v2p/plan.draft.md"; git commit -qm 'clone ships plan.draft.md'
+    FP; is "R2 case-folded tracked draft finalized" $rc 0; is "R2 case-folded tracked draft not trusted" "$(test -e "$L" && echo yes)" ""
+    has "R2 case-folded tracked draft names trust-plan" "$out" "trust-plan.sh"
+  else echo "SKIP [$SH] R2 case-folded tracked draft: this filesystem is case-sensitive"; fi
+  # R3. a control character in the project root (newline, tab) is refused and the ledger left byte-identical
+  rm -rf "$XDG_CONFIG_HOME"; cd "$base" || exit 2; mk "$base/r3ok-$SH"; TP "$base/r3ok-$SH" --yes; s0=$(sha "$L"); cd "$base" || exit 2
+  for nm in "r3
+nl-$SH" "r3	tab-$SH"; do mkdir -p "$base/$nm/.v2p"; cp "$base/r3ok-$SH/.v2p/PLAN.md" "$base/$nm/.v2p/PLAN.md"
+    out=$(sh "$S/check-trust.sh" "$base/$nm/.v2p/PLAN.md" --add 2>&1); rc=$?
+    is "R3 control char in root --add exit" $rc 1; has "R3 control char in root msg" "$out" "FAIL:"; is "R3 ledger unchanged" "$(sha "$L")" "$s0"
+    out=$(sh "$S/check-trust.sh" "$base/$nm/.v2p/PLAN.md" 2>&1); is "R3 control char in root check exit" $? 1; done
   # M3. trust is per project path: an identical PLAN in another (or a moved) project is not trusted
   rm -rf "$XDG_CONFIG_HOME"; mk "$base/m3a-$SH"; TP "$base/m3a-$SH" --yes; is "M3 trust A" $rc 0
   cp -R "$base/m3a-$SH" "$base/m3b-$SH"; cd "$base/m3b-$SH" || exit 2; rm -f pwned
