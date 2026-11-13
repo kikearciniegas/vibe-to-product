@@ -19,6 +19,7 @@ trap 'rm -f "$tmp.r" "$tmp.c" "$tmp.st" "$tmp.f" "$tmp.s" "$tmp.fx" "$tmp.rl" "$
 # 1. receipts, no earlier DEPLOY.md, a draft to stamp
 sh "$skill/scripts/check-pass.sh" "$rv" "$d/.review-pass" >/dev/null || { echo "FAIL: REVIEW.md does not match its receipt (run /v2p review first)"; exit 1; }
 sh "$skill/scripts/check-pass.sh" "$plan" "$d/.plan-pass" >/dev/null || { echo "FAIL: PLAN.md does not match its receipt (its verifiers run here)"; exit 1; }
+sh "$skill/scripts/check-trust.sh" "$plan" || exit 1
 [ -e "$out" ] && { echo "FAIL: DEPLOY.md exists (redeploy: move it aside first)"; exit 1; }
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
@@ -175,7 +176,8 @@ vt=0; vp=0; nr=0; left=0
     # same rule as task-record.sh: only an unquoted `<word>` is a placeholder; `'<loc>'` and `< file` run
     if printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>'; then left=$((left + 1)); echo "skip: task $n: $c (placeholder)"; continue; fi
     vt=$((vt + 1)); ran=$((ran + 1)); echo "run: task $n: $c"
-    # trust boundary: $c is a Verifier command from PLAN.md (hash-locked, checked above) plus the host validated in step 2
+    # trust boundary: $c is a Verifier command from PLAN.md (hash-locked and trusted on this machine, check-trust.sh
+    # above: a shipped receipt is not enough) plus the host validated in step 2
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     if [ "$r" -ne 0 ]; then echo "FAIL: verifier of task $n fails on the live target: $c exit $r"; fail=1
     else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: verifier of task $n fails on the live target: $c → $last (expected $x)"; fail=1; fi ;; esac; fi

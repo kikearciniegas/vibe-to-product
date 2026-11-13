@@ -7,7 +7,11 @@
 # Writes only under ${TMPDIR:-/tmp}/v2p-fr.<pid> (HOME points there too). Usage: sh tests/test-finalize-review.sh
 here=$(cd "$(dirname "$0")/.." && pwd -P); S=$here/skills/v2p/scripts; src=$here/tests/fixtures/finalize-review/REVIEW.md
 base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-fr.$$; mkdir -p "$base/home"; HOME=$base/home; export HOME
+XDG_CONFIG_HOME=$HOME/.config; export XDG_CONFIG_HOME
 GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t; export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+# the fixture's PLAN and every resealed PLAN are trusted in the scratch ledger (check-trust.sh), as finalize-plan.sh would
+fixture() { sh "$here/tests/fixture-execute.sh" "$1" && sh "$S/check-trust.sh" "$1/.v2p/PLAN.md" --add; }
+trust() { sh "$S/check-trust.sh" .v2p/PLAN.md --add >/dev/null; }
 sum0=$(shasum -a 256 < "$src"); fails=0
 is() { if [ "$2" = "$3" ]; then echo "PASS [$SH] $1"; else echo "FAIL [$SH] $1: got '$2' want '$3'"; fails=$((fails+1)); fi; }
 has() { case $2 in *"$3"*) echo "PASS [$SH] $1" ;; *) echo "FAIL [$SH] $1: missing '$3' in: $(printf '%s' "$2" | head -c 400)"; fails=$((fails+1)) ;; esac; }
@@ -19,7 +23,7 @@ ins() { RE=$1 T=$2 awk '!done && $0 ~ ENVIRON["RE"] { print ENVIRON["T"]; done =
 M1="§1 missing security row"; M2="§1 missing qa row"; M3="§1 codex findings cell 'some'"; M4="§2 fix commit deadbeef not found"
 M5="pending without deferred to deploy"; M6="no 'pre-deploy: pending"; M7="'---' rule"; M8="no valid 'preview:' line"
 for SH in sh zsh; do
-  fx=$base/fx-$SH; sh "$here/tests/fixture-execute.sh" "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
+  fx=$base/fx-$SH; fixture "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
   # execute, the short way (test-execute.sh covers each step's refusals)
   q start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   git add -A; git commit -qm 'feat: greeting'; q verify 1; q ponytail 1 none
@@ -135,7 +139,7 @@ for SH in sh zsh; do
   mv .v2p/.brand-pass "$base/bp"; FR; is "15 pre-brand plan skips the brand checks" $rc 0
   rm .v2p/REVIEW.md .v2p/.review-pass; cp "$base/p15-$SH" "$P"
   awk '{print} /^# Fixture Implementation Plan$/ {print "**Spec:** .v2p/BRIEF.md · .v2p/SCAVENGE.md · .v2p/DESIGN.md"}' .v2p/PLAN.md > "$base/pl15" && cat "$base/pl15" > .v2p/PLAN.md
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   FR; is "15 no brand receipt exit" $rc 1; has "15 no brand receipt" "$out" "FAIL: DESIGN.md does not match its receipt"
   mv "$base/bp" .v2p/.brand-pass; FR; hasnt "15 receipt back" "$out" "DESIGN.md does not match"; has "15 ux-laws cell" "$out" "FAIL: §1 ux-laws run cell does not name DESIGN.md"
   sub '| ux-laws | references/ux-laws.md + /design-review |' '| ux-laws | references/ux-laws.md + /design-review http://localhost:3101 against DESIGN.md |'
@@ -145,12 +149,12 @@ for SH in sh zsh; do
   # Task 2 (still broken since 14) loses its ruling: unbackticked, nothing would run and the break would pass unseen
   sed 's/^checked: .*/checked: pending/' .v2p/REVIEW.md | grep -v '^ruling:' > "$P"; rm .v2p/REVIEW.md .v2p/.review-pass
   sub2() { A=$1 B=$2 awk 'index($0, ENVIRON["A"]) { i = index($0, ENVIRON["A"]); $0 = substr($0, 1, i-1) ENVIRON["B"] substr($0, i+length(ENVIRON["A"])) } { print }' .v2p/PLAN.md > "$base/pl16" && cat "$base/pl16" > .v2p/PLAN.md; }
-  sub2 "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: grep -c hi src/greet.sh → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass
+  sub2 "mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1" 'mechanical: grep -c hi src/greet.sh → 1'; shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust
   grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "16 fixture edited" $? 0
   FR; is "16 unbackticked exit" $rc 1; has "16 unbackticked" "$out" "FAIL: verifier of task 2: mechanical with no backticked"
   # 17. a: a mechanical Verifier whose commands are all `<placeholder>`s ran nothing and counted as verified (one runnable
   # command beside a placeholder is enough); b: a backticked `cmd` → x inside the manual part was extracted and run
-  reseal() { shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; }
+  reseal() { shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; }
   keep() { [ -f .v2p/REVIEW.md ] && { sed 's/^checked: .*/checked: pending/' .v2p/REVIEW.md > "$P"; rm .v2p/REVIEW.md .v2p/.review-pass; }; }
   sub2 'mechanical: grep -c hi src/greet.sh → 1' 'mechanical: `grep -c hi <file>` → 1'; reseal
   FR; keep; is "17a all placeholders exit" $rc 1; has "17a all placeholders" "$out" "FAIL: verifier of task 2: every command is a <placeholder>: nothing ran"

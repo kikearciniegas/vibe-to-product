@@ -33,7 +33,7 @@ Claude Code: run `sh <this skill's dir>/scripts/tidy-check.sh --probe` and print
 - The BRIEF goes to `$PWD/.v2p/BRIEF.md`.
 - If `$PWD` has no code and no `.v2p/`, ask once whether this directory is the project.
 - Never scaffold a project.
-- Recommend committing `.v2p/`: it is the contract between phases.
+- Recommend committing `.v2p/`: it is the contract between phases. Its receipts are shared with it; trust to run the PLAN's Verifier commands is not: each machine grants it for itself.
 
 ## 4. Profiles
 | Profile | Shape |

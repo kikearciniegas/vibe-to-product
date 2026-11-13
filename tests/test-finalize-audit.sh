@@ -68,6 +68,27 @@ for SH in sh zsh; do
   # 8d. trust boundary: a draft tracked by git came from the repo, not this session; its commands never run
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; git add -f .v2p/AUDIT.draft.md; FA; git rm -q --cached .v2p/AUDIT.draft.md
   is "8d tracked draft exit" $rc 1; has "8d tracked draft" "$out" "tracked by git"; is "8d nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8d2. tracked under another case: on a case-insensitive disk (macOS default) .v2p/audit.draft.md IS this draft
+  if [ -f .v2p/audit.draft.md ]; then rm -f pwned
+    git update-index --add --cacheinfo "100644,$(git hash-object -w .v2p/AUDIT.draft.md),.v2p/audit.draft.md"; FA; git rm -q --cached .v2p/audit.draft.md
+    is "8d2 case-folded tracked draft exit" $rc 1; has "8d2 case-folded tracked draft" "$out" "tracked by git"; is "8d2 nothing ran" "$(test -f pwned && echo yes)" ""
+  else echo "SKIP [$SH] 8d2 case-folded tracked draft: this filesystem is case-sensitive"; fi
+  # 8d3. tracked is decided by file identity from the repo top: a cased-differently directory or file name is this draft
+  for alias in .V2P/audit.draft.md .v2p/AUDIT.DRAFT.MD; do plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; 
+    if [ -f "$alias" ]; then rm -f pwned
+      git update-index --add --cacheinfo "100644,$(git hash-object -w .v2p/AUDIT.draft.md),$alias"; FA; git rm -q --cached "$alias"
+      is "8d3 $alias exit" $rc 1; has "8d3 $alias tracked" "$out" "tracked by git"; is "8d3 $alias nothing ran" "$(test -f pwned && echo yes)" ""
+    else echo "SKIP [$SH] 8d3 $alias: this filesystem is case-sensitive"; fi
+  done
+  # 8d5. .v2p is a nested repo holding the draft: the outer index never lists it; refused, and the message says why
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; rm -f pwned; git -C .v2p init -q; git -C .v2p add -f AUDIT.draft.md
+  git -C .v2p -c user.name=t -c user.email=t@t commit -qm 'nested repo ships the draft'; FA; rm -rf .v2p/.git
+  is "8d5 nested repo exit" $rc 1; has "8d5 nested repo says why" "$out" "inside a nested repo"; is "8d5 nested repo nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8d6. an unreadable index fails closed, and the message says why
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; rm -f pwned; cp .git/index "$base/idx-$SH"; echo junk > .git/index; FA; cp "$base/idx-$SH" .git/index
+  is "8d6 unreadable index exit" $rc 1; has "8d6 unreadable index says why" "$out" "index unreadable"; is "8d6 unreadable index nothing ran" "$(test -f pwned && echo yes)" ""
+  # 8d4. the normal path still runs: the same draft, untracked in its own repo
+  plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; rm -f pwned; FA; is "8d4 untracked draft runs" "$(test -f pwned && echo yes)" yes; rm -f pwned
   # 8g. fail closed: outside a git work tree nothing shows the draft is this session's, so its commands never run
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; mv .git "$base/git-off-$SH"; FA; mv "$base/git-off-$SH" .git
   is "8g no git exit" $rc 1; has "8g no git" "$out" "not in a git repo"; is "8g nothing ran" "$(test -f pwned && echo yes)" ""; rm -f pwned

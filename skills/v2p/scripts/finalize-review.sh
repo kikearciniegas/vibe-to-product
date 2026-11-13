@@ -13,6 +13,7 @@ draft=$d/REVIEW.draft.md; out=$d/REVIEW.md; plan=$d/PLAN.md; ex=$d/EXECUTE.md; t
 trap 'rm -f "$tmp.r" "$tmp.f" "$tmp.s" "$tmp.p" "$tmp.pi" "$tmp.si" "$tmp.t" "$tmp.c" "$tmp.run"' EXIT
 sh "$skill/scripts/check-pass.sh" "$ex" "$d/.execute-pass" >/dev/null || { echo "FAIL: EXECUTE.md does not match its receipt (run /v2p execute first)"; exit 1; }
 sh "$skill/scripts/check-pass.sh" "$plan" "$d/.plan-pass" >/dev/null || { echo "FAIL: PLAN.md does not match its receipt (its verifiers run here)"; exit 1; }
+sh "$skill/scripts/check-trust.sh" "$plan" || exit 1
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
 rows() { awk -v h="$1" 'index($0,h)==1{f=1;next} /^## /{f=0} f && /^\| / && !/^\| (check|item|#) / && !/^\|---/' "$2"; }
@@ -114,8 +115,8 @@ while IFS= read -r n; do
     # same rule as task-record.sh: only an unquoted `<word>` is a placeholder; `'<loc>'` and `< file` run
     printf '%s\n' "$c" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g" | grep -qE '<[A-Za-z][A-Za-z0-9_-]*>' && continue
     vt=$((vt + 1)); ran=$((ran + 1)); echo "run: task $n: $c"
-    # trust boundary: $c is a Verifier command from PLAN.md, which is hash-locked (check-pass.sh) — by design,
-    # not sanitized here; whoever can edit an unsealed PLAN can already run arbitrary commands via this path
+    # trust boundary: $c is a Verifier command from PLAN.md, hash-locked (check-pass.sh) AND trusted on this machine
+    # (check-trust.sh above: a shipped receipt is not enough) — not sanitized here
     sh -c "$c" > "$tmp.run" 2>&1 < /dev/null; r=$?; last=$(grep . "$tmp.run" | tail -n 1)
     if [ "$r" -ne 0 ]; then echo "FAIL: verifier of task $n fails after review fixes: $c exit $r"; fail=1
     else case $x in ''|*[!0-9]*) vp=$((vp + 1)) ;; *) if [ "$last" = "$x" ]; then vp=$((vp + 1)); else echo "FAIL: verifier of task $n fails after review fixes: $c → $last (expected $x)"; fail=1; fi ;; esac; fi

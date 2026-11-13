@@ -6,7 +6,11 @@
 # ${TMPDIR:-/tmp}/v2p-ex.<pid> (HOME points there too). Usage: sh tests/test-execute.sh   (exit 0 = all PASS)
 here=$(cd "$(dirname "$0")/.." && pwd -P); S=$here/skills/v2p/scripts
 base=$(cd "${TMPDIR:-/tmp}" && pwd -P)/v2p-ex.$$; mkdir -p "$base/home"; HOME=$base/home; export HOME
+XDG_CONFIG_HOME=$HOME/.config; export XDG_CONFIG_HOME
 GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t; export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+# the fixture's PLAN and every resealed PLAN are trusted in the scratch ledger (check-trust.sh), as finalize-plan.sh would
+fixture() { sh "$here/tests/fixture-execute.sh" "$1" && sh "$S/check-trust.sh" "$1/.v2p/PLAN.md" --add; }
+trust() { sh "$S/check-trust.sh" .v2p/PLAN.md --add >/dev/null; }
 fails=0
 is() { if [ "$2" = "$3" ]; then echo "PASS [$SH] $1"; else echo "FAIL [$SH] $1: got '$2' want '$3'"; fails=$((fails+1)); fi; }
 has() { case $2 in *"$3"*) echo "PASS [$SH] $1" ;; *) echo "FAIL [$SH] $1: missing '$3' in: $(printf '%s' "$2" | head -c 300)"; fails=$((fails+1)) ;; esac; }
@@ -17,7 +21,7 @@ DC() { out=$($SH "$S/drift-check.sh" "$@" 2>&1); rc=$?; }
 FE() { out=$($SH "$S/finalize-execute.sh" .v2p 2>&1); rc=$?; }
 rec1=.v2p/work/execute-task-1.md
 for SH in sh zsh; do
-  fx=$base/fx-$SH; sh "$here/tests/fixture-execute.sh" "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
+  fx=$base/fx-$SH; fixture "$fx" >/dev/null 2>&1; cd "$fx" || exit 2
   main=$(git rev-parse --abbrev-ref HEAD)
   # 1. start records base/branch/plan and seals it; falsifier: a corrupt PLAN receipt → exit 2, no record
   cp .v2p/.plan-pass "$base/pp"; echo 0 > .v2p/.plan-pass
@@ -134,9 +138,9 @@ for SH in sh zsh; do
   # 11. EXECUTE.md edited after finalize → check-pass refuses
   cp $E "$base/E-$SH"; echo x >> $E; out=$(sh "$S/check-pass.sh" $E .v2p/.execute-pass); has "11 tamper" "$out" "changed after finalize"; cp "$base/E-$SH" $E
   # 13. a curl verifier against a closed localhost port fails fast (no hang); separate copy with a re-sealed PLAN
-  f13=$base/f13-$SH; sh "$here/tests/fixture-execute.sh" "$f13" >/dev/null 2>&1; cd "$f13"
+  f13=$base/f13-$SH; fixture "$f13" >/dev/null 2>&1; cd "$f13"
   sed "s|^\*\*Verifier:\*\* mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1|**Verifier:** mechanical: \`curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:9/\` → 200|" .v2p/PLAN.md > "$base/p13" && mv "$base/p13" .v2p/PLAN.md
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: curl verifier'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; git add -A; git commit -qm 'plan: curl verifier'
   TR start 2; t0=$(date +%s); TR verify 2; t1=$(date +%s)
   is "13 curl verifier fails" $rc 1; has "13 curl exit" "$(cat .v2p/work/execute-task-2.md)" "verifier: fail · attempts: 1 · exit 7 · \`curl"
   is "13 under 5s" "$([ $((t1 - t0)) -lt 5 ] && echo yes)" yes
@@ -144,14 +148,14 @@ for SH in sh zsh; do
   # 14. drift-check refuses a pattern with shell-unsafe characters instead of eval'ing it (fail closed).
   # Planted straight into PLAN-AMENDMENTS.md so the test covers the matcher itself, not just the `allow` gate
   # in front of it. Falsifier checked by hand against the pre-fix script: same payload → exit 0 and a PWNED file.
-  f14=$base/f14-$SH; sh "$here/tests/fixture-execute.sh" "$f14" >/dev/null 2>&1; cd "$f14"
+  f14=$base/f14-$SH; fixture "$f14" >/dev/null 2>&1; cd "$f14"
   TR start 1; rm -f PWNED
   printf -- '- 2026-09-24T00:00:00 · task 1 · files += `*) ;; esac; touch PWNED; case 1 in 1` · malicious\n' >> .v2p/PLAN-AMENDMENTS.md
   DC 1; is "14 injection blocked exit" $rc 1; has "14 injection blocked msg" "$out" "DRIFT pattern"; is "14 no PWNED via drift-check" "$(test -f PWNED && echo yes)" ""
   TR verify 1; is "14 verify blocked exit" $rc 1; is "14 no PWNED via verify" "$(test -f PWNED && echo yes)" ""
   cd "$base"
   # 15. task-record allow refuses an absolute path, a `..` segment or an unsafe character before any write
-  f15=$base/f15-$SH; sh "$here/tests/fixture-execute.sh" "$f15" >/dev/null 2>&1; cd "$f15"
+  f15=$base/f15-$SH; fixture "$f15" >/dev/null 2>&1; cd "$f15"
   TR start 1
   TR allow 1 '../secret' r; is "15 traversal exit" $rc 2; has "15 traversal msg" "$out" "ERROR: unsafe path"
   TR allow 1 '/etc/passwd' r; is "15 absolute exit" $rc 2; has "15 absolute msg" "$out" "ERROR: unsafe path"
@@ -162,21 +166,21 @@ for SH in sh zsh; do
   hasnt "15 not finalized: no review route" "$out" "execute is finalized"
   cd "$base"
   # 16. task-record's <n> check (already `case $n in ''|*[!0-9]*)`) applies ahead of every subcommand's file writes
-  f16=$base/f16-$SH; sh "$here/tests/fixture-execute.sh" "$f16" >/dev/null 2>&1; cd "$f16"
+  f16=$base/f16-$SH; fixture "$f16" >/dev/null 2>&1; cd "$f16"
   TR verify '../../x'; is "16 verify bad n exit" $rc 2
   TR start '1a'; is "16 start bad n exit" $rc 2
   is "16 no work dir writes" "$(find .v2p/work -type f 2>/dev/null | grep -c .)" 0
   cd "$base"
   # 17. verify runs against the committed head: an out-of-scope file that was already committed still blocks it
-  f17=$base/f17-$SH; sh "$here/tests/fixture-execute.sh" "$f17" >/dev/null 2>&1; cd "$f17"
+  f17=$base/f17-$SH; fixture "$f17" >/dev/null 2>&1; cd "$f17"
   TR start 1; echo x > stray.txt; git add stray.txt; git commit -qm 'stray'
   TR verify 1; is "17 committed stray exit" $rc 1; has "17 committed stray" "$(cat .v2p/work/execute-task-1.md)" "DRIFT file stray.txt"
   cd "$base"
   # 18. brace shorthand in Files (live PLAN Tasks 4/5 wrote `src/components/{Hero,Proof,...}.tsx`) expands to one
   # pattern per alternative, one or more groups per token; nested/unclosed braces and unsafe alternatives fail closed.
-  f18=$base/f18-$SH; sh "$here/tests/fixture-execute.sh" "$f18" >/dev/null 2>&1; cd "$f18"
+  f18=$base/f18-$SH; fixture "$f18" >/dev/null 2>&1; cd "$f18"
   sed 's|^\*\*Files:\*\* Modify: `src/\*\.sh`, `app/\[locale\]/page\.tsx`$|**Files:** Create `src/components/{Hero,Proof}.tsx`, `{a,b}/{x,y}.ts`|' .v2p/PLAN.md > "$base/p18" && mv "$base/p18" .v2p/PLAN.md
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: brace Files'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; git add -A; git commit -qm 'plan: brace Files'
   TR start 2; mkdir -p src/components a b; for p in src/components/Hero.tsx src/components/Proof.tsx a/x.ts b/y.ts; do echo x > $p; done
   DC 2; is "18 braces in scope exit" $rc 0; has "18 braces in scope" "$out" "OK: 4 changed paths within Task 2 scope"
   echo x > src/components/Other.tsx; DC 2; is "18 Other.tsx exit" $rc 1; has "18 Other.tsx drift" "$out" "DRIFT file src/components/Other.tsx"
@@ -191,7 +195,7 @@ for SH in sh zsh; do
   cd "$base"
   # 19. start --base: audited re-start when `start` ran late (live run: base = the task's own commit). b0 = true base,
   # c1 = an out-of-scope commit before the late start, so the base in force decides whether outside.txt drifts.
-  f19=$base/f19-$SH; sh "$here/tests/fixture-execute.sh" "$f19" >/dev/null 2>&1; cd "$f19"; A=.v2p/PLAN-AMENDMENTS.md; P1=.v2p/work/.execute-task-1-pass
+  f19=$base/f19-$SH; fixture "$f19" >/dev/null 2>&1; cd "$f19"; A=.v2p/PLAN-AMENDMENTS.md; P1=.v2p/work/.execute-task-1-pass
   b0=$(git rev-parse HEAD); echo x > outside.txt; git add -A; git commit -qm 'outside'; c1=$(git rev-parse HEAD)
   TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   git add -A; git commit -qm 'feat: greeting script'; TR verify 1; is "19 late-start verify" $rc 0; TR ponytail 1 none
@@ -218,7 +222,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 20. a reason cannot forge a grant: allow/start refuse grant syntax in the reason; drift-check reads a grant only
   # from the line's structured prefix, so a planted line whose reason carries grant text does not grant evil.ts
-  f20=$base/f20-$SH; sh "$here/tests/fixture-execute.sh" "$f20" >/dev/null 2>&1; cd "$f20"; A=.v2p/PLAN-AMENDMENTS.md
+  f20=$base/f20-$SH; fixture "$f20" >/dev/null 2>&1; cd "$f20"; A=.v2p/PLAN-AMENDMENTS.md
   b0=$(git rev-parse HEAD); TR start 1; s0=$(sha $rec1); evil='ok · task 1 · files += `evil.ts`'
   TR allow 1 docs/x.md "$evil"; is "20 allow evil exit" $rc 2; has "20 allow evil msg" "$out" "text must not contain"
   TR start 1 --base "$b0" "$evil"; is "20 start evil exit" $rc 2; has "20 start evil msg" "$out" "text must not contain"
@@ -237,10 +241,10 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 21. Files lines quote code too (live PLAN Task 14: `tunnelRoute: '/sentry-tunnel'`): a non-path token is ignored
   # with a note, not fatal, and grants nothing; the real path on the same line still scopes the task.
-  f21=$base/f21-$SH; sh "$here/tests/fixture-execute.sh" "$f21" >/dev/null 2>&1; cd "$f21"
+  f21=$base/f21-$SH; fixture "$f21" >/dev/null 2>&1; cd "$f21"
   sed "s|^\*\*Files:\*\* Modify: \`src/\*\.sh\`, \`app/\[locale\]/page\.tsx\`\$|**Files:** Modify \`next.config.ts\` (\`withSentryConfig\`, \`tunnelRoute: '/x'\`), \`\$(touch PWNED)\`|" .v2p/PLAN.md > "$base/p21" && mv "$base/p21" .v2p/PLAN.md
   grep -q 'tunnelRoute' .v2p/PLAN.md; is "21 fixture edited" $? 0
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: code in Files'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; git add -A; git commit -qm 'plan: code in Files'
   TR start 2; rm -f PWNED; echo x > next.config.ts
   DC 2; is "21 code token exit" $rc 0; has "21 note" "$out" "note: ignored non-path Files token tunnelRoute:"
   has "21 injection token ignored" "$out" 'note: ignored non-path Files token $(touch'; is "21 no PWNED" "$(test -f PWNED && echo yes)" ""
@@ -248,17 +252,17 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 22. placeholder = an UNQUOTED `<word>` only (live PLAN Task 15: `grep -c '<loc>'` was skipped and sealed a pass
   # without running). Quoted `<loc>` and a `< file` redirect run; unquoted `https://<domain>` is still skipped.
-  f22=$base/f22-$SH; sh "$here/tests/fixture-execute.sh" "$f22" >/dev/null 2>&1; cd "$f22"
+  f22=$base/f22-$SH; fixture "$f22" >/dev/null 2>&1; cd "$f22"
   sed "s|^\*\*Verifier:\*\* mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1|**Verifier:** mechanical: \`grep -c '<loc>' src/greet.sh\` → 1, \`wc -l < src/greet.sh \| tr -d ' '\` → 1, \`curl -m 1 https://<domain>/\` → 200|" .v2p/PLAN.md > "$base/p22" && mv "$base/p22" .v2p/PLAN.md
   grep -q "'<loc>'" .v2p/PLAN.md; is "22 fixture edited" $? 0
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: placeholder forms'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; git add -A; git commit -qm 'plan: placeholder forms'
   TR start 2; TR verify 2; v22=$(grep '^verifier:' .v2p/work/execute-task-2.md)
   is "22 quoted <loc> ran and failed" $rc 1; has "22 quoted <loc> ran" "$v22" "exit 2 · \`grep -c '<loc>' src/greet.sh\`"
   has "22 redirect ran" "$v22" "exit 0 · \`wc -l < src/greet.sh"; has "22 domain skipped" "$v22" "\`curl -m 1 https://<domain>/\` → skipped: placeholder"
   cd "$base"
   # 23. `note` = the controller's own evidence (live: `manual` stamps `by user`, and the controller signed the user's
   # name on its own checks, observation 0210). Several notes accumulate, reason() rules apply, verify keeps them.
-  f23=$base/f23-$SH; sh "$here/tests/fixture-execute.sh" "$f23" >/dev/null 2>&1; cd "$f23"
+  f23=$base/f23-$SH; fixture "$f23" >/dev/null 2>&1; cd "$f23"
   TR start 1; s0=$(sha $rec1)
   TR note 1 'has a `tick'; is "23 backtick refused" $rc 2; TR note 1 "$(printf 'two\nlines')"; is "23 newline refused" $rc 2
   TR note 1 'x · task 1 · files += y'; is "23 grant syntax refused" $rc 2; TR note 1 ""; is "23 empty refused" $rc 2
@@ -270,7 +274,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   TR verify 1; is "23 notes survive verify" "$(grep -c '^note: ' $rec1)" 2
   cd "$base"
   # 24. ponytail refuses while the verifier is pending (live Task 11 was reviewed before verify)
-  f24=$base/f24-$SH; sh "$here/tests/fixture-execute.sh" "$f24" >/dev/null 2>&1; cd "$f24"
+  f24=$base/f24-$SH; fixture "$f24" >/dev/null 2>&1; cd "$f24"
   TR start 1; s0=$(sha $rec1); TR ponytail 1 none; is "24 pending exit" $rc 2; has "24 pending msg" "$out" "run verify first"
   is "24 record unchanged" "$(sha $rec1)" "$s0"
   mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh; git add -A; git commit -qm 'feat: greet'
@@ -285,7 +289,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   has "25 §1 lists credential" "$(grep '^| 2 |' .v2p/EXECUTE.md)" "deferred — VERCEL_TOKEN (deploy preview URL)"
   cd "$base"
   # 26. skip/defer text goes through reason(): one line, no grant syntax or backtick, refused before any record exists
-  f26=$base/f26-$SH; sh "$here/tests/fixture-execute.sh" "$f26" >/dev/null 2>&1; cd "$f26"
+  f26=$base/f26-$SH; fixture "$f26" >/dev/null 2>&1; cd "$f26"
   TR skip 3 "$(printf 'two\nlines')"; is "26 skip newline exit" $rc 2; has "26 neutral msg" "$out" "ERROR: text must be one line"
   TR skip 3 'has a `tick'; is "26 skip backtick exit" $rc 2; has "26 neutral msg 2" "$out" "ERROR: text must not contain"
   TR defer 3 "$(printf 'TOKEN\nx')"; is "26 defer newline exit" $rc 2
@@ -295,7 +299,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 27. UI gate: a task whose Files name a UI file (Task 2: app/[locale]/page.tsx) starts only while .v2p/DESIGN.md
   # matches its receipt (brand before UI work); Task 1 (.sh files only) is not gated
-  f27=$base/f27-$SH; sh "$here/tests/fixture-execute.sh" "$f27" >/dev/null 2>&1; cd "$f27"
+  f27=$base/f27-$SH; fixture "$f27" >/dev/null 2>&1; cd "$f27"
   mv .v2p/.brand-pass "$base/bp27"
   TR start 2; is "27 no receipt exit" $rc 2; has "27 no receipt msg" "$out" "ERROR: task 2 touches UI files (app/[locale]/page.tsx) and .v2p/DESIGN.md has no valid receipt: run /v2p brand"
   is "27 no record" "$(test -f .v2p/work/execute-task-2.md && echo yes)" ""
@@ -306,10 +310,10 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 28. a mechanical Verifier with no backticked command (field test V0: 14 of 14) extracted nothing, ran nothing and
   # recorded pass. verify records fail; a manual-only Verifier (Task 3) still records pass with nothing to run.
-  f28=$base/f28-$SH; sh "$here/tests/fixture-execute.sh" "$f28" >/dev/null 2>&1; cd "$f28"
+  f28=$base/f28-$SH; fixture "$f28" >/dev/null 2>&1; cd "$f28"
   sed "s|^\*\*Verifier:\*\* mechanical: \`sh -c 'grep -c hi src/greet.sh'\` → 1|**Verifier:** mechanical: grep -c hi src/greet.sh → 1|" .v2p/PLAN.md > "$base/p28" && mv "$base/p28" .v2p/PLAN.md
   grep -q '^\*\*Verifier:\*\* mechanical: grep -c hi' .v2p/PLAN.md; is "28 fixture edited" $? 0
-  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; git add -A; git commit -qm 'plan: unbackticked verifier'
+  shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; git add -A; git commit -qm 'plan: unbackticked verifier'
   TR start 2; TR verify 2; is "28 unbackticked exit" $rc 1; has "28 unbackticked msg" "$out" "no backticked"
   has "28 unbackticked record" "$(grep '^verifier:' .v2p/work/execute-task-2.md)" "verifier: fail · attempts: 1"
   TR start 3; TR verify 3; is "28 manual-only exit" $rc 0; has "28 manual-only record" "$(grep '^verifier:' .v2p/work/execute-task-3.md)" "verifier: pass"
@@ -317,7 +321,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   # 29. field test V6/V7: the commit one-liner (run as execute.md writes it) used `git add -A` and swept a pre-existing
   # untracked file into the task commit. It now runs drift-check first: nothing is committed while one is present;
   # Step 0's remedy (.git/info/exclude) clears it and the commit holds only the task's files.
-  f29=$base/f29-$SH; sh "$here/tests/fixture-execute.sh" "$f29" >/dev/null 2>&1; cd "$f29"
+  f29=$base/f29-$SH; fixture "$f29" >/dev/null 2>&1; cd "$f29"
   ol=$(grep -m1 'git add -A.* && git commit -m "<type>' "$here/skills/v2p/phases/execute.md" | sed 's/^ *`//; s/`$//' |
     K="$here/skills/v2p" awk '{ gsub(/<n>/, "1"); gsub(/<type>: <task title>/, "feat: greet"); i = index($0, "<this skill'"'"'s dir>")
       if (i) $0 = substr($0, 1, i - 1) ENVIRON["K"] substr($0, i + 18); print }')
@@ -335,7 +339,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   echo n > .v2p/notes.md; printf 'echo hi\n# 2\n' > src/greet.sh; out=$($SH -c "$ol" 2>&1); rc=$?
   is "29b commit exit" $rc 0; is "29b .v2p file not committed" "$(git show --name-only --format= HEAD | tr '\n' ' ')" "src/greet.sh "
   is "29b .v2p file still untracked" "$(git status --porcelain -- .v2p/notes.md)" "?? .v2p/notes.md"
-  sub=$base/f29s-$SH; mkdir -p "$sub"; sh "$here/tests/fixture-execute.sh" "$sub/proj" >/dev/null 2>&1; rm -rf "$sub/proj/.git"
+  sub=$base/f29s-$SH; mkdir -p "$sub"; fixture "$sub/proj" >/dev/null 2>&1; rm -rf "$sub/proj/.git"
   mv "$sub/proj/.gitignore" "$sub/.gitignore"; sed -i.b 's|^|proj/|' "$sub/.gitignore"; rm -f "$sub/.gitignore.b"
   (cd "$sub" && git init -q && git add -A && git commit -qm base); cd "$sub/proj"
   TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
@@ -344,7 +348,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 30. field test V8: tasks committed in sequence, then an earlier one re-verified, saw the later tasks' files as drift.
   # --head <sha> measures base..<sha> (no untracked scan); <sha> must be an ancestor of HEAD and a descendant of base.
-  f30=$base/f30-$SH; sh "$here/tests/fixture-execute.sh" "$f30" >/dev/null 2>&1; cd "$f30"; b0=$(git rev-parse HEAD)
+  f30=$base/f30-$SH; fixture "$f30" >/dev/null 2>&1; cd "$f30"; b0=$(git rev-parse HEAD)
   TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   git add -A; git commit -qm 'feat: greet'; c1=$(git rev-parse HEAD)
   TR start 2; printf 'echo hi\n# greeting\n' > src/greet.sh; mkdir -p 'app/[locale]'; echo p > 'app/[locale]/page.tsx'; git add -A; git commit -qm 'feat: page'; c2=$(git rev-parse HEAD)
@@ -364,7 +368,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 31. field test V12: Step 1 (copy PLAN §4 into EXECUTE.draft.md) was skipped and only finalize caught it. Every record
   # writer (start, start --base, skip, defer) now refuses while the draft is missing; the fixture creates it.
-  f31=$base/f31-$SH; sh "$here/tests/fixture-execute.sh" "$f31" >/dev/null 2>&1; cd "$f31"
+  f31=$base/f31-$SH; fixture "$f31" >/dev/null 2>&1; cd "$f31"
   is "31 fixture has the draft" "$(test -f .v2p/EXECUTE.draft.md && echo yes)" yes
   cp .v2p/EXECUTE.draft.md "$base/d31" 2>/dev/null; rm -f .v2p/EXECUTE.draft.md
   TR start 1; is "31 start exit" $rc 2; has "31 start msg" "$out" "EXECUTE.draft.md missing"
@@ -375,7 +379,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   cd "$base"
   # 32. finalize-execute: HEAD must be the newest recorded head (a commit after the last verify was never checked);
   # a later commit touching only .v2p/ is accepted, as the clean-tree check ignores .v2p/
-  f32=$base/f32-$SH; sh "$here/tests/fixture-execute.sh" "$f32" >/dev/null 2>&1; cd "$f32"; b0=$(git rev-parse HEAD)
+  f32=$base/f32-$SH; fixture "$f32" >/dev/null 2>&1; cd "$f32"; b0=$(git rev-parse HEAD)
   TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   git add -A; git commit -qm 'feat: greet'; c1=$(git rev-parse HEAD); TR verify 1; TR ponytail 1 none; TR skip 2 "not in this test"; TR skip 3 "not in this test"
   echo late >> README.md; git commit -qam 'late: after verify'
@@ -387,9 +391,9 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   # 33. Verifier loose ends. a: a mechanical Verifier whose commands are all `<placeholder>`s ran nothing and recorded
   # pass; now fail (one runnable command beside a placeholder still passes). b: a backticked `cmd` → x inside the
   # manual part was extracted and run; only the mechanical part is (either order of the two parts).
-  f33=$base/f33-$SH; sh "$here/tests/fixture-execute.sh" "$f33" >/dev/null 2>&1; cd "$f33"; cp .v2p/PLAN.md "$base/p33"
+  f33=$base/f33-$SH; fixture "$f33" >/dev/null 2>&1; cd "$f33"; cp .v2p/PLAN.md "$base/p33"
   v33() { V=$1 awk '/^\*\*Verifier:\*\* mechanical: `sh -c / { print "**Verifier:** " ENVIRON["V"]; next } { print }' "$base/p33" > .v2p/PLAN.md
-    shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; TR start 2; TR verify 2; v=$(grep '^verifier:' .v2p/work/execute-task-2.md); }
+    shasum -a 256 .v2p/PLAN.md | cut -d' ' -f1 > .v2p/.plan-pass; trust; TR start 2; TR verify 2; v=$(grep '^verifier:' .v2p/work/execute-task-2.md); }
   v33 'mechanical: `grep -c hi <file>` → 1, `curl -m 1 https://<domain>/` → 200   |   manual: the user opens it'
   is "33a all placeholders exit" $rc 1; has "33a all placeholders record" "$v" "verifier: fail"; has "33a msg" "$out" "nothing ran"
   printf 'echo hi\n' > src/greet.sh
@@ -404,7 +408,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   # 34. ponytail, skip and defer wrote `head: HEAD` unverified, so verify → commit → ponytail (or skip/defer of another
   # task) moved the newest recorded head past an unchecked commit and finalize-execute passed it. Only verify (after
   # drift-check) writes head:; the late commit fails finalize until verify runs again.
-  f34=$base/f34-$SH; sh "$here/tests/fixture-execute.sh" "$f34" >/dev/null 2>&1; cd "$f34"
+  f34=$base/f34-$SH; fixture "$f34" >/dev/null 2>&1; cd "$f34"
   TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
   git add -A; git commit -qm 'feat: greet'; c1=$(git rev-parse HEAD); TR verify 1
   echo late >> README.md; git commit -qam 'late: after verify'; c2=$(git rev-parse HEAD)
@@ -419,7 +423,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   # (exclusive base, inclusive head) or touch only .v2p/. $1: code | v2p (the commit between the two tasks) | skip (task 2
   # verified, then skipped: a skipped task has no range) | none
   f35=$base/f35-$SH
-  t35() { cd "$base"; sh "$here/tests/fixture-execute.sh" "$f35" >/dev/null 2>&1; cd "$f35"
+  t35() { cd "$base"; fixture "$f35" >/dev/null 2>&1; cd "$f35"
     TR start 1; mkdir -p tests; printf 'echo hi\n' > src/greet.sh; printf '[ "$(sh src/greet.sh)" = hi ]\n' > tests/greet.test.sh
     git add -A; git commit -qm 'feat: greet'; TR verify 1; TR ponytail 1 none
     case $1 in code) echo between >> README.md; git commit -qam 'between: code' ;;
@@ -433,7 +437,7 @@ lines"; is "19 newline reason exit" $rc 2; has "19 newline reason msg" "$out" "m
   t35 none; is "35 control: sequential tasks exit" $rc 0; has "35 control PASS" "$out" "PASS: 2/3 tasks (1 skipped)"
   # 36. live re-test: start outside git, or before the first commit, wrote `branch:  · base: ` and later gates
   # failed on the empty record; start now refuses and writes nothing
-  f36=$base/f36-$SH; sh "$here/tests/fixture-execute.sh" "$f36" >/dev/null 2>&1; cd "$f36"; rm -rf .git
+  f36=$base/f36-$SH; fixture "$f36" >/dev/null 2>&1; cd "$f36"; rm -rf .git
   TR start 1; is "36 no git exit" $rc 2; has "36 no git" "$out" "no commit to record as the task's base"
   is "36 no git: no record" "$(test -f .v2p/work/execute-task-1.md && echo yes)" ""
   git init -q; TR start 1; is "36 unborn exit" $rc 2; has "36 unborn" "$out" "no commit to record as the task's base"
