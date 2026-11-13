@@ -97,6 +97,21 @@ for SH in sh zsh; do
     FP; is "R2 case-folded tracked draft finalized" $rc 0; is "R2 case-folded tracked draft not trusted" "$(test -e "$L" && echo yes)" ""
     has "R2 case-folded tracked draft names trust-plan" "$out" "trust-plan.sh"
   else echo "SKIP [$SH] R2 case-folded tracked draft: this filesystem is case-sensitive"; fi
+  # R4. tracked is decided by file identity from the repo top: any index entry that IS the draft on disk (directory or
+  # file name cased differently), and an index entry with a newline (unreadable line by line) fails closed
+  for alias in .V2P/plan.draft.md .v2p/PLAN.DRAFT.MD; do rm -rf "$XDG_CONFIG_HOME"; pd "$base/r4-$SH"
+    if [ -f "$alias" ]; then
+      git update-index --add --cacheinfo "100644,$(git hash-object -w .v2p/PLAN.draft.md),$alias"; git commit -qm "clone ships $alias"
+      FP; is "R4 $alias finalized" $rc 0; is "R4 $alias not trusted" "$(test -e "$L" && echo yes)" ""
+    else echo "SKIP [$SH] R4 $alias: this filesystem is case-sensitive"; fi
+    cd "$base" || exit 2; done
+  rm -rf "$XDG_CONFIG_HOME"; pd "$base/r4n-$SH"
+  git update-index --add --cacheinfo "100644,$(git hash-object -w README.md),odd
+name"; git commit -qm 'an entry with a newline'
+  FP; is "R4 newline entry finalized" $rc 0; is "R4 newline entry fails closed" "$(test -e "$L" && echo yes)" ""
+  # R4. the normal path still trusts: a draft genuinely untracked in its own repo
+  rm -rf "$XDG_CONFIG_HOME"; pd "$base/r4u-$SH"; FP; is "R4 untracked draft finalized" $rc 0
+  is "R4 untracked draft trusted" "$(cat "$L" 2>/dev/null)" "$(sha .v2p/PLAN.md)	$base/r4u-$SH"; cd "$base" || exit 2
   # R3. a control character in the project root (newline, tab) is refused and the ledger left byte-identical
   rm -rf "$XDG_CONFIG_HOME"; cd "$base" || exit 2; mk "$base/r3ok-$SH"; TP "$base/r3ok-$SH" --yes; s0=$(sha "$L"); cd "$base" || exit 2
   for nm in "r3
