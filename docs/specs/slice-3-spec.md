@@ -351,16 +351,18 @@ check() { p=$1
   fi
   return 0
 }
+# single-quote a path for the generated restore commands: $ ` " \ in a file name stay data ('\'' for an embedded ')
+sq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 move() { m=$1; reason=$2   # file or empty dir, already checked
   if [ -d "$m" ]; then
-    [ $apply = yes ] && { rmdir "$m" || { echo "FAIL rmdir $m"; bad=$((bad+1)); return; }; mkdir -p "$q/$m"; printf '%s\t-\t%s\t%s\tmkdir -p "%s"\n' "$m" "$tr" "$reason" "$root/$m" >> "$man"; printf 'mkdir -p "%s"\n' "$root/$m" >> "$res"; }
+    [ $apply = yes ] && { rmdir "$m" || { echo "FAIL rmdir $m"; bad=$((bad+1)); return; }; mkdir -p "$q/$m"; printf '%s\t-\t%s\t%s\tmkdir -p %s\n' "$m" "$tr" "$reason" "$(sq "$root/$m")" >> "$man"; printf 'mkdir -p %s\n' "$(sq "$root/$m")" >> "$res"; }
     echo "MOVE dir	$m"; moved=$((moved+1)); return; fi
   s1=$(sha "$m")
   if [ $apply = yes ]; then
     mkdir -p "$q/$(dirname "$m")" && mv "$m" "$q/$m" || { echo "FAIL mv $m"; bad=$((bad+1)); return; }
     s2=$(sha "$q/$m"); [ "$s1" = "$s2" ] || { echo "FAIL sha mismatch after move: $m (now at $q/$m)"; bad=$((bad+1)); return; }
-    printf '%s\t%s\t%s\t%s\tmkdir -p "%s" && mv "%s" "%s"\n' "$m" "$s1" "$tr" "$reason" "$root/$(dirname "$m")" "$q/$m" "$root/$m" >> "$man"
-    printf 'mkdir -p "%s" && mv "%s" "%s"\n' "$root/$(dirname "$m")" "$q/$m" "$root/$m" >> "$res"
+    printf '%s\t%s\t%s\t%s\tmkdir -p %s && mv %s %s\n' "$m" "$s1" "$tr" "$reason" "$(sq "$root/$(dirname "$m")")" "$(sq "$q/$m")" "$(sq "$root/$m")" >> "$man"
+    printf 'mkdir -p %s && mv %s %s\n' "$(sq "$root/$(dirname "$m")")" "$(sq "$q/$m")" "$(sq "$root/$m")" >> "$res"
   fi
   echo "MOVE $s1	$m"; moved=$((moved+1))
 }

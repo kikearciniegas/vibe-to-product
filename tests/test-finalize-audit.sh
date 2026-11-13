@@ -71,6 +71,14 @@ for SH in sh zsh; do
   # 8g. fail closed: outside a git work tree nothing shows the draft is this session's, so its commands never run
   plant '| std1 | core.md | done | `touch pwned` → exit 0 |'; mv .git "$base/git-off-$SH"; FA; mv "$base/git-off-$SH" .git
   is "8g no git exit" $rc 1; has "8g no git" "$out" "not in a git repo"; is "8g nothing ran" "$(test -f pwned && echo yes)" ""; rm -f pwned
+  # 8i. no git and nothing to run: adopt's "No git → continue" still finishes
+  plant '| std1 | core.md | pending | |'; mv .git "$base/git-off-$SH"; FA; mv "$base/git-off-$SH" .git
+  is "8i no git, no commands exit" $rc 0; hasnt "8i no git, no commands" "$out" "git repo"
+  # 8h. an empty .git (a copy without history) never lets a parent repo vouch for the draft
+  pr=$base/par-$SH; mkdir -p "$pr/p/.git" "$pr/p/.v2p"; git init -q "$pr"; cp README.md BACKLOG.md "$pr/p/"; cp .v2p/BRIEF.md "$pr/p/.v2p/"
+  R='| std1 | core.md | done | `touch pwned` → exit 0 |' awk '!done && $0 == "| std1 | core.md | pending | |" { print ENVIRON["R"]; done = 1; next } { print }' "$G" > "$pr/p/.v2p/AUDIT.draft.md"
+  out=$(cd "$pr/p" && $SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?
+  is "8h parent repo exit" $rc 1; has "8h parent repo" "$out" "not in a git repo"; is "8h nothing ran" "$(test -f "$pr/p/pwned" && echo yes)" ""
   # 8e. `\|` inside a backticked cell fails here, as finalize-plan's V30 lint does later (the copied command keeps the
   # backslash); a `\|` outside backticks is plain text (control)
   plant "| std1 | core.md | done | \`echo 'a\\|b'\` → exit 0 |"; FA; is "8e escaped pipe in a done cell exit" $rc 1; has "8e escaped pipe" "$out" 'has `\|` inside backticks'
