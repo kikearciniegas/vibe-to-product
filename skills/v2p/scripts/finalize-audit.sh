@@ -8,9 +8,7 @@
 skill=$(cd "$(dirname "$0")/.." && pwd -P); d=${1:-.v2p}; draft="$d/AUDIT.draft.md"; out="$d/AUDIT.md"; brief="$d/BRIEF.md"; fail=0
 [ -f "$draft" ] || { echo "FAIL: $draft missing"; exit 1; }
 [ -f "$brief" ] || { echo "FAIL: $brief missing"; exit 1; }
-root=$(cd "$d/.." && pwd -P)
-[ -e "$root/.git" ] && GIT_CEILING_DIRECTORIES=${root%/*} && export GIT_CEILING_DIRECTORIES   # as quarantine.sh: an invalid .git here never falls through to a parent repo
-tmp=${TMPDIR:-/tmp}/fa.$$; trap 'rm -f "$tmp" "$tmp.d" "$tmp.c" "$tmp.run"' EXIT
+root=$(cd "$d/.." && pwd -P); tmp=${TMPDIR:-/tmp}/fa.$$; trap 'rm -f "$tmp" "$tmp.d" "$tmp.c" "$tmp.run"' EXIT
 awk '/^## 11/{f=1;next} /^## /{f=0} f && NF {print; exit}' "$brief" | grep -qE '^none( *←.*)?$' || { echo "FAIL: BRIEF §11 is not 'none'"; fail=1; }
 # work/ checkpoints are a resume aid, not proof: requiring them made agents write them after the fact.
 grep -q '^checked: ' "$draft" || { echo "FAIL: draft has no 'checked:' line to stamp"; fail=1; }
@@ -48,7 +46,7 @@ v30=$(awk '/^\|/ { c = $0; while (match(c, /`[^`]*`/)) { if (index(substr(c, RST
 # Absence (→ 0 or `! …`) without `control:` in the cell is only a WARN.
 # trust boundary: the draft is unsealed, written by this session (adopt Step 4) and gitignored (`.v2p/*.draft.md`); its
 # writer can already run commands. A draft tracked by git came from the repo instead, so nothing from it runs; outside a
-# git work tree nothing tells the two apart, so a row with a command to run fails there (a draft with none still passes).
+# repo whose top is the project root nothing tells the two apart, so a row with a command to run fails there (a draft with none still passes).
 # §3 (modularity) done rows run the same way: runev <label> <rows> <status field>.
 vt=0; vp=0
 runev() { printf '%s\n' "$2" | awk -F'|' -v s="$3" '{st=$s; gsub(/^ +| +$/,"",st); if (st!="done") next; it=$2; gsub(/^ +| +$/,"",it)
@@ -73,7 +71,9 @@ while IFS='	' read -r it ev; do
   esac
 done < "$tmp.d"; }
 r3=$(rows '## 3.'); rows3=$(printf '%s\n' "$r3" | grep -c .)
-nogit=; [ "$(git -C "$d" rev-parse --is-inside-work-tree 2>/dev/null)" = true ] || nogit=1
+# the root must be the top of its own repo: a parent repo (a monorepo, or one behind an empty .git) never vouches for the draft
+top=$(git -C "$root" rev-parse --show-toplevel 2>/dev/null) && top=$(cd "$top" && pwd -P)
+nogit=; [ -n "$top" ] && [ "$top" = "$root" ] || nogit=1
 if [ -z "$nogit" ] && git -C "$d" ls-files --error-unmatch AUDIT.draft.md >/dev/null 2>&1; then echo "FAIL: $draft is tracked by git (it came from the repo, not this session): its evidence commands are not run"; fail=1
 else runev §2 "$r2" 4; runev §3 "$r3" 3; fi
 [ "$rows3" -eq "$modexp" ] || { echo "FAIL: §3 rows $rows3/$modexp"; fail=1; }

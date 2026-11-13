@@ -79,6 +79,9 @@ for SH in sh zsh; do
   R='| std1 | core.md | done | `touch pwned` → exit 0 |' awk '!done && $0 == "| std1 | core.md | pending | |" { print ENVIRON["R"]; done = 1; next } { print }' "$G" > "$pr/p/.v2p/AUDIT.draft.md"
   out=$(cd "$pr/p" && $SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?
   is "8h parent repo exit" $rc 1; has "8h parent repo" "$out" "not in a git repo"; is "8h nothing ran" "$(test -f "$pr/p/pwned" && echo yes)" ""
+  # 8j. a project with no .git inside another repo (a monorepo subfolder) is not its repo's top: nothing runs
+  rm -rf "$pr/p/.git" "$pr/p/.v2p/AUDIT.md" "$pr/p/.v2p/.audit-pass"; out=$(cd "$pr/p" && $SH "$S/finalize-audit.sh" .v2p 2>&1); rc=$?
+  is "8j subfolder exit" $rc 1; has "8j subfolder" "$out" "not in a git repo"; is "8j nothing ran" "$(test -f "$pr/p/pwned" && echo yes)" ""
   # 8e. `\|` inside a backticked cell fails here, as finalize-plan's V30 lint does later (the copied command keeps the
   # backslash); a `\|` outside backticks is plain text (control)
   plant "| std1 | core.md | done | \`echo 'a\\|b'\` → exit 0 |"; FA; is "8e escaped pipe in a done cell exit" $rc 1; has "8e escaped pipe" "$out" 'has `\|` inside backticks'
